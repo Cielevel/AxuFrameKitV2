@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace AxuFrameKit.Common.Editor.KitBox
 {
-    public class AxUKitBoxWindow : EditorWindow, IKitBox
+    public class AxuKitBoxWindow : EditorWindow, IKitBox
     {
         private readonly Dictionary<string, IKitGroup> _groupDict = new()
         {
@@ -19,12 +19,12 @@ namespace AxuFrameKit.Common.Editor.KitBox
 
         private IKitPage _currentPage;
 
-        [MenuItem("AxU_NextGen/AxU工具集")]
+        [MenuItem("AxuFrameKit/AxuEditor工具集")]
         public static void Open()
         {
-            var window = GetWindow<AxUKitBoxWindow>();
+            var window = GetWindow<AxuKitBoxWindow>();
 
-            window.titleContent = new GUIContent("AxU工具集");
+            window.titleContent = new GUIContent("Axu工具集");
 
             window.Show();
         }

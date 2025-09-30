@@ -29,8 +29,8 @@ namespace AxuFrameKit.Common.Utility.Multiton
         {
             lock (Lock)
             {
-                Instances.Remove(key, out var instance);
-                instance?.Dispose();
+                if (Instances.Remove(key, out var instance))
+                    instance?.Dispose();
             }
         }
 
