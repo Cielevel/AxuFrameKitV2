@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using AxuFrameKit.Common.Utility.Singleton;
 using UnityEngine;
@@ -18,6 +19,9 @@ namespace AxuFrameKit.Common.Auto.AutoCamera
             _faceCameraHs.Remove(faceCamera);
         }
 
+        /// <summary>
+        /// 朝向的相机变更
+        /// </summary>
         public void UpdateCamera(Camera cam)
         {
             foreach (var faceCamera in _faceCameraHs)

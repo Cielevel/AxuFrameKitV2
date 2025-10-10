@@ -10,29 +10,29 @@ namespace AxuFrameKit.Common.Utility.UseMono
     /// <summary>
     /// 每一个实例都是独立生命周期
     /// </summary>
-    public interface IUserMonoBehaviourSeparate { } 
+    public interface IUseMonoBehaviourSeparate { } 
 
     public static class IUseMonoBehaviourSeparateExtension
     {
         private static IMonoHandler MonoHandler => _monoHandler ??= new MonoHandler();
         private static IMonoHandler _monoHandler;
         
-        public static Coroutine StartACoroutine(this IUserMonoBehaviourSeparate self, IEnumerator enumerator)
+        public static Coroutine StartACoroutine(this IUseMonoBehaviourSeparate self, IEnumerator enumerator)
         {
             return MonoHandler.StartCoroutine(enumerator, self);
         }
         
-        public static void StopAllCoroutines(this IUserMonoBehaviourSeparate self)
+        public static void StopAllCoroutines(this IUseMonoBehaviourSeparate self)
         {
             MonoHandler.StopAllCoroutines(self);
         }
         
-        public static void StopCoroutine(this IUserMonoBehaviourSeparate self, Coroutine coroutine)
+        public static void StopCoroutine(this IUseMonoBehaviourSeparate self, Coroutine coroutine)
         {
             MonoHandler.StopCoroutine(coroutine, self);
         }
         
-        public static void Destroy(this IUserMonoBehaviourSeparate self)
+        public static void Destroy(this IUseMonoBehaviourSeparate self)
         {
             MonoHandler.Destroy(self);
         }

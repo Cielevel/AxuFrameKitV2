@@ -29,7 +29,9 @@ namespace AxuFrameKit.Common.Utility.TaskX
         private Coroutine _coroutine;
 
         private ConcurrentQueue<IEnumerator> _queue;
-        
+
+        #region Entry
+
         public ICoroutineQ EnQ(IEnumerator coroutine)
         {
             MakeSure();
@@ -43,6 +45,22 @@ namespace AxuFrameKit.Common.Utility.TaskX
             _queue.Enqueue(IEAction(action));
             return this;
         }
+        
+        public ICoroutineQ Delay(float duration, Action action)
+        {
+            MakeSure();
+            EnQ(IEDelay(duration, action));
+            return this;
+        }
+        
+        public ICoroutineQ Delay(float duration)
+        {
+            MakeSure();
+            EnQ(IEDelay(duration));
+            return this;
+        }
+
+            #endregion
 
         ICoroutineQ ICoroutineQ.Then(IEnumerator coroutine)
         {
@@ -59,20 +77,6 @@ namespace AxuFrameKit.Common.Utility.TaskX
         }
         
         ICoroutineQ ICoroutineQ.Delay(float duration)
-        {
-            MakeSure();
-            EnQ(IEDelay(duration));
-            return this;
-        }
-        
-        public ICoroutineQ Delay(float duration, Action action)
-        {
-            MakeSure();
-            EnQ(IEDelay(duration, action));
-            return this;
-        }
-        
-        public ICoroutineQ Delay(float duration)
         {
             MakeSure();
             EnQ(IEDelay(duration));

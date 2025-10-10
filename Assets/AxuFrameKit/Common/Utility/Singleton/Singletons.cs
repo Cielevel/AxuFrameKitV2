@@ -9,15 +9,31 @@ namespace AxuFrameKit.Common.Utility.Singleton
         
     }
     
-    // Warning 该单例有一个fatal问题，在editor内运行时，不进行编译清理，则上一次运行的结果会保留下来！单例不会被清除！
     public abstract class SingletonLazy<T> : ISingleton where T : SingletonLazy<T>, new()
     {
         public static T Instance => _instance.Value;
         private static Lazy<T> _instance = new(() => new T());
 
-        protected virtual void OnDestroy()
+#if UNITY_EDITOR
+        static SingletonLazy()
         {
+            // 静态构造函数，只在类型首次使用时调用一次
+            UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeChanged;
         }
+
+        private static void OnPlayModeChanged(UnityEditor.PlayModeStateChange state)
+        {
+            // 退出Play模式时清理
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+            {
+                if (_instance.IsValueCreated)
+                    _instance.Value?.OnDestroy();
+                _instance = new Lazy<T>(() => new T());
+            }
+        }
+#endif
+        
+        protected virtual void OnDestroy() { }
     }
 
     // TODO 分离singletonLazy，切换场景不销毁，切换场景销毁；但editor下，停止运行都会销毁

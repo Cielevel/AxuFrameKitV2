@@ -6,5 +6,5 @@ namespace AxuFrameKit.Common.Utility.UseMono
     /// <summary>
     /// 每个实例共用一个生命周期
     /// </summary>
-    public interface IUserMonoBehaviourCommon { }
+    public interface IUseMonoBehaviourCommon { }
 }
