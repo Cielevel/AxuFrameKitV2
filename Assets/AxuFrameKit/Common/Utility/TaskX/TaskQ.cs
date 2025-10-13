@@ -24,7 +24,16 @@ namespace AxuFrameKit.Common.Utility.TaskX
                 while (IsRunning)
                 {
                     if (_taskQueue.TryDequeue(out var taskFunc))
-                        await taskFunc.Invoke();
+                    {
+                        try
+                        {
+                            await taskFunc.Invoke();
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError($"任务执行失败: {ex}");
+                        }
+                    }
                     else
                         await Task.Yield();
                 }
