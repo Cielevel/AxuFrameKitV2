@@ -7,7 +7,6 @@ namespace AxuFrameKit.Common.Utility.Multiton
     /// 对象池多例模式，用于需要运行在MonoBehaviour下的纯组件（对于快捷实现，使用IUseMonoBehaviour接口以实现对应特性）
     /// 该多例仅支持无子类的类进行创建构造
     /// </summary>
-    /// <typeparam name="T"></typeparam>
     public class MultitonAutoMonoR<T> : MonoBehaviour where T : MultitonAutoMonoR<T>
     {
         // ReSharper disable once StaticMemberInGenericType

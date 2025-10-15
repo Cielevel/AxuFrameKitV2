@@ -17,7 +17,7 @@ namespace AxuFrameKit.Common.Utility.UseMono
         private static IMonoHandler MonoHandler => _monoHandler ??= new MonoHandler();
         private static IMonoHandler _monoHandler;
         
-        public static Coroutine StartACoroutine(this IUseMonoBehaviourSeparate self, IEnumerator enumerator)
+        public static Coroutine StartCoroutine(this IUseMonoBehaviourSeparate self, IEnumerator enumerator)
         {
             return MonoHandler.StartCoroutine(enumerator, self);
         }
