@@ -1,6 +1,6 @@
 namespace AxuFrameKit.Common.Utility.Timer
 {
-    public class TimerC
+    public class CountDownC
     {
         
     }

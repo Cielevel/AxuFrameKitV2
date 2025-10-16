@@ -9,7 +9,7 @@ namespace TestAndSample.Sample_TimerSeries
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                TimerU.Get().StartTik(5).OnComplete += () =>
+                CountDownU.Get().StartTik(5).OnComplete += () =>
                 {
                     Debug.Log("5秒到");
                 };

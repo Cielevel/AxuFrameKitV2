@@ -6,7 +6,7 @@ namespace AxuFrameKit.Common.Utility.Timer
     /// <summary>
     /// 通过Update实现的计时器，受到游戏时间缩放影响
     /// </summary>
-    public class TimerU : MultitonAutoMonoR<TimerU>
+    public class CountDownU : MultitonAutoMonoR<CountDownU>
     {
         public float TimeLeft { get; private set; }
 
@@ -35,7 +35,7 @@ namespace AxuFrameKit.Common.Utility.Timer
             Release(this);
         }
         
-        public TimerU StartTik(float time)
+        public CountDownU StartTik(float time)
         {
             if (IsRunning)
                 return this;

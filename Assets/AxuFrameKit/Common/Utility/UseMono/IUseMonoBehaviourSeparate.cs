@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace AxuFrameKit.Common.Utility.UseMono
 {
@@ -11,6 +13,11 @@ namespace AxuFrameKit.Common.Utility.UseMono
     /// 每一个实例都是独立生命周期
     /// </summary>
     public interface IUseMonoBehaviourSeparate { } 
+    
+    /// <summary>
+    /// 每一个实例都是独立生命周期，并且可以使用Update
+    /// </summary>
+    public interface IUseMonoBehaviourUpdate : IUseMonoBehaviourSeparate { }
 
     public static class IUseMonoBehaviourSeparateExtension
     {
@@ -32,6 +39,16 @@ namespace AxuFrameKit.Common.Utility.UseMono
             MonoHandler.StopCoroutine(coroutine, self);
         }
         
+        public static void RegisterUpdate(this IUseMonoBehaviourUpdate self, Action onUpdate)
+        {
+            MonoHandler.RegisterUpdate(onUpdate, self);
+        }
+        
+        public static void ClearUpdate(this IUseMonoBehaviourUpdate self)
+        {
+            MonoHandler.ClearUpdate(self);
+        }
+        
         public static void Destroy(this IUseMonoBehaviourSeparate self)
         {
             MonoHandler.Destroy(self);
@@ -45,6 +62,10 @@ namespace AxuFrameKit.Common.Utility.UseMono
         void StopAllCoroutines(object obj);
         
         void StopCoroutine(Coroutine coroutine, object obj);
+        
+        void RegisterUpdate(Action onUpdate, object obj);
+
+        void ClearUpdate(object obj);
 
         void Destroy(object obj);
     }
@@ -61,8 +82,13 @@ namespace AxuFrameKit.Common.Utility.UseMono
         public Coroutine StartCoroutine(IEnumerator enumerator, object obj)
         {
             if (_memberDict.ContainsKey(obj) == false)
-                _memberDict.Add(obj, new GameObject($"[MonoSingle_{obj.GetType().Name}_{_memberDict.Count}]").AddComponent<MonoSingle>());
-            
+            {
+                if (obj is IUseMonoBehaviourUpdate)
+                    _memberDict.Add(obj, new GameObject($"[MonoSingle_{obj.GetType().Name}_{_memberDict.Count}]").AddComponent<MonoSingleUpdate>());
+                else
+                    _memberDict.Add(obj, new GameObject($"[MonoSingle_{obj.GetType().Name}_{_memberDict.Count}]").AddComponent<MonoSingle>());
+            }
+
             return _memberDict[obj].StartCoroutine(enumerator);
         }
 
@@ -82,6 +108,31 @@ namespace AxuFrameKit.Common.Utility.UseMono
             _memberDict[obj].StopCoroutine(coroutine);
         }
 
+        public void RegisterUpdate(Action onUpdate, object obj)
+        {
+            if (_memberDict.ContainsKey(obj) == false)
+            {
+                if (obj is IUseMonoBehaviourUpdate)
+                    _memberDict.Add(obj, new GameObject($"[MonoSingle_{obj.GetType().Name}_{_memberDict.Count}]").AddComponent<MonoSingleUpdate>());
+                else
+                    Debug.Log("注册失败，对象未实现IUseMonoBehaviourUpdate接口");
+            }
+
+            if (_memberDict[obj] is MonoSingleUpdate monoSingleUpdate)
+                monoSingleUpdate.OnUpdate += onUpdate;
+            else
+                Debug.Log("注册失败，对象此前注册了协程，无法注册Update");
+        }
+
+        public void ClearUpdate(object obj)
+        {
+            if (_memberDict.TryGetValue(obj, out var value) == false)
+                return;
+
+            if (value is MonoSingleUpdate monoSingleUpdate)
+                monoSingleUpdate.ClearUpdate();
+        }
+
         public void Destroy(object obj)
         {
             if (_memberDict.TryGetValue(obj, out var monoSingle) == false)
@@ -96,4 +147,16 @@ namespace AxuFrameKit.Common.Utility.UseMono
     /// 挂载器，提供生命周期
     /// </summary>
     public class MonoSingle : MonoBehaviour { }
+    
+    /// <summary>
+    /// 挂载器，提供生命周期，同时提供Update事件
+    /// </summary>
+    public class MonoSingleUpdate : MonoSingle
+    {
+        public event Action OnUpdate;
+        
+        private void Update() => OnUpdate?.Invoke();
+        
+        public void ClearUpdate() => OnUpdate = null;
+    }
 }
