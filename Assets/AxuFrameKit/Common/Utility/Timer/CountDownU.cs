@@ -8,28 +8,28 @@ namespace AxuFrameKit.Common.Utility.Timer
     /// </summary>
     public class CountDownU : MultitonAutoMonoR<CountDownU>
     {
-        public float TimeLeft { get; private set; }
+        private float _timeLeft;
 
-        public bool IsRunning { get; private set; }
+        private bool _isRunning;
 
         public event Action<float> OnTik;
         public event Action OnComplete;
         
         private void Update()
         {
-            if (IsRunning == false)
+            if (_isRunning == false)
                 return;
             
-            if (0 < TimeLeft)
+            if (0 < _timeLeft)
             {
-                TimeLeft -= UnityEngine.Time.deltaTime;
+                _timeLeft -= UnityEngine.Time.deltaTime;
                 
-                OnTik?.Invoke(TimeLeft);
+                OnTik?.Invoke(_timeLeft);
                 
                 return;
             }
 
-            IsRunning = false;
+            _isRunning = false;
             OnComplete?.Invoke();
             
             Release(this);
@@ -37,19 +37,19 @@ namespace AxuFrameKit.Common.Utility.Timer
         
         public CountDownU StartTik(float time)
         {
-            if (IsRunning)
+            if (_isRunning)
                 return this;
             
-            TimeLeft = time;
+            _timeLeft = time;
             
-            IsRunning = true;
+            _isRunning = true;
 
             return this;
         }
 
         public void StopTik()
         {
-            IsRunning = false;
+            _isRunning = false;
         }
     }
 }

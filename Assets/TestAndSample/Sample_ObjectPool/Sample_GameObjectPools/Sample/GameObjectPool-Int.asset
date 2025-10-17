@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8c023cea8d243c28d8e42fc724dbed6, type: 3}
+  m_Name: GameObjectPool-Int
+  m_EditorClassIdentifier: 
+  <ObjectUnitIntList>k__BackingField:
+  - <ObjID>k__BackingField: 1
+    <Prefab>k__BackingField: {fileID: 1311076654947669554, guid: 97b65c04f7a1a3b4ab84981f72b1a7c4, type: 3}
+  - <ObjID>k__BackingField: 2
+    <Prefab>k__BackingField: {fileID: -7051239633821780219, guid: d07aeee852d20fc469008b7cbae019de, type: 3}
+  - <ObjID>k__BackingField: 3
+    <Prefab>k__BackingField: {fileID: -5314140341296503493, guid: 462ef91c97fd86f4ca5761d9501e3352, type: 3}
