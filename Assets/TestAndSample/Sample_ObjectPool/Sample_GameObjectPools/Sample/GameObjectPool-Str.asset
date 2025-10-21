@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ab243edcd4447c0b190cda904d68314, type: 3}
   m_Name: GameObjectPool-Str
   m_EditorClassIdentifier: 
-  <ObjectUnitStrList>k__BackingField:
+  _objectUnitIntList:
   - <ObjName>k__BackingField: Obj1
     <Prefab>k__BackingField: {fileID: 7394114312570793832, guid: 6dffb8c12e89525499e46a0817153e1c, type: 3}
   - <ObjName>k__BackingField: Obj2

@@ -8,18 +8,18 @@ namespace AxuFrameKit.Common.Utility.ObjectPool.GameObjectPool
     [CreateAssetMenu(fileName = "GameObjectPool-Str", menuName = "AxuFrameKit/Utility/GameObjectPools-Str")]
     public class GameObjectStrPools : ScriptableObject
     {
-        [field: SerializeField]
-        public List<ObjectUnitStr> ObjectUnitStrList { get; set; }
+        [SerializeField]
+        private List<ObjectUnitStr> _objectUnitIntList;
         
         private Dictionary<string, SimpleObjPool<PoolableStr>> _strPoolDict;
         
         public void Initialize(Action<PoolableStr> onGet, Action<PoolableStr> onRelease, Transform defaultRoot, int defaultCapacity = 16)
         {
-            _strPoolDict = new Dictionary<string, SimpleObjPool<PoolableStr>>(ObjectUnitStrList.Count);
+            _strPoolDict = new Dictionary<string, SimpleObjPool<PoolableStr>>(_objectUnitIntList.Count);
 
-            var strSet = new HashSet<string>(ObjectUnitStrList.Count);
+            var strSet = new HashSet<string>(_objectUnitIntList.Count);
             
-            foreach (var unit in ObjectUnitStrList)
+            foreach (var unit in _objectUnitIntList)
             {
                 var newPool = new SimpleObjPool<PoolableStr>(() => Instantiate(unit.Prefab, defaultRoot), onGet, onRelease, defaultCapacity);
                 _strPoolDict.Add(unit.ObjName, newPool);
@@ -42,14 +42,14 @@ namespace AxuFrameKit.Common.Utility.ObjectPool.GameObjectPool
 
             void MakeSure()
             {
-                if (_strPoolDict != null && _strPoolDict.Count == ObjectUnitStrList.Count)
+                if (_strPoolDict != null && _strPoolDict.Count == _objectUnitIntList.Count)
                     return;
 
-                _strPoolDict = new Dictionary<string, SimpleObjPool<PoolableStr>>(ObjectUnitStrList.Count);
+                _strPoolDict = new Dictionary<string, SimpleObjPool<PoolableStr>>(_objectUnitIntList.Count);
 
-                var strSet = new HashSet<string>(ObjectUnitStrList.Count);
+                var strSet = new HashSet<string>(_objectUnitIntList.Count);
                 
-                foreach (var unit in ObjectUnitStrList)
+                foreach (var unit in _objectUnitIntList)
                 {
                     var newPool = new SimpleObjPool<PoolableStr>(() => Instantiate(unit.Prefab), OnGetDefault, OnReleaseDefault);
                     _strPoolDict.Add(unit.ObjName, newPool);

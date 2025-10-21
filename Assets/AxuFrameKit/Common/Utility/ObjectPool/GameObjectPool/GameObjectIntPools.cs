@@ -8,18 +8,18 @@ namespace AxuFrameKit.Common.Utility.ObjectPool.GameObjectPool
     [CreateAssetMenu(fileName = "GameObjectPool-Int", menuName = "AxuFrameKit/Utility/GameObjectPools-Int")]
     public class GameObjectIntPools : ScriptableObject
     {
-        [field: SerializeField]
-        public List<ObjectUnitInt> ObjectUnitIntList { get; set; }
+        [SerializeField] 
+        private List<ObjectUnitInt> _objectUnitIntList;
 
         private Dictionary<int, SimpleObjPool<PoolableInt>> _intPoolDict;
         
         public void Initialize(Action<PoolableInt> onGet, Action<PoolableInt> onRelease, Transform defaultRoot, int defaultCapacity = 16)
         {
-            _intPoolDict = new Dictionary<int, SimpleObjPool<PoolableInt>>(ObjectUnitIntList.Count);
+            _intPoolDict = new Dictionary<int, SimpleObjPool<PoolableInt>>(_objectUnitIntList.Count);
 
-            var idSet = new HashSet<int>(ObjectUnitIntList.Count);
+            var idSet = new HashSet<int>(_objectUnitIntList.Count);
             
-            foreach (var unit in ObjectUnitIntList)
+            foreach (var unit in _objectUnitIntList)
             {
                 var newPool = new SimpleObjPool<PoolableInt>(() => Instantiate(unit.Prefab, defaultRoot), onGet, onRelease, defaultCapacity);
                 _intPoolDict.Add(unit.ObjID, newPool);
@@ -42,14 +42,14 @@ namespace AxuFrameKit.Common.Utility.ObjectPool.GameObjectPool
 
             void MakeSure()
             {
-                if (_intPoolDict != null && _intPoolDict.Count == ObjectUnitIntList.Count)
+                if (_intPoolDict != null && _intPoolDict.Count == _objectUnitIntList.Count)
                     return;
 
-                _intPoolDict = new Dictionary<int, SimpleObjPool<PoolableInt>>(ObjectUnitIntList.Count);
+                _intPoolDict = new Dictionary<int, SimpleObjPool<PoolableInt>>(_objectUnitIntList.Count);
 
-                var idSet = new HashSet<int>(ObjectUnitIntList.Count);
+                var idSet = new HashSet<int>(_objectUnitIntList.Count);
                 
-                foreach (var unit in ObjectUnitIntList)
+                foreach (var unit in _objectUnitIntList)
                 {
                     var newPool = new SimpleObjPool<PoolableInt>(() => Instantiate(unit.Prefab), OnGetDefault, OnReleaseDefault);
                     _intPoolDict.Add(unit.ObjID, newPool);

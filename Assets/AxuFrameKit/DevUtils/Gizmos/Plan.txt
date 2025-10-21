@@ -1,0 +1,4 @@
+预计将使用UI ToolKit；特化地实现Gizmos工具。
+
+且Gizmos工具是类似LiveStream工具一样的，依赖于Core与Common的特殊工具集，并不属于Common。
+旨在需要使用时才导入。

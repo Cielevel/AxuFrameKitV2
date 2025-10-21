@@ -17,6 +17,9 @@ namespace AxuFrameKit.Common.Utility.ObjectPool.GameObjectPool
         
         public void Release()
         {
+            if (gameObject.activeSelf == false)
+                return;
+            
             _strPoolMgr?.Release(this);
         }
     }
