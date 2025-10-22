@@ -29,7 +29,7 @@ namespace AxuFrameKit.Common.Utility.TaskX
         private Coroutine _coroutine;
 
         private ConcurrentQueue<IEnumerator> _queue;
-
+        
         #region Entry
 
         public ICoroutineQ EnQ(IEnumerator coroutine)
@@ -60,7 +60,7 @@ namespace AxuFrameKit.Common.Utility.TaskX
             return this;
         }
 
-            #endregion
+        #endregion
 
         ICoroutineQ ICoroutineQ.Then(IEnumerator coroutine)
         {
@@ -87,8 +87,10 @@ namespace AxuFrameKit.Common.Utility.TaskX
         {
             while (_isRunning)
             {
-                if (_queue.TryDequeue(out var next))
+                if (0 < _queue.Count && _queue.TryDequeue(out var next))
                     yield return StartCoroutine(next);
+                else
+                    yield return null;
             }
         }
 
