@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 using AxuFrameKit.Common.Utility.Singleton;
 using UnityEngine;
 
-namespace AxuFrameKit.Common.Auto.AutoCamera
+namespace AxuFrameKit.Common.Utility.Auto.AutoCamera
 {
     public class FaceCameraManager : SingletonMonoCrDs<FaceCameraManager>
     {

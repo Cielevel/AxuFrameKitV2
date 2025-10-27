@@ -6,6 +6,7 @@ using AxuFrameKit._Core.Utility.Common;
 namespace AxuFrameKit._Core.Utility.RandomX
 {
     /// <summary>
+    /// 别名法。
     /// 这是一个高效的加权随机抽样算法，预处理时间O(n)，抽样时间O(1)
     /// 适用场景：高频率抽样；权重数量极多的抽样；不需要经常更改权重的抽样；
     /// 不适用场景：经常需要更改权重的抽样

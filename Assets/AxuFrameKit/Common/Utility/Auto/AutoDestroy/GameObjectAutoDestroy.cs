@@ -1,7 +1,6 @@
-using System;
 using UnityEngine;
 
-namespace AxuFrameKit.Common.Auto.AutoDestroy
+namespace AxuFrameKit.Common.Utility.Auto.AutoDestroy
 {
     public class GameObjectAutoDestroy : MonoBehaviour
     {

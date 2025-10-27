@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace AxuFrameKit.Common.Auto.AutoCamera
+namespace AxuFrameKit.Common.Utility.Auto.AutoCamera
 {
     public class GameObjectFaceCamera : MonoBehaviour
     {
