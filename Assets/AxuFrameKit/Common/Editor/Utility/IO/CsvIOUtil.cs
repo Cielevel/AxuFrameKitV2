@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 
-namespace AxuFrameKit.Common.Editor.Utility.IOX
+namespace AxuFrameKit.Common.Editor.Utility.IO
 {
     public class CsvRowUnit
     {

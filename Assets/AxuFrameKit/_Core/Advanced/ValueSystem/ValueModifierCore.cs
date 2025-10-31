@@ -5,19 +5,34 @@ namespace AxuFrameKit._Core.Advanced.ValueSystem
     /*
      * Combine：Param默认为累加的形式，即使是乘法也是累加
      */
+    
+    /*
+     * 对于数量的情况：
+     * 1.允许此Modifier存在多个，则不会存在合并的选项（多个Modifier同时起作用）
+     * 2.不允许此Modifier存在多个，则给出合并的选项（也可以不合并，直接排除）
+     */
 
+    /// <summary>
+    /// 对多个相同的Modifier存在的允许情况
+    /// </summary>
     public enum ValueModifierCountType
     {
         AllowMultiple = 1, // 允许多个相同ID的ValueModifier存在
         ForbidMultiple = 2, // 禁止多个相同ID的ValueModifier存在
     }
     
+    /// <summary>
+    /// 当前Modifier的时间限制情况
+    /// </summary>
     public enum ValueModifierLifeType
     {
-        Continuos = 1, // 是否是持续的ValueModifier
-        LimitedTime = 2, // 是否是限时的ValueModifier
+        Unlimited = 1, // 是否是不限时的ValueModifier
+        Limited = 2, // 是否是限时的ValueModifier
     }
     
+    /// <summary>
+    /// 参数合并的模式
+    /// </summary>
     public enum ValueModifierCombineParamType
     {
         None = 0, // 不合并
@@ -29,6 +44,9 @@ namespace AxuFrameKit._Core.Advanced.ValueSystem
         AddParamAtSameID = 4, // 在ID相同时合并Param，且是累加的形式
     }
     
+    /// <summary>
+    /// 数量合并的模式
+    /// </summary>
     public enum ValueModifierCombineCountType
     {
         None = 0, // 不合并
@@ -37,6 +55,9 @@ namespace AxuFrameKit._Core.Advanced.ValueSystem
         AddCountAtSameID = 2, // 在ID相同时是否合并Count，且是加法的形式
     }
 
+    /// <summary>
+    /// 计算的方式
+    /// </summary>
     public enum ValueModifierCalculateType
     {
         // normal计算域（无任何强制性）
@@ -74,7 +95,7 @@ namespace AxuFrameKit._Core.Advanced.ValueSystem
     {
         public uint UniqueID { get; private set; }
         
-        public ValueUnitBaseCore ParamUnit { get; private set; }
+        public ValueUnitBaseCore ParamUnit { get; private set; } // Modifier的Param是用ValueUnit表示，而非double；Modifier也可嵌套Modifier
         
         public int Count { get; private set; }
         

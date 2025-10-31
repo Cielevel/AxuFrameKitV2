@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using AxuFrameKit._Core.Extension;
-using AxuFrameKit.Common.Editor.Utility.IOX;
+using AxuFrameKit.Common.Editor.Utility.IO;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;

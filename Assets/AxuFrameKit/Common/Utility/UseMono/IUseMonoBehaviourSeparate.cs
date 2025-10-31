@@ -44,6 +44,11 @@ namespace AxuFrameKit.Common.Utility.UseMono
             MonoHandler.RegisterUpdate(onUpdate, self);
         }
         
+        public static void RegisterUpdate(this IUseMonoBehaviourUpdate self, Action<float> onUpdate)
+        {
+            MonoHandler.RegisterUpdate(onUpdate, self);
+        }
+        
         public static void ClearUpdate(this IUseMonoBehaviourUpdate self)
         {
             MonoHandler.ClearUpdate(self);
@@ -64,6 +69,8 @@ namespace AxuFrameKit.Common.Utility.UseMono
         void StopCoroutine(Coroutine coroutine, object obj);
         
         void RegisterUpdate(Action onUpdate, object obj);
+        
+        void RegisterUpdate(Action<float> onUpdate, object obj);
 
         void ClearUpdate(object obj);
 
@@ -71,7 +78,7 @@ namespace AxuFrameKit.Common.Utility.UseMono
     }
     
     /// <summary>
-    /// 控制器，提供生成，生命周期功能，销毁等功能
+    /// 控制器，非Mono的一个管理类；提供生成，生命周期功能，销毁等功能
     /// </summary>
     public class MonoHandler : IMonoHandler
     {
@@ -124,6 +131,22 @@ namespace AxuFrameKit.Common.Utility.UseMono
                 Debug.Log("注册失败，对象此前注册了协程，无法注册Update");
         }
 
+        public void RegisterUpdate(Action<float> onUpdate, object obj)
+        {
+            if (_memberDict.ContainsKey(obj) == false)
+            {
+                if (obj is IUseMonoBehaviourUpdate)
+                    _memberDict.Add(obj, new GameObject($"[MonoSingle_{obj.GetType().Name}_{_memberDict.Count}]").AddComponent<MonoSingleUpdate>());
+                else
+                    Debug.Log("注册失败，对象未实现IUseMonoBehaviourUpdate接口");
+            }
+
+            if (_memberDict[obj] is MonoSingleUpdate monoSingleUpdate)
+                monoSingleUpdate.OnUpdateTime += onUpdate;
+            else
+                Debug.Log("注册失败，对象此前注册了协程，无法注册Update");
+        }
+
         public void ClearUpdate(object obj)
         {
             if (_memberDict.TryGetValue(obj, out var value) == false)
@@ -154,9 +177,18 @@ namespace AxuFrameKit.Common.Utility.UseMono
     public class MonoSingleUpdate : MonoSingle
     {
         public event Action OnUpdate;
-        
-        private void Update() => OnUpdate?.Invoke();
-        
-        public void ClearUpdate() => OnUpdate = null;
+        public event Action<float> OnUpdateTime;
+
+        private void Update()
+        {
+            OnUpdate?.Invoke();
+            OnUpdateTime?.Invoke(Time.deltaTime);
+        }
+
+        public void ClearUpdate()
+        {
+            OnUpdate     = null;
+            OnUpdateTime = null;
+        }
     }
 }
