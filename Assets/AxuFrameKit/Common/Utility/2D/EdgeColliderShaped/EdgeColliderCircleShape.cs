@@ -1,7 +1,7 @@
 #if ODIN_INSPECTOR
+using Sirenix.OdinInspector;
 using System.Collections.Generic;
 using AxU_NextGen.Common.CustomAttribute;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace AxU_NextGen.Common._2D.EdgeColliderShaped

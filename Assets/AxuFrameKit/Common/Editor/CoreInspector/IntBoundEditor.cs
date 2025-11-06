@@ -37,13 +37,13 @@ namespace AxuFrameKit.Common.Editor.CoreInspector
             int indent = EditorGUI.indentLevel;
             EditorGUI.indentLevel = 0;
 
-            float fieldWidth = (innerRect.width - LabelWidth * 2 - ButtonWidth - Spacing * 4) / 2f;
+            float fieldWidth = (innerRect.width - LabelWidth * 2 - Spacing * 4) / 2f;
 
             Rect minLabelRect = new(innerRect.x, innerRect.y, LabelWidth, EditorGUIUtility.singleLineHeight);
             Rect minFieldRect = new(minLabelRect.xMax + Spacing, innerRect.y, fieldWidth, EditorGUIUtility.singleLineHeight);
             Rect maxLabelRect = new(minFieldRect.xMax + Spacing, innerRect.y, LabelWidth, EditorGUIUtility.singleLineHeight);
             Rect maxFieldRect = new(maxLabelRect.xMax + Spacing, innerRect.y, fieldWidth, EditorGUIUtility.singleLineHeight);
-            Rect buttonRect = new(maxFieldRect.xMax + Spacing, innerRect.y, ButtonWidth, EditorGUIUtility.singleLineHeight);
+            // Rect buttonRect = new(maxFieldRect.xMax + Spacing, innerRect.y, ButtonWidth, EditorGUIUtility.singleLineHeight);
 
             EditorGUI.LabelField(minLabelRect, "Min");
             EditorGUI.PropertyField(minFieldRect, minProp, GUIContent.none);
@@ -51,16 +51,16 @@ namespace AxuFrameKit.Common.Editor.CoreInspector
             EditorGUI.LabelField(maxLabelRect, "Max");
             EditorGUI.PropertyField(maxFieldRect, maxProp, GUIContent.none);
 
-            if (GUI.Button(buttonRect, "🎲 Random"))
-            {
-                int min = Mathf.Min(minProp.intValue, maxProp.intValue);
-                int max = Mathf.Max(minProp.intValue, maxProp.intValue + 1);
-                int randomValue = UnityEngine.Random.Range(min, max);
-
-                Debug.Log($"Random value from IntBound({min}, {max - 1}) = {randomValue}");
-                EditorGUIUtility.systemCopyBuffer = randomValue.ToString();
-                ShowNotification($"Generated: {randomValue}");
-            }
+            // if (GUI.Button(buttonRect, "🎲 Random"))
+            // {
+            //     int min = Mathf.Min(minProp.intValue, maxProp.intValue);
+            //     int max = Mathf.Max(minProp.intValue, maxProp.intValue + 1);
+            //     int randomValue = UnityEngine.Random.Range(min, max);
+            //
+            //     Debug.Log($"Random value from IntBound({min}, {max - 1}) = {randomValue}");
+            //     EditorGUIUtility.systemCopyBuffer = randomValue.ToString();
+            //     ShowNotification($"Generated: {randomValue}");
+            // }
 
             EditorGUI.indentLevel = indent;
             EditorGUI.EndProperty();
