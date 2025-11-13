@@ -1,9 +1,8 @@
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
-namespace AxuFrameKit.DevUtils.Gizmos.Editor.UI
+namespace AxuFrameKit.Modules.Gizmos.Editor.UI
 {
     public class GizmosUtilEditor : EditorWindow
     {
