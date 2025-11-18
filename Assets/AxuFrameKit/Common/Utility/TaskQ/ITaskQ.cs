@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace AxuFrameKit.Common.Utility.TaskX
+namespace AxuFrameKit.Common.Utility.TaskQ
 {
     public interface ITaskQ
     {

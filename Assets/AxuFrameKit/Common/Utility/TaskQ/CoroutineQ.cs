@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using AxuFrameKit.Common.Utility.Multiton;
 using UnityEngine;
 
-namespace AxuFrameKit.Common.Utility.TaskX
+namespace AxuFrameKit.Common.Utility.TaskQ
 {
     public interface ICoroutineQ
     {
