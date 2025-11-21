@@ -16,6 +16,9 @@ namespace AxuFrameKit.Common.Utility.TaskQ
 
         ICoroutineQ Delay(float duration, Action action);
         ICoroutineQ Delay(float duration);
+
+        ICoroutineQ Insert(IEnumerator coroutine);
+        ICoroutineQ Insert(Action action);
         
         void Run();
 
@@ -57,6 +60,18 @@ namespace AxuFrameKit.Common.Utility.TaskQ
         {
             MakeSure();
             EnQ(IEDelay(duration));
+            return this;
+        }
+
+        public ICoroutineQ Insert(IEnumerator coroutine)
+        {
+
+            return this;
+        }
+
+        public ICoroutineQ Insert(Action action)
+        {
+
             return this;
         }
 
