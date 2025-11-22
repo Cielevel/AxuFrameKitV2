@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace AxuFrameKit.Common.Utility.Multiton
@@ -6,7 +7,7 @@ namespace AxuFrameKit.Common.Utility.Multiton
     /// <summary>
     /// 多例模式基类（由于是MonoBehaviour，销毁直接调用Destroy即可）
     /// </summary>
-    public class MultitonMono<T> : MonoBehaviour where T : MultitonMono<T>
+    public abstract class MultitonMono<T> : MonoBehaviour where T : MultitonMono<T>
     {
         [field: SerializeField]
         public string Key { get; set; }
@@ -41,6 +42,7 @@ namespace AxuFrameKit.Common.Utility.Multiton
             if (_parent == null)
                 _parent = new GameObject($"[Parent {typeof(T).Name}]").transform;
             instance.transform.SetParent(_parent);
+            instance.OnThisCreated();
         }
 
         public static void DestroyInstance(string key)
@@ -48,7 +50,10 @@ namespace AxuFrameKit.Common.Utility.Multiton
             lock (Lock)
             {
                 if (Instances.TryGetValue(key, out var instance))
+                {
+                    instance.OnThisDestroyed();
                     Destroy(instance.gameObject);
+                }
             }
         }
         
@@ -56,19 +61,24 @@ namespace AxuFrameKit.Common.Utility.Multiton
         {
             lock (Lock)
             {
-                foreach (var instance in Instances.Values)
+                foreach (var instance in Instances.Values.Where(instance => instance != null))
                 {
-                    if (instance != null)
-                        Destroy(instance.gameObject);
+                    instance.OnThisDestroyed();
+                    Destroy(instance.gameObject);
                 }
+
                 Instances.Clear();
             }
         }
         
         private void OnDestroy()
         {
+            // 理论上此处是不需要锁的，但是Instances在其他同步块内会使用，所以依旧保持锁。
             lock (Lock)
                 Instances.Remove(Key);
         }
+        
+        protected virtual void OnThisCreated() { }
+        protected virtual void OnThisDestroyed() { }
     }
 }

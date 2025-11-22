@@ -12,96 +12,96 @@ namespace AxuFrameKit.Common.Utility.TaskQ
 
         ICoroutineQ EnQ(Action action);
 
-        ICoroutineQ Then(IEnumerator coroutine);
-
         ICoroutineQ Delay(float duration, Action action);
         ICoroutineQ Delay(float duration);
 
         ICoroutineQ Insert(IEnumerator coroutine);
         ICoroutineQ Insert(Action action);
-        
-        void Run();
 
-        void Stop();
+        void Run();
+        
+        void Pause();
+
+        void StopAndClear();
     }
 
+    /// <summary>
+    /// 协程队列；支持从不同线程入队；但是所有执行都会在主线程上进行。
+    /// </summary>
     public class CoroutineQ : MultitonMono<CoroutineQ>, ICoroutineQ
     {
         private bool _isRunning = false;
         
-        private Coroutine _coroutine;
+        private Coroutine _loopCoroutine;
 
         private ConcurrentQueue<IEnumerator> _queue;
-        
+        private ConcurrentQueue<IEnumerator> _insertQ;
+
+        protected override void OnThisCreated()
+        {
+            base.OnThisCreated();
+
+            _queue   = new ConcurrentQueue<IEnumerator>();
+            _insertQ = new ConcurrentQueue<IEnumerator>();
+        }
+
+        protected override void OnThisDestroyed()
+        {
+            base.OnThisDestroyed();
+            
+            StopAndClear();
+        }
+
         #region Entry
 
         public ICoroutineQ EnQ(IEnumerator coroutine)
         {
-            MakeSure();
             _queue.Enqueue(coroutine);
             return this;
         }
 
         public ICoroutineQ EnQ(Action action)
         {
-            MakeSure();
             _queue.Enqueue(IEAction(action));
             return this;
         }
         
         public ICoroutineQ Delay(float duration, Action action)
         {
-            MakeSure();
-            EnQ(IEDelay(duration, action));
+            if (Mathf.Approximately(duration, 0f) || duration <= 0)
+                EnQ(IEAction(action));
+            else
+                EnQ(IEDelay(duration, action));
             return this;
         }
         
         public ICoroutineQ Delay(float duration)
         {
-            MakeSure();
             EnQ(IEDelay(duration));
             return this;
         }
 
         public ICoroutineQ Insert(IEnumerator coroutine)
         {
-
+            _insertQ.Enqueue(coroutine);
             return this;
         }
 
         public ICoroutineQ Insert(Action action)
         {
-
+            _insertQ.Enqueue(IEAction(action));
             return this;
         }
 
         #endregion
 
-        ICoroutineQ ICoroutineQ.Then(IEnumerator coroutine)
-        {
-            MakeSure();
-            _queue.Enqueue(coroutine);
-            return this;
-        }
-        
-        ICoroutineQ ICoroutineQ.Delay(float duration, Action action)
-        {
-            MakeSure();
-            EnQ(IEDelay(duration, action));
-            return this;
-        }
-        
-        ICoroutineQ ICoroutineQ.Delay(float duration)
-        {
-            MakeSure();
-            EnQ(IEDelay(duration));
-            return this;
-        }
-
         private IEnumerator Loop()
         {
             while (_isRunning)
             {
+                while (0 < _insertQ.Count && _insertQ.TryDequeue(out var insertNext))
+                    yield return StartCoroutine(insertNext);
+                
                 if (0 < _queue.Count && _queue.TryDequeue(out var next))
                     yield return StartCoroutine(next);
                 else
@@ -109,44 +109,53 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             }
         }
 
-        private IEnumerator IEDelay(float duration, Action action)
+        private static IEnumerator IEDelay(float duration, Action action)
         {
             yield return new WaitForSeconds(duration);
             action?.Invoke();
         }
         
-        private IEnumerator IEDelay(float duration)
+        private static IEnumerator IEDelay(float duration)
         {
             yield return new WaitForSeconds(duration);
         }
 
-        private IEnumerator IEAction(Action action)
+        private static IEnumerator IEAction(Action action)
         {
             action?.Invoke();
-            yield return null;
+            yield break;
         }
 
         public void Run()
         {
-            if (_coroutine != null && _isRunning)
+            if (_loopCoroutine != null && _isRunning)
                 return;
             
             _isRunning = true;
-            _coroutine = StartCoroutine(Loop());
+            _loopCoroutine = StartCoroutine(Loop());
         }
 
-        public void Stop()
+        /// <summary>
+        /// 暂停；但会保留后续未执行的任务。
+        /// </summary>
+        public void Pause()
         {
-            if (_coroutine != null && _isRunning)
+            if (_loopCoroutine != null && _isRunning)
             {
                 _isRunning = false;
-                StopCoroutine(_coroutine);
+                StopCoroutine(_loopCoroutine);
             }
         }
-
-        private void MakeSure()
+        
+        /// <summary>
+        /// 暂停，然后清除未执行的任务。
+        /// </summary>
+        public void StopAndClear()
         {
-            _queue ??= new ConcurrentQueue<IEnumerator>();
+            Pause();
+            
+            _queue.Clear();
+            _insertQ.Clear();
         }
     }
 }

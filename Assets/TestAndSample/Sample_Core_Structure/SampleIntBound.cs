@@ -10,7 +10,7 @@ namespace TestAndSample.Sample_Core_Structure
         public IntBound bound2;
 
         public TestIntBoundInClass test;
-        
+
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.Space))
