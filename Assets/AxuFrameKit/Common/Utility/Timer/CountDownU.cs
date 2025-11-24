@@ -4,7 +4,7 @@ using AxuFrameKit.Common.Utility.Multiton;
 namespace AxuFrameKit.Common.Utility.Timer
 {
     /// <summary>
-    /// 通过Update实现的计时器，受到游戏时间缩放影响
+    /// 通过Update实现的计时器，受到游戏时间缩放影响；倒计时多时，推荐使用CdManager
     /// </summary>
     public class CountDownU : MultitonAutoMonoR<CountDownU>
     {
