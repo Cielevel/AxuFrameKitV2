@@ -18,6 +18,34 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
         private static readonly IEase OutCubic = new OutCubic();
         private static readonly IEase InOutCubic = new InOutCubic();
 
+        private static readonly IEase InQuart = new InQuart();
+        private static readonly IEase OutQuart = new OutQuart();
+        private static readonly IEase InOutQuart = new InOutQuart();
+        
+        private static readonly IEase InQuint = new InQuint();
+        private static readonly IEase OutQuint = new OutQuint();
+        private static readonly IEase InOutQuint = new InOutQuint();
+        
+        private static readonly IEase InExpo = new InExpo();
+        private static readonly IEase OutExpo = new OutExpo();
+        private static readonly IEase InOutExpo = new InOutExpo();
+        
+        private static readonly IEase InCirc = new InCirc();
+        private static readonly IEase OutCirc = new OutCirc();
+        private static readonly IEase InOutCirc = new InOutCirc();
+        
+        private static readonly IEase InBack = new InBack();
+        private static readonly IEase OutBack = new OutBack();
+        private static readonly IEase InOutBack = new InOutBack();
+        
+        private static readonly IEase InElastic = new InElastic();
+        private static readonly IEase OutElastic = new OutElastic();
+        private static readonly IEase InOutElastic = new InOutElastic();
+        
+        private static readonly IEase InBounce = new InBounce();
+        private static readonly IEase OutBounce = new OutBounce();
+        private static readonly IEase InOutBounce = new InOutBounce();
+        
         public static IEase Get(EaseType easeType) => easeType switch
         {
             EaseType.Linear => Linear,
@@ -30,7 +58,28 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
             EaseType.InCubic => InCubic,
             EaseType.OutCubic => OutCubic,
             EaseType.InOutCubic => InOutCubic,
-            _ => InSine,
+            EaseType.InQuart => InQuart,
+            EaseType.OutQuart => OutQuart,
+            EaseType.InOutQuart => InOutQuart,
+            EaseType.InQuint => InQuint,
+            EaseType.OutQuint => OutQuint,
+            EaseType.InOutQuint => InOutQuint,
+            EaseType.InExpo => InExpo,
+            EaseType.OutExpo => OutExpo,
+            EaseType.InOutExpo => InOutExpo,
+            EaseType.InCirc => InCirc,
+            EaseType.OutCirc => OutCirc,
+            EaseType.InOutCirc => InOutCirc,
+            EaseType.InBack => InBack,
+            EaseType.OutBack => OutBack,
+            EaseType.InOutBack => InOutBack,
+            EaseType.InElastic => InElastic,
+            EaseType.OutElastic => OutElastic,
+            EaseType.InOutElastic => InOutElastic,
+            EaseType.InBounce => InBounce,
+            EaseType.OutBounce => OutBounce,
+            EaseType.InOutBounce => InOutBounce,
+            _ => Linear,
         };
     }
 }
