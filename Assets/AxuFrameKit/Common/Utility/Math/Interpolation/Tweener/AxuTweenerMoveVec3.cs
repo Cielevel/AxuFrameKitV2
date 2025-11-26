@@ -1,9 +1,9 @@
-using AxuFrameKit._Core.Utility.Math.Interpolation;
 using UnityEngine;
+using AxuFrameKit._Core.Utility.Math.Interpolation;
 
 namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
 {
-    public class AxuTweenerVec3 : AxuTweener
+    public class AxuTweenerMoveVec3 : AxuTweener
     {
         private bool _isLocal;
         
@@ -11,13 +11,14 @@ namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
         
         private Vector3 _start, _end;
 
-        public AxuTweenerVec3(float duration, Transform transform, Vector3 start, Vector3 end, bool isLocal) : base(duration)
+        public AxuTweenerMoveVec3(float duration, Transform transform, Vector3 end, bool isLocal) : base(duration)
         {
             _transform = transform;
-            _start     = start;
             _end       = end;
             _isLocal   = isLocal;
         }
+
+        protected override void OnStartup() => _start = _isLocal ? _transform.localPosition : _transform.position;
 
         protected override void Action()
         {

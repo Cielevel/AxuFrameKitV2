@@ -20,7 +20,11 @@ namespace TestAndSample.Sample_Common_AxuTween
             var sequence = AxuTween.Sequence();
 
             sequence.Append(transform.Move(targetPosition, duration).SetEase(easeType))
-                    .Append(transform.RotateEuler(targetEulerAngle, duration).SetEase(easeType));
+                    .Append(transform.RotateEuler(targetEulerAngle, duration).SetEase(easeType))
+                    .Append(transform.Move(Vector3.zero, duration).SetEase(easeType))
+                    .Append(transform.LocalScale(Vector3.one * 1.3f, duration).SetEase(easeType))
+                    .Append(transform.LocalScale(Vector3.one, duration).SetEase(easeType))
+                    .Start();
 
             _tweener = sequence;
         }
@@ -34,7 +38,10 @@ namespace TestAndSample.Sample_Common_AxuTween
                 _tweener.Pause();
             
             if (Input.GetKeyDown(KeyCode.L))
-                _tweener.Play();
+                _tweener.Resume();
+
+            if (Input.GetKeyDown(KeyCode.R))
+                AxuTween.Replay(_tweener);
         }
     }
 }

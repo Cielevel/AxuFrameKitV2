@@ -1,9 +1,9 @@
-#if PRIME_TWEEN
-using PrimeTween;
 using UnityEngine;
 using UnityEngine.UI;
+using AxuFrameKit._Core.Utility.Math.Interpolation;
+using AxuFrameKit.Common.Utility.Math.Interpolation;
 
-namespace AxU_NextGen._DevUtils.LiveStream.Script.UI
+namespace AxuFrameKit.Modules.LiveStream.Script.UI
 {
     [RequireComponent(typeof(ScrollRect))]
     public class UIScrollViewAutoDown : MonoBehaviour
@@ -20,7 +20,7 @@ namespace AxU_NextGen._DevUtils.LiveStream.Script.UI
 
         private int _lastContentChildCount;
 
-        private Tween _tween;
+        private AxuTweener _tween;
         
         private void Start()
         {
@@ -54,9 +54,11 @@ namespace AxU_NextGen._DevUtils.LiveStream.Script.UI
         {
             _lastContentChildCount = _content.childCount;
 
-            _tween.Stop();
+            _tween.Kill();
             
-            _tween = Tween.Custom(_scrollRect.verticalNormalizedPosition, 0f, _tweenDuration, value => _scrollRect.verticalNormalizedPosition = value);
+            _tween = AxuTween.Custom(_scrollRect.verticalNormalizedPosition, 0f, _tweenDuration, value => _scrollRect.verticalNormalizedPosition = value);
+
+            _tween.Start();
         }
 
         private void OnValidate()
@@ -67,4 +69,3 @@ namespace AxU_NextGen._DevUtils.LiveStream.Script.UI
         }
     }
 }
-#endif

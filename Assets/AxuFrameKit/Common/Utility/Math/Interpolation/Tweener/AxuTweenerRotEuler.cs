@@ -6,7 +6,7 @@ namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
     // AxuTweenEuler 类：直接对欧拉角 (Vector3) 进行插值。
     // 注意：对欧拉角进行 Lerp 可能会导致非最短路径或万向锁问题，
     // 但这是最简单且常见的欧拉角 Tween 实现方式。
-    public class AxuTweenerEuler : AxuTweener
+    public class AxuTweenerRotEuler : AxuTweener
     {
         private bool _isLocal;
         
@@ -14,13 +14,14 @@ namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
         
         private Vector3 _start, _end;
 
-        public AxuTweenerEuler(float duration, Transform transform, Vector3 start, Vector3 end, bool isLocal) : base(duration)
+        public AxuTweenerRotEuler(float duration, Transform transform, Vector3 end, bool isLocal) : base(duration)
         {
             _transform = transform;
-            _start     = start;
             _end       = end;
             _isLocal   = isLocal;
         }
+
+        protected override void OnStartup() => _start = _isLocal ? _transform.localEulerAngles : _transform.eulerAngles;
 
         protected override void Action()
         {

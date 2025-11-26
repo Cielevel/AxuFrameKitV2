@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using AxuFrameKit._Core.Utility.Math.Interpolation;
+using UnityEngine;
 
 namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
 {
@@ -12,70 +13,76 @@ namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
     
     public class AxuSequence : AxuTweener
     {
-        private List<SequenceElement> _elementList = new();
-        private float _totalDuration; 
+        private const int DefaultCapacity = 8;
+        
+        private Queue<SequenceElement> _elementQStart = new(DefaultCapacity); // 未开始队列
+        private Queue<SequenceElement> _elementQEnd = new(DefaultCapacity); // 已完成队列
+        private List<SequenceElement> _currentElementList = new(DefaultCapacity);
+        private Stack<SequenceElement> _elementReStack; // 反转栈
+        private float _totalDuration;
 
-        public AxuSequence() : base(0f) // 初始 Duration 为 0
+        public AxuSequence() : base(0f) { } // 初始 Duration 为 0
+
+        protected override void OnStartup()
         {
+            while (0 < _elementQEnd.Count)
+                _elementQStart.Enqueue(_elementQEnd.Dequeue());
+            
+            _currentElementList.Clear();
+            
+            Debug.Log($"OnStart, Q:{_elementQStart.Count},S:{_elementQEnd.Count}");
         }
 
         // 核心组合方法
         public AxuSequence Append(IAxuTweener tween)
         {
             // 创建 Element 并记录时间
-            _elementList.Add(new SequenceElement
+            _elementQStart.Enqueue(new SequenceElement
             {
                 TargetTween = tween,
                 StartTime   = _totalDuration,
                 EndTime     = _totalDuration + tween.Duration
             });
         
-            _totalDuration = _elementList[^1].EndTime; // 更新总时长
+            _totalDuration += tween.Duration; // 更新总时长
             
-            // 【修正点 1】更新基类的 Duration，解决 Duraton=0 导致的瞬间完成问题
-            Duration = _totalDuration; 
+            Duration = _totalDuration;
             
             return this;
         }
     
         // 覆盖 Action()
-        protected override void Action()
+        protected override void Action() // TODO 这样的结构似乎无法实现SetProgress功能（2025-11-26，暂时关闭了SetProgress功能开放）
         {
-            // 获取 Sequence 自身的运行时间 (已缓动并钳制后的 _t * TotalDuration)
-            float currentSequenceTime = _t * _totalDuration; 
-        
-            // 遍历所有元素，并手动控制它们的进度
-            for (int i = 0; i < _elementList.Count; i++)
+            // 此处逻辑还是有问题：一个Tweener的End与Start，在Sequence的生命周期里，应该只会调用一次。
+            if (_elementQStart.TryPeek(out var element))
             {
-                SequenceElement element = _elementList[i];
-                IAxuTweener tween = element.TargetTween;
+                var tween = element.TargetTween;
 
-                if (currentSequenceTime >= element.StartTime && currentSequenceTime <= element.EndTime)
+                if (element.StartTime <= RunTime && RunTime <= element.EndTime) // 区间内
                 {
-                    // 动画正在进行中
-                    
-                    // 计算元素在其时间轴上的绝对时间
-                    float elementTime = currentSequenceTime - element.StartTime;
-                    
-                    // 计算元素在其时间轴上的归一化进度 (0~1)
-                    float progress = elementTime / tween.Duration; 
-                    
-                    // 【修正点 2】直接通过 SetProgress 设置进度，而不是试图计算 deltaTime
-                    // SetProgress 现在会自动调用 ApplyCurrentProgress() 来更新动画值
-                    tween.SetProgress(progress);
+                    tween.Startup();
+                    _currentElementList.Add(element);
+                    _elementQEnd.Enqueue(element);
+                    _elementQStart.Dequeue();
                 }
-                else if (currentSequenceTime > element.EndTime)
+            }
+
+            for (int i = _currentElementList.Count - 1; i >= 0; i--)
+            {
+                var currentElement = _currentElementList[i];
+
+                if (currentElement.EndTime < RunTime)
                 {
-                    // 动画已完成
-                    // 确保动画停在终点 (t=1)
-                    tween.SetProgress(1f); 
+                    currentElement.TargetTween.SetProgress(1f);
+                    _currentElementList.RemoveAt(i);
+                    continue;
                 }
-                else // currentSequenceTime < element.StartTime
-                {
-                    // 动画尚未开始
-                    // 确保动画停在起点 (t=0)
-                    tween.SetProgress(0f);
-                }
+                
+                var elementTime = RunTime - currentElement.StartTime;
+                var progress    = elementTime / currentElement.TargetTween.Duration; 
+                
+                currentElement.TargetTween.SetProgress(progress);
             }
         }
     }

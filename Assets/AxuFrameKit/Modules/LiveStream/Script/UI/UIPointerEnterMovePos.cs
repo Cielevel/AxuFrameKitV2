@@ -1,9 +1,9 @@
-#if PRIME_TWEEN
-using PrimeTween;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using AxuFrameKit._Core.Utility.Math.Interpolation;
+using AxuFrameKit.Common.Utility.Math.Interpolation;
 
-namespace AxU_NextGen._DevUtils.LiveStream.Script.UI
+namespace AxuFrameKit.Modules.LiveStream.Script.UI
 {
     [RequireComponent(typeof(RectTransform))]
     public class UIPointerEnterMovePos : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
@@ -23,29 +23,28 @@ namespace AxU_NextGen._DevUtils.LiveStream.Script.UI
 
         private RectTransform _rtf;
         
-        private Tween _currentTween;
+        private AxuTweener _currentTween;
         
         private void Start() => _rtf = GetComponent<RectTransform>();
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            _currentTween.Stop();
-
+            _currentTween?.Kill();
+            
             if (_lockX && _lockY == false)
-                _currentTween = Tween.UIAnchoredPositionY(_rtf, _onPointerEnterPos.y, _durationOnEnter);
+                _currentTween = _rtf.AnchoredMoveX(_onPointerEnterPos.y, _durationOnEnter).Start();
             if (_lockY && _lockX == false)
-                _currentTween = Tween.UIAnchoredPositionX(_rtf, _onPointerEnterPos.x, _durationOnEnter);
+                _currentTween = _rtf.AnchoredMoveY(_onPointerEnterPos.x, _durationOnEnter).Start();
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            _currentTween.Stop();
+            _currentTween?.Kill();
             
             if (_lockX && _lockY == false)
-                _currentTween = Tween.UIAnchoredPositionY(_rtf, _onPointerExitPos.y, _durationOnExit);
+                _currentTween = _rtf.AnchoredMoveY(_onPointerExitPos.y, _durationOnExit).Start();
             if (_lockY && _lockX == false)
-                _currentTween = Tween.UIAnchoredPositionX(_rtf, _onPointerExitPos.x, _durationOnExit);
+                _currentTween = _rtf.AnchoredMoveX(_onPointerExitPos.x, _durationOnExit).Start();
         }
     }
 }
-#endif

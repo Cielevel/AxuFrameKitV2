@@ -18,9 +18,15 @@ namespace TestAndSample.Sample_Common_AxuTween
         
         private void Start()
         {
-            _tweener = transform.LocalMove(targetPosition, duration).SetEase(easeType).OnComplete(() =>
+            _tweener = transform.LocalMove(targetPosition, duration).SetEase(easeType).Start().OnComplete(() =>
             {
-                transform.RotateEuler(targetEulerAngle, duration).SetEase(easeType);
+                transform.LocalScale(Vector3.one, duration).SetEase(easeType).Start();
+                transform.RotateEuler(targetEulerAngle, duration).SetEase(easeType).Start().OnComplete(() =>
+                {
+                    transform.RotateEuler(Vector3.zero, duration).SetEase(easeType).Start();
+                    transform.LocalScale(Vector3.one * 1.5f, duration).SetEase(easeType).Start();
+                    transform.LocalMove(targetPosition + Vector3.one * 10, duration).SetEase(easeType).Start();
+                });
             });
         }
 
@@ -33,7 +39,10 @@ namespace TestAndSample.Sample_Common_AxuTween
                 _tweener.Pause();
             
             if (Input.GetKeyDown(KeyCode.L))
-                _tweener.Play();
+                _tweener.Resume();
+
+            if (Input.GetKeyDown(KeyCode.R))
+                AxuTween.Replay(_tweener);
         }
     }
 }

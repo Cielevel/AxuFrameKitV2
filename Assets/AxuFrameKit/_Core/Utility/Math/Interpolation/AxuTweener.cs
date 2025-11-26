@@ -14,6 +14,12 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
         
         float Duration { get; }
         float RunTime { get; }
+        float Progress { get; }
+
+        /// <summary>
+        /// 激活，得到初始状态。
+        /// </summary>
+        void Startup();
         
         void Tik(float deltaTime);
 
@@ -21,14 +27,30 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
         
         // void OnComplete(Action callback);
 
+        /// <summary>
+        /// 设置进度
+        /// </summary>
+        /// <param name="progress">进度[0,1]</param>
         void SetProgress(float progress);
         
+        /// <summary>
+        /// 暂停执行
+        /// </summary>
         void Pause();
 
-        void Play();
+        /// <summary>
+        /// 从暂停的状态恢复
+        /// </summary>
+        void Resume();
 
+        /// <summary>
+        /// 重新播放
+        /// </summary>
         void Replay();
         
+        /// <summary>
+        /// 销毁该Tweener
+        /// </summary>
         void Kill();
     }
     
@@ -36,11 +58,12 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
     {
         public bool IsCompleted { get; private set; }
         public bool IsPaused { get; private set; }
-        
+
         private EaseType _easeType;
 
         public float Duration { get; protected set; }
         public float RunTime { get; protected set; }
+        public float Progress { get; protected set; }
 
         private IEase _ease = EaseFactory.Get(EaseType.InCubic);
 
@@ -48,7 +71,11 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
 
         protected float _t;
 
+        private static float Clamp01(float value) => System.Math.Clamp(value, 0, 1);
+        
         public AxuTweener(float duration) => Duration = duration;
+
+        void IAxuTweener.Startup() => OnStartup();
 
         void IAxuTweener.Tik(float deltaTime)
         {
@@ -60,10 +87,7 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
             
             RunTime += deltaTime;
             
-            // 使用新方法应用进度
-            ApplyCurrentProgress();
-
-            if (0 < Duration && 1 <= RunTime / Duration) // 检查是否完成
+            if (0 < Duration && Duration <= RunTime) // 检查是否完成
             {
                 RunTime = Duration; 
                 ApplyCurrentProgress();
@@ -71,18 +95,19 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
                 IsCompleted = true;
                 _onComplete?.Invoke();
             }
+            else
+                ApplyCurrentProgress();
         }
         
         // 【新增方法】用于计算 _t 并执行 Action()，供 Tik 和 SetProgress 调用
         private void ApplyCurrentProgress()
         {
-            if (Duration <= 0) return; // 避免除以零
+            if (Duration <= 0) // 避免除以零
+                return;
 
-            float rate = RunTime / Duration;
-            
-            _t = _ease.Evaluate(rate);
+            Progress = Clamp01(RunTime / Duration);
 
-            _t = Clamp01(_t); // 钳制
+            _t = _ease.Evaluate(Progress);
             
             Action();
         }
@@ -103,19 +128,32 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
             return this;
         }
         
-        public void SetProgress(float progress) // 0~1
+        void IAxuTweener.SetProgress(float progress) // 0~1
         {
             progress = Clamp01(progress);
 
             RunTime = progress * Duration;
+
+            Progress = progress;
             
-            ApplyCurrentProgress();
+            if (0 < Duration && Duration <= RunTime) // 检查是否完成
+            {
+                RunTime = Duration; 
+                ApplyCurrentProgress();
+                
+                IsCompleted = true;
+                _onComplete?.Invoke();
+            }
+            else
+                ApplyCurrentProgress();
         }
 
-        public void Play() => IsPaused = false;
+        public void Resume() => IsPaused = false;
         
         void IAxuTweener.Replay()
         {
+            // OnStart(); // 此处不用OnStart，Replay时会加入Runner，加入时会自动调用Start
+            
             IsPaused    = false;
             IsCompleted = false;
 
@@ -127,7 +165,7 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
         public void Kill() => IsCompleted = true;
         
         protected abstract void Action();
-        
-        private static float Clamp01(float value) => System.Math.Clamp(value, 0, 1);
+
+        protected abstract void OnStartup(); // Start时，Replay时
     }
 }

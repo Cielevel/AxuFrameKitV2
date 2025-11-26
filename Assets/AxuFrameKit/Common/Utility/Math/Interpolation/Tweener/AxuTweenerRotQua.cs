@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
 {
-    public class AxuTweenerQua : AxuTweener
+    public class AxuTweenerRotQua : AxuTweener
     {
         private bool _isLocal;
         
@@ -11,13 +11,14 @@ namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
         
         private Quaternion _start, _end;
 
-        public AxuTweenerQua(float duration, Transform transform, Quaternion start, Quaternion end, bool isLocal) : base(duration)
+        public AxuTweenerRotQua(float duration, Transform transform, Quaternion end, bool isLocal) : base(duration)
         {
             _transform = transform;
-            _start     = start;
             _end       = end;
             _isLocal   = isLocal;
         }
+
+        protected override void OnStartup() => _start = _isLocal ? _transform.localRotation : _transform.rotation;
 
         protected override void Action()
         {
