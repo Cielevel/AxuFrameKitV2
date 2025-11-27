@@ -2,6 +2,7 @@ using System;
 using AxuFrameKit._Core.Utility.Math.Interpolation;
 using AxuFrameKit.Common.Utility.Math.Interpolation;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace TestAndSample.Sample_Common_AxuTween
 {
@@ -14,18 +15,18 @@ namespace TestAndSample.Sample_Common_AxuTween
 
         public EaseType easeType;
 
-        private AxuTweener _tweener;
+        private AxuTweener<Transform> _tweener;
         
         private void Start()
         {
-            _tweener = transform.LocalMove(targetPosition, duration).SetEase(easeType).Start().OnComplete(() =>
+            _tweener = transform.ToLocalPos(targetPosition, duration).SetEase(easeType).Start().OnComplete(() =>
             {
-                transform.LocalScale(Vector3.one, duration).SetEase(easeType).Start();
+                transform.ToLocalScale(Vector3.one, duration).SetEase(easeType).Start();
                 transform.RotateEuler(targetEulerAngle, duration).SetEase(easeType).Start().OnComplete(() =>
                 {
                     transform.RotateEuler(Vector3.zero, duration).SetEase(easeType).Start();
-                    transform.LocalScale(Vector3.one * 1.5f, duration).SetEase(easeType).Start();
-                    transform.LocalMove(targetPosition + Vector3.one * 10, duration).SetEase(easeType).Start();
+                    transform.ToLocalScale(Vector3.one * 1.5f, duration).SetEase(easeType).Start();
+                    transform.ToLocalPos(targetPosition + Vector3.one * 10, duration).SetEase(easeType).Start();
                 });
             });
         }
@@ -42,7 +43,9 @@ namespace TestAndSample.Sample_Common_AxuTween
                 _tweener.Resume();
 
             if (Input.GetKeyDown(KeyCode.R))
-                AxuTween.Replay(_tweener);
+            {
+                transform.ToPos(Vector3.one * Random.Range(0f, 10f), 2f).Start();
+            }
         }
     }
 }

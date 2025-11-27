@@ -931,7 +931,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetPosition: {x: -203, y: -598, z: 0}
   targetEulerAngle: {x: 0, y: 0, z: 45}
-  duration: 1
+  img: {fileID: 1367859940}
+  toColorA: {r: 1, g: 0, b: 0, a: 1}
+  toColorB: {r: 0, g: 0.022339106, b: 1, a: 1}
+  duration: 2
   easeType: 24
 --- !u!114 &1367859940
 MonoBehaviour:
@@ -1194,7 +1197,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1733743406
 MonoBehaviour:
   m_ObjectHideFlags: 0

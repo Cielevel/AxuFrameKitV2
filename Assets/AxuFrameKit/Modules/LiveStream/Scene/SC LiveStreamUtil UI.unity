@@ -1303,10 +1303,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53744a42e36e3d244a12f88381a9cda0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _onPointerEnterPos: {x: -20, y: 140}
-  _durationOnEnter: 1
-  _onPointerExitPos: {x: -128, y: 140}
-  _durationOnExit: 1
+  _onPointerEnterPos: {x: -20, y: 20}
+  _durationOnEnter: 0.4
+  _easeIn: 23
+  _onPointerExitPos: {x: -128, y: 20}
+  _durationOnExit: 0.4
+  _easeOut: 22
   _lockX: 0
   _lockY: 1
 --- !u!114 &386984361
@@ -1891,9 +1893,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _onPointerEnterPos: {x: -20, y: 140}
-  _durationOnEnter: 1
+  _durationOnEnter: 0.4
+  _easeIn: 23
   _onPointerExitPos: {x: -128, y: 140}
-  _durationOnExit: 1
+  _durationOnExit: 0.4
+  _easeOut: 22
   _lockX: 0
   _lockY: 1
 --- !u!1 &547635585
@@ -4535,10 +4539,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53744a42e36e3d244a12f88381a9cda0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _onPointerEnterPos: {x: -20, y: 140}
-  _durationOnEnter: 1
-  _onPointerExitPos: {x: -128, y: 140}
-  _durationOnExit: 1
+  _onPointerEnterPos: {x: -20, y: -40}
+  _durationOnEnter: 0.4
+  _easeIn: 23
+  _onPointerExitPos: {x: -128, y: -40}
+  _durationOnExit: 0.4
+  _easeOut: 22
   _lockX: 0
   _lockY: 1
 --- !u!114 &1171792704
@@ -5296,10 +5302,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53744a42e36e3d244a12f88381a9cda0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _onPointerEnterPos: {x: -20, y: 140}
-  _durationOnEnter: 1
-  _onPointerExitPos: {x: -128, y: 140}
-  _durationOnExit: 1
+  _onPointerEnterPos: {x: -20, y: 80}
+  _durationOnEnter: 0.4
+  _easeIn: 23
+  _onPointerExitPos: {x: -128, y: 80}
+  _durationOnExit: 0.4
+  _easeOut: 22
   _lockX: 0
   _lockY: 1
 --- !u!114 &1251657416
@@ -6848,10 +6856,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53744a42e36e3d244a12f88381a9cda0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _onPointerEnterPos: {x: -20, y: 140}
-  _durationOnEnter: 1
-  _onPointerExitPos: {x: -128, y: 140}
-  _durationOnExit: 1
+  _onPointerEnterPos: {x: -20, y: -100}
+  _durationOnEnter: 0.4
+  _easeIn: 23
+  _onPointerExitPos: {x: -128, y: -100}
+  _durationOnExit: 0.4
+  _easeOut: 22
   _lockX: 0
   _lockY: 1
 --- !u!114 &1805912180

@@ -4,4 +4,10 @@
 
 2025-11-26
 1.增加PlayBackward功能？
-2.增加AnchoredMove功能提供到UI
+2.增加AnchoredMove功能提供到UI。-OK
+
+2025-11-27
+1.PreTestFunc中，对于泛型Tweener的设计考虑。
+2.Tweener的返回值目前又是泛型的，需要一个中间类来统合。（就像DoTween.Tweener一样）
+
+Reset()功能与TweenExtension中的tween.IsCompleted检查，均是必要的，否则对象池会出现重复拥有问题。

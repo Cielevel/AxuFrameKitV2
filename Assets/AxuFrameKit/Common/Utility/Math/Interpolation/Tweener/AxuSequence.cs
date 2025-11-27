@@ -11,7 +11,7 @@ namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
         public float EndTime { get; set; }         // 在 Sequence 时间轴上结束的绝对时间
     }
     
-    public class AxuSequence : AxuTweener
+    public class AxuSequence : AxuTweener<object>
     {
         private const int DefaultCapacity = 8;
         

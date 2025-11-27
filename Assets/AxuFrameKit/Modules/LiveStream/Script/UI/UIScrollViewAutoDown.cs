@@ -20,7 +20,7 @@ namespace AxuFrameKit.Modules.LiveStream.Script.UI
 
         private int _lastContentChildCount;
 
-        private AxuTweener _tween;
+        private AxuTweener<object> _tween;
         
         private void Start()
         {

@@ -6,7 +6,7 @@ namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
     /// <summary>
     /// 自定义Float曲线
     /// </summary>
-    public class AxuTweenerCustomFloat : AxuTweener
+    public class AxuTweenerCustomFloat : AxuTweener<object>
     {
         private float _start, _end;
         
@@ -23,6 +23,8 @@ namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
         }
 
         protected override void OnStartup() { }
+        
+        public void SetEnd(float end) => _end = end;
         
         protected override void Action() => _setter?.Invoke(_start + (_end - _start) * _t);
     }

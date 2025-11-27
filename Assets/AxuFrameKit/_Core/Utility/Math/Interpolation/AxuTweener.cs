@@ -16,6 +16,8 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
         float RunTime { get; }
         float Progress { get; }
 
+        void Reset();
+        
         /// <summary>
         /// 激活，得到初始状态。
         /// </summary>
@@ -27,6 +29,8 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
         
         // void OnComplete(Action callback);
 
+        void SetDuration(float duration);
+        
         /// <summary>
         /// 设置进度
         /// </summary>
@@ -54,28 +58,49 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
         void Kill();
     }
     
-    public abstract class AxuTweener : IAxuTweener
+    public abstract class AxuTweener<TTarget> : IAxuTweener
     {
+        // --public--
         public bool IsCompleted { get; private set; }
         public bool IsPaused { get; private set; }
-
-        private EaseType _easeType;
-
         public float Duration { get; protected set; }
         public float RunTime { get; protected set; }
         public float Progress { get; protected set; }
-
+        
+        // --protected--
+        protected float _t;
+        protected TTarget _target;
+        
+        // --private--
+        private EaseType _easeType;
         private IEase _ease = EaseFactory.Get(EaseType.InCubic);
-
         private Action _onComplete;
 
-        protected float _t;
-
-        private static float Clamp01(float value) => System.Math.Clamp(value, 0, 1);
-        
         public AxuTweener(float duration) => Duration = duration;
+        
+        private static float Clamp01(float value) => System.Math.Clamp(value, 0, 1);
 
-        void IAxuTweener.Startup() => OnStartup();
+        void IAxuTweener.Startup()
+        {
+            IsCompleted = false;
+            IsPaused    = false;
+            
+            RunTime  = 0f;
+            Progress = 0f;
+            
+            OnStartup();
+        }
+
+        void IAxuTweener.Reset()
+        {
+            IsCompleted = false;
+            IsPaused    = false;
+            
+            RunTime  = 0f;
+            Progress = 0f;
+
+            _onComplete = null;
+        }
 
         void IAxuTweener.Tik(float deltaTime)
         {
@@ -98,7 +123,7 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
             else
                 ApplyCurrentProgress();
         }
-        
+
         // 【新增方法】用于计算 _t 并执行 Action()，供 Tik 和 SetProgress 调用
         private void ApplyCurrentProgress()
         {
@@ -112,7 +137,7 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
             Action();
         }
 
-        public AxuTweener SetEase(EaseType easeType)
+        public AxuTweener<TTarget> SetEase(EaseType easeType)
         {
             _easeType = easeType;
 
@@ -121,12 +146,20 @@ namespace AxuFrameKit._Core.Utility.Math.Interpolation
             return this;
         }
 
-        public AxuTweener OnComplete(Action callback)
+        public AxuTweener<TTarget> OnComplete(Action callback)
         {
             _onComplete = callback;
 
             return this;
         }
+
+        public AxuTweener<TTarget> SetTarget(TTarget target)
+        {
+            _target = target;
+            return this;
+        }
+
+        public void SetDuration(float duration) => Duration = duration;
         
         void IAxuTweener.SetProgress(float progress) // 0~1
         {

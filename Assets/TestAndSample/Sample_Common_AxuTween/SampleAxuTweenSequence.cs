@@ -13,17 +13,17 @@ namespace TestAndSample.Sample_Common_AxuTween
 
         public EaseType easeType;
 
-        private AxuTweener _tweener;
+        private AxuTweener<object> _tweener;
         
         private void Start()
         {
             var sequence = AxuTween.Sequence();
 
-            sequence.Append(transform.Move(targetPosition, duration).SetEase(easeType))
+            sequence.Append(transform.ToPos(targetPosition, duration).SetEase(easeType))
                     .Append(transform.RotateEuler(targetEulerAngle, duration).SetEase(easeType))
-                    .Append(transform.Move(Vector3.zero, duration).SetEase(easeType))
-                    .Append(transform.LocalScale(Vector3.one * 1.3f, duration).SetEase(easeType))
-                    .Append(transform.LocalScale(Vector3.one, duration).SetEase(easeType))
+                    .Append(transform.ToPos(Vector3.zero, duration).SetEase(easeType))
+                    .Append(transform.ToLocalScale(Vector3.one * 1.3f, duration).SetEase(easeType))
+                    .Append(transform.ToLocalScale(Vector3.one, duration).SetEase(easeType))
                     .Start();
 
             _tweener = sequence;

@@ -2,6 +2,7 @@ using System;
 using AxuFrameKit._Core.Utility.Math.Interpolation;
 using AxuFrameKit.Common.Utility.Math.Interpolation;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace TestAndSample.Sample_Common_AxuTween
 {
@@ -10,22 +11,26 @@ namespace TestAndSample.Sample_Common_AxuTween
         public Vector3 targetPosition;
         public Vector3 targetEulerAngle;
 
+        [Space]
+        
+        public Image img;
+        public Color toColorA, toColorB;
+
+        [Space]
+        
         public float duration;
 
         public EaseType easeType;
 
-        private AxuTweener _tweener;
+        private AxuTweener<Transform> _tweener;
         
         private void Start()
         {
-            _tweener = transform.LocalMove(targetPosition, duration).SetEase(easeType).Start().OnComplete(() =>
+            img.ToColor(toColorA, duration).Start().OnComplete(() =>
             {
-                transform.LocalScale(Vector3.one, duration).SetEase(easeType).Start();
-                transform.RotateEuler(targetEulerAngle, duration).SetEase(easeType).Start().OnComplete(() =>
+                img.ToColor(toColorB, duration).Start().OnComplete(() =>
                 {
-                    transform.RotateEuler(Vector3.zero, duration).SetEase(easeType).Start();
-                    transform.LocalScale(Vector3.one * 1.5f, duration).SetEase(easeType).Start();
-                    transform.LocalMove(targetPosition + Vector3.one * 10, duration).SetEase(easeType).Start();
+                    img.ToColor(toColorA, duration).Start();
                 });
             });
         }

@@ -3,22 +3,22 @@ using UnityEngine;
 
 namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
 {
-    public class AxuTweenerMoveVec2 : AxuTweener
+    public class AxuTweenerMoveVec2 : AxuTweener<Transform>
     {
         private bool _isLocal;
-        
-        private Transform _transform;
         
         private Vector2 _start, _end;
 
         public AxuTweenerMoveVec2(float duration, Transform transform, Vector2 end, bool isLocal) : base(duration)
         {
-            _transform = transform;
+            _target = transform;
             _end       = end;
             _isLocal   = isLocal;
         }
 
-        protected override void OnStartup() => _start = _isLocal ? _transform.localPosition : _transform.position;
+        protected override void OnStartup() => _start = _isLocal ? _target.localPosition : _target.position;
+        
+        public void SetEnd(Vector2 end) => _end = end;
         
         protected override void Action()
         {
@@ -26,9 +26,9 @@ namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
             var y = _start.y + (_end.y - _start.y) * _t;
 
             if (_isLocal)
-                _transform.localPosition = new Vector3(x, y);
+                _target.localPosition = new Vector3(x, y);
             else
-                _transform.position = new Vector3(x, y);
+                _target.position = new Vector3(x, y);
         }
     }
 }
