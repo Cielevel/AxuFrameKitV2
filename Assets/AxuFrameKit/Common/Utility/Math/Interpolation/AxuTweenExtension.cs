@@ -117,12 +117,28 @@ namespace AxuFrameKit.Common.Utility.Math.Interpolation
         
         public static AxuTweener<RectTransform> ToAnchoredPosX(this RectTransform self, float value, float duration)
         {
-            return ToAnchoredPos(self, new Vector2(value, self.anchoredPosition.y), duration);
+            var tween = Runner.TryGetTweener<AxuTweenerAnchoredMoveX>();
+            if (tween == null || tween.IsCompleted == false)
+                tween = new AxuTweenerAnchoredMoveX(duration, self, value);
+            else
+            {
+                tween.SetTarget(self).SetDuration(duration);
+                tween.SetEnd(value);
+            }
+            return tween;
         }
         
         public static AxuTweener<RectTransform> ToAnchoredPosY(this RectTransform self, float value, float duration)
         {
-            return ToAnchoredPos(self, new Vector2(self.anchoredPosition.x, value), duration);
+            var tween = Runner.TryGetTweener<AxuTweenerAnchoredMoveY>();
+            if (tween == null || tween.IsCompleted == false)
+                tween = new AxuTweenerAnchoredMoveY(duration, self, value);
+            else
+            {
+                tween.SetTarget(self).SetDuration(duration);
+                tween.SetEnd(value);
+            }
+            return tween;
         }
 
         public static AxuTweener<Graphic> ToAlpha(this Graphic self, float value, float duration)

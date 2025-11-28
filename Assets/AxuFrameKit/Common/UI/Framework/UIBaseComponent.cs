@@ -23,6 +23,19 @@ namespace AxuFrameKit.Common.UI.Framework
         public virtual void Hide() => Content?.SetActive(false);
         public virtual void Hide(params object[] objs) => Content?.SetActive(false);
         
+        public RectTransform RtTsf
+        {
+            get
+            {
+                if (_rtTsf == null) 
+                    _rtTsf = GetComponent<RectTransform>();
+
+                return _rtTsf;
+            }
+        }
+
+        private RectTransform _rtTsf;
+        
         public virtual void Toggle()
         {
             if (Content.activeSelf)
@@ -39,7 +52,7 @@ namespace AxuFrameKit.Common.UI.Framework
                 Show(objs);
         }
         
-        private void OnValidate()
+        protected virtual void OnValidate()
         {
             Name = transform.name.Split(' ')[^1];
             
