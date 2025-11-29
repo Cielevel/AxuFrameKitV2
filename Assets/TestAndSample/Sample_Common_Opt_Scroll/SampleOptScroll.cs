@@ -16,7 +16,7 @@ namespace TestAndSample.Sample_Common_Opt_Scroll
         void Start()
         {
             // 1. 生成1000条模拟数据
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 100; i++)
             {
                 myDataList.Add($"DT #{i + 1}");
             }

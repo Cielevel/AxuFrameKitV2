@@ -190,10 +190,10 @@ MonoBehaviour:
   bufferCount: 2
   totalCount: 100
   space: 10
-  paddingTop: 10
+  paddingTop: 0
   paddingBottom: 0
-  paddingLeft: 0
-  paddingRight: 0
+  paddingLeft: 80
+  paddingRight: 20
   controlChildWidth: 1
 --- !u!114 &845627699
 MonoBehaviour:
@@ -615,7 +615,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: -17}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1278146568
 MonoBehaviour:
@@ -796,7 +796,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Padding:
-    m_Left: 20
+    m_Left: 10
     m_Right: 20
     m_Top: 20
     m_Bottom: 20
