@@ -1,9 +1,8 @@
-using System.Collections;
 using System.Collections.Generic;
 using AxuFrameKit._Core.Advanced.ObjectPool;
+using AxuFrameKit._Core.Structure;
 using AxuFrameKit._Core.Utility.Math.Interpolation;
 using AxuFrameKit.Common.UI.Framework;
-using AxuFrameKit.Common.Utility.Math.Interpolation;
 using UnityEngine;
 
 namespace AxuFrameKit.Common.UI.Kit.Toast
@@ -55,7 +54,7 @@ namespace AxuFrameKit.Common.UI.Kit.Toast
         private SimpleObjPool<T> _toastPool;
 
         // 用于跟踪当前显示的 Unit 列表
-        private readonly List<T> _showingUnitList = new(DefaultCapacity);
+        private readonly IndexedList<T> _showingUnitList = new(DefaultCapacity);
 
         protected override void Start()
         {
@@ -122,28 +121,31 @@ namespace AxuFrameKit.Common.UI.Kit.Toast
         /// </summary>
         private void PushShowingUnits()
         {
-            // 1. 回收超出最大显示限制的 Unit (最底下的 Unit)
-            while (_showingUnitList.Count >= _maxShowingCount)
-            {
-                // 获取最底下的 Unit
-                var unitToRecycle = _showingUnitList[^1];
-
-                // 强制 Unit 启动退场并通知自身回收
-                unitToRecycle.ForceRecycle();
-
-                // 从列表中移除，回收逻辑将由 Unit 的 OnLifetimeCompleted 事件处理。
-                _showingUnitList.RemoveAt(_showingUnitList.Count - 1);
-            }
-
-            // 2. 移动剩余的 Unit
+            // 1. 计算需要立即回收的超出数量（预留一个位置给即将弹出的新 Unit）
+            var allowedBeforeInsert = _maxShowingCount - 1;
+            var overflow = Mathf.Max(0, _showingUnitList.Count - allowedBeforeInsert);
+        
+            // 2. 先移动所有当前显示的 Unit（每个 Unit 都需要被挤压到对应位置）
             for (var i = 0; i < _showingUnitList.Count; i++)
             {
                 var unit = _showingUnitList[i];
-                // 目标位置是当前 Unit 挤压后的位置
                 var targetPos = GetTargetAnchoredPos(i + 1);
-
+        
                 // 通知 Unit 移动
                 unit.Push(targetPos);
+            }
+        
+            // 3. 对于超出的 Unit，立即触发回收并从显示列表中移除（它们仍然会执行移动动画）
+            for (var r = 0; r < overflow; r++)
+            {
+                var idx = _showingUnitList.Count - 1;
+                var unitToRecycle = _showingUnitList[idx];
+        
+                // 强制 Unit 启动退场并通知自身回收
+                unitToRecycle.ForceRecycle();
+        
+                // 从列表中移除，实际回收由 Unit 的 OnLifetimeCompleted 事件处理
+                _showingUnitList.RemoveAt(idx);
             }
         }
 
