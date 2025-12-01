@@ -53,6 +53,23 @@ namespace AxuFrameKit._Core.Structure
             return true;
         }
 
+        public void Insert(int index, T item)
+        {
+            if (index < 0 || index > _list.Count)
+            {
+                Logger.Error("IndexedList: Index out of range");
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            if (_indexDict.ContainsKey(item))
+                return;
+
+            _list.Insert(index, item);
+
+            for (int i = index; i < _list.Count; i++)
+                _indexDict[_list[i]] = i;
+        }
+
         /// <summary>
         /// 移除指定元素。
         /// 注意此操作后数组顺序可能会改变。
