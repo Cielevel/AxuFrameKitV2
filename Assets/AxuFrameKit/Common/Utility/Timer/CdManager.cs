@@ -6,18 +6,34 @@ using UnityEngine;
 
 namespace AxuFrameKit.Common.Utility.Timer
 {
+    public interface ICdManager
+    {
+        void StartCd(float time, Action onComplete);
+        void StartCd(float time, Action<float> onTik, Action onComplete);
+    }
+    
     /// <summary>
     /// CountDownManager，倒计时管理器；倒计时数量多时推荐使用。
     /// </summary>
-    public class CdManager : SingletonMonoCrDs<CdManager>
+    public class CdManager : SingletonMonoCrDs<CdManager>, ICdManager
     {
+        private const int DefaultCapacity = 32;
+        
         private SimpleObjPool<ICdUnit> _cdPool;
 
         private List<ICdUnit> _cdRunningList;
 
         private int RunningCount => _cdRunningList.Count;
         private int LastCount => RunningCount - 1;
-        
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            _cdPool        = new SimpleObjPool<ICdUnit>(Constructor, OnGet, OnRelease, DefaultCapacity);
+            _cdRunningList = new List<ICdUnit>(DefaultCapacity);
+        }
+
         private void Update()
         {
             for (int i = 0; i < _cdRunningList.Count; i++)
@@ -29,21 +45,35 @@ namespace AxuFrameKit.Common.Utility.Timer
             }
         }
 
-        public void StartTimer(Action onComplete)
+        #region Pool Method
+
+        private ICdUnit Constructor() => new CdUnit();
+
+        private void OnGet(ICdUnit cdUnit) => cdUnit.Reset();
+
+        private void OnRelease(ICdUnit cdUnit) => cdUnit.Reset();
+
+        #endregion
+
+        void ICdManager.StartCd(float time, Action onComplete)
         {
             var unit = _cdPool.Get();
             
             unit.OnComplete += onComplete;
             
+            unit.SetTime(time);
+            
             _cdRunningList.Add(unit);
         }
         
-        public void StartTimer(Action<float> onTik, Action onComplete)
+        void ICdManager.StartCd(float time, Action<float> onTik, Action onComplete)
         {
             var unit = _cdPool.Get();
             
             unit.OnTik      += onTik;
             unit.OnComplete += onComplete;
+            
+            unit.SetTime(time);
             
             _cdRunningList.Add(unit);
         }
@@ -51,9 +81,12 @@ namespace AxuFrameKit.Common.Utility.Timer
         private void OnCdComplete(int index)
         {
             if (index != LastCount)
-                (_cdRunningList[index], _cdRunningList[RunningCount - 1]) = (_cdRunningList[RunningCount - 1], _cdRunningList[index]);
+                (_cdRunningList[index], _cdRunningList[LastCount]) = (_cdRunningList[LastCount], _cdRunningList[index]);
 
             _cdRunningList[LastCount].SetComplete();
+            
+            _cdPool.Release(_cdRunningList[LastCount]);
+            
             _cdRunningList.RemoveAt(LastCount);
         }
 
@@ -62,11 +95,14 @@ namespace AxuFrameKit.Common.Utility.Timer
             event Action<float> OnTik;
             event Action OnComplete;
 
+            void SetTime(float time);
             void Tik(float deltaTime);
             
             bool IsCompleted();
 
             void SetComplete();
+
+            void Reset();
         }
         
         private class CdUnit : ICdUnit
@@ -76,6 +112,8 @@ namespace AxuFrameKit.Common.Utility.Timer
             public event Action OnComplete;
 
             public float Time { get; private set; }
+
+            public void SetTime(float time) => Time = time;
 
             public void Tik(float deltaTime)
             {
@@ -90,6 +128,16 @@ namespace AxuFrameKit.Common.Utility.Timer
             {
                 OnComplete?.Invoke();
 
+                Time = 0f;
+                
+                OnTik      = delegate { };
+                OnComplete = delegate { };
+            }
+
+            public void Reset()
+            {
+                Time = 0f;
+                
                 OnTik      = delegate { };
                 OnComplete = delegate { };
             }

@@ -1,3 +1,4 @@
+using System;
 using AxuFrameKit.Common.Utility.Timer;
 using UnityEngine;
 
@@ -5,14 +6,12 @@ namespace TestAndSample.Sample_TimerSeries
 {
     public class SampleTimerSeries : MonoBehaviour
     {
-        private void Update()
+        private void Start()
         {
-            if (Input.GetKeyDown(KeyCode.Space))
+            for (int i = 6; i < 10; i++)
             {
-                CountDownU.Get().StartTik(5).OnComplete += () =>
-                {
-                    Debug.Log("5秒到");
-                };
+                int index = i;
+                CdTimer.StartCd(index, () => { Debug.Log("Time=>" + index); });
             }
         }
     }
