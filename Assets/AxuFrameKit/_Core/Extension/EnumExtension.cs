@@ -1,4 +1,7 @@
-﻿using System;
+using System;
+using System.ComponentModel;
+using System.Linq;
+using System.Reflection;
 
 namespace AxuFrameKit._Core.Extension
 {
@@ -18,17 +21,6 @@ namespace AxuFrameKit._Core.Extension
         {
             Array values = System.Enum.GetValues(typeof(T));
             return (T)values.GetValue(SystemRandom.Next(values.Length));
-        }
-
-        /// <summary>
-        /// 使用Unity随机数生成器获取枚举类型的随机值
-        /// </summary>
-        /// <typeparam name="T">枚举类型</typeparam>
-        /// <returns>随机选择的枚举值</returns>
-        public static T GetRandomValueUnity<T>() where T : System.Enum
-        {
-            Array values = System.Enum.GetValues(typeof(T));
-            return (T)values.GetValue(UnityEngine.Random.Range(0, values.Length));
         }
 
         /// <summary>
@@ -61,6 +53,35 @@ namespace AxuFrameKit._Core.Extension
         public static T[] GetAllValues<T>() where T : System.Enum
         {
             return (T[])System.Enum.GetValues(typeof(T));
+        }
+
+        /// <summary>
+        /// 获取枚举值的描述（需使用 [Description] 特性）
+        /// </summary>
+        public static string GetDescription(this System.Enum value)
+        {
+            if (value == null) return string.Empty;
+
+            FieldInfo field = value.GetType().GetField(value.ToString());
+            if (field == null) return value.ToString();
+
+            DescriptionAttribute attribute =
+                Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute)) as DescriptionAttribute;
+
+            return attribute == null ? value.ToString() : attribute.Description;
+        }
+
+        /// <summary>
+        /// 检查枚举是否包含特定的位标志
+        /// </summary>
+        public static bool HasFlagUnsafe<T>(this T value, T flag) where T : struct, System.Enum
+        {
+            // Note: .NET 4.0+ Enum.HasFlag exists but boxes. This generic version avoids boxing if using Int32/64 conversion,
+            // but strict generic Enum constraint is tricky in C# 7.3-.
+            // Simple usage:
+            long v = Convert.ToInt64(value);
+            long f = Convert.ToInt64(flag);
+            return (v & f) == f;
         }
     }
 }

@@ -13,6 +13,82 @@ namespace AxuFrameKit._Core.Extension
         
         private static readonly Random Ran = new();
 
+        #region Empty Checks
+
+        /// <summary>
+        /// 检查集合是否为null或空
+        /// </summary>
+        public static bool IsNullOrEmpty<T>(this IEnumerable<T> source)
+        {
+            return source == null || !source.Any();
+        }
+
+        /// <summary>
+        /// 检查集合是否不为null且不为空
+        /// </summary>
+        public static bool IsNotNullOrEmpty<T>(this IEnumerable<T> source)
+        {
+            return source != null && source.Any();
+        }
+
+        #endregion
+
+        #region Modifications
+
+        /// <summary>
+        /// 将另一个集合的所有元素添加到当前集合中
+        /// </summary>
+        public static void AddRange<T>(this ICollection<T> source, IEnumerable<T> collection)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (collection == null) return;
+
+            if (source is List<T> list)
+            {
+                list.AddRange(collection);
+            }
+            else
+            {
+                foreach (var item in collection)
+                {
+                    source.Add(item);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 洗牌算法 (Fisher-Yates Shuffle) - 就地修改 List
+        /// </summary>
+        public static void Shuffle<T>(this IList<T> list)
+        {
+            if (list == null) throw new ArgumentNullException(nameof(list));
+            int n = list.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = Ran.Next(n + 1);
+                (list[k], list[n]) = (list[n], list[k]);
+            }
+        }
+
+        /// <summary>
+        /// 将序列按指定大小分块
+        /// </summary>
+        public static IEnumerable<IEnumerable<T>> Chunk<T>(this IEnumerable<T> source, int chunkSize)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (chunkSize <= 0) throw new ArgumentException("Chunk size must be greater than 0.", nameof(chunkSize));
+
+            return source
+                .Select((x, i) => new { Index = i, Value = x })
+                .GroupBy(x => x.Index / chunkSize)
+                .Select(x => x.Select(v => v.Value));
+        }
+
+        #endregion
+
+        #region Random
+
         /// <summary>
         /// 获取集合中的随机一个元素，适用于任何 IEnumerable（数组、List、HashSet 等）
         /// </summary>
@@ -283,6 +359,8 @@ namespace AxuFrameKit._Core.Extension
 
             return shuffled.Take(count).ToArray(); // 取前 n 个
         }
+
+        #endregion
 
         /// <summary>
         /// 对每一个元素进行操作
