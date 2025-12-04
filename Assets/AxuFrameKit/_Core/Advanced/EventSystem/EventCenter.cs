@@ -9,7 +9,9 @@ namespace AxuFrameKit._Core.Advanced.EventSystem
     /// </summary>
     public static class EventCenter
     {
-        private static readonly Dictionary<Type, List<Delegate>> _handlers = new Dictionary<Type, List<Delegate>>();
+        private const int DefaultCapacity = 16;
+        
+        private static readonly Dictionary<Type, List<Delegate>> _handlers = new(DefaultCapacity);
 
         /// <summary>
         /// 订阅事件
@@ -22,15 +24,6 @@ namespace AxuFrameKit._Core.Advanced.EventSystem
                 _handlers[type] = new List<Delegate>();
             }
             _handlers[type].Add(handler);
-        }
-
-        /// <summary>
-        /// 订阅无参数事件 - 此方法被禁用以强制类型安全
-        /// </summary>
-        [Obsolete("Use Subscribe<T>(Action<T>) for type safety. If you need a parameterless event, define an empty struct.", true)]
-        public static void Subscribe<T>(Action handler)
-        {
-             // This method will generate a compile-time error if called.
         }
 
         /// <summary>

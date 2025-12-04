@@ -8,9 +8,9 @@ using UnityEngine.SceneManagement;
 namespace AxuFrameKit.Common.Utility.Event
 {
     /// <summary>
-    /// 静态事件Bus，可直接使用。
+    /// 适用于Unity中的事件中心，静态事件Central，可直接使用。
     /// </summary>
-    public static class EventBus
+    public static class EventCentral
     {
         private static readonly EventContainer Container = new();
 
@@ -25,6 +25,32 @@ namespace AxuFrameKit.Common.Utility.Event
         {
             var e = Container.GetEvent<EventUnit<T>>();
             e?.UnRegister(onEvent);
+        }
+    }
+    
+    // 中间间
+    // 负责存储IEvent
+    public class EventContainer
+    {
+        private const int DefaultCapacity = 16;
+
+        private readonly Dictionary<Type, IEvent> _typeEvents = new(DefaultCapacity);
+
+        public void Register<T>() where T : IEvent, new() => AddEvent<T>();
+
+        private void AddEvent<T>() where T : IEvent, new() => _typeEvents.Add(typeof(T), new T());
+
+        public T GetEvent<T>() where T : IEvent => _typeEvents.TryGetValue(typeof(T), out var e) ? (T)e : default;
+
+        public T GetOrAddEvent<T>() where T : IEvent, new()
+        {
+            var eType = typeof(T);
+            if (_typeEvents.TryGetValue(eType, out var e))
+                return (T)e;
+
+            var t = new T();
+            _typeEvents.Add(eType, t);
+            return t;
         }
     }
 
@@ -46,7 +72,7 @@ namespace AxuFrameKit.Common.Utility.Event
 
     public abstract class UnRegisterTrigger : MonoBehaviour
     {
-        private readonly HashSet<IUnRegister> _unRegisters = new HashSet<IUnRegister>();
+        private readonly HashSet<IUnRegister> _unRegisters = new(8);
 
         public IUnRegister AddUnRegister(IUnRegister unRegister)
         {
@@ -59,9 +85,7 @@ namespace AxuFrameKit.Common.Utility.Event
         public void UnRegister()
         {
             foreach (var unRegister in _unRegisters)
-            {
                 unRegister.UnRegister();
-            }
 
             _unRegisters.Clear();
         }
@@ -69,34 +93,28 @@ namespace AxuFrameKit.Common.Utility.Event
 
     public class UnRegisterOnDestroyTrigger : UnRegisterTrigger
     {
-        private void OnDestroy()
-        {
-            UnRegister();
-        }
+        private void OnDestroy() => UnRegister();
     }
 
     public class UnRegisterOnDisableTrigger : UnRegisterTrigger
     {
-        private void OnDisable()
-        {
-            UnRegister();
-        }
+        private void OnDisable() => UnRegister();
     }
 
     public class UnRegisterCurrentSceneUnloadedTrigger : UnRegisterTrigger
     {
-        private static UnRegisterCurrentSceneUnloadedTrigger DefaultTrigger;
+        private static UnRegisterCurrentSceneUnloadedTrigger _defaultTrigger;
 
         public static UnRegisterCurrentSceneUnloadedTrigger Get
         {
             get
             {
-                if (!DefaultTrigger)
+                if (!_defaultTrigger)
                 {
-                    DefaultTrigger = new GameObject("UnRegisterCurrentSceneUnloadedTrigger").AddComponent<UnRegisterCurrentSceneUnloadedTrigger>();
+                    _defaultTrigger = new GameObject("UnRegisterCurrentSceneUnloadedTrigger").AddComponent<UnRegisterCurrentSceneUnloadedTrigger>();
                 }
 
-                return DefaultTrigger;
+                return _defaultTrigger;
             }
         }
 
@@ -118,30 +136,22 @@ namespace AxuFrameKit.Common.Utility.Event
             var trigger = gameObject.GetComponent<T>();
 
             if (!trigger)
-            {
                 trigger = gameObject.AddComponent<T>();
-            }
 
             return trigger;
         }
 
-        public static IUnRegister UnRegisterWhenGameObjectDestroyed(this IUnRegister unRegister,
-                                                                    UnityEngine.GameObject gameObject) =>
-            GetOrAddComponent<UnRegisterOnDestroyTrigger>(gameObject)
-                .AddUnRegister(unRegister);
-
         public static IUnRegister UnRegisterWhenGameObjectDestroyed<T>(this IUnRegister self, T component)
-            where T : UnityEngine.Component =>
-            self.UnRegisterWhenGameObjectDestroyed(component.gameObject);
+            where T : Component => self.UnRegisterWhenGameObjectDestroyed(component.gameObject);
 
+        public static IUnRegister UnRegisterWhenGameObjectDestroyed(this IUnRegister unRegister, GameObject gameObject) =>
+            GetOrAddComponent<UnRegisterOnDestroyTrigger>(gameObject).AddUnRegister(unRegister);
+        
         public static IUnRegister UnRegisterWhenDisabled<T>(this IUnRegister self, T component)
-            where T : UnityEngine.Component =>
-            self.UnRegisterWhenDisabled(component.gameObject);
+            where T : Component => self.UnRegisterWhenDisabled(component.gameObject);
 
-        public static IUnRegister UnRegisterWhenDisabled(this IUnRegister unRegister,
-                                                         UnityEngine.GameObject gameObject) =>
-            GetOrAddComponent<UnRegisterOnDisableTrigger>(gameObject)
-                .AddUnRegister(unRegister);
+        public static IUnRegister UnRegisterWhenDisabled(this IUnRegister unRegister, GameObject gameObject) =>
+            GetOrAddComponent<UnRegisterOnDisableTrigger>(gameObject).AddUnRegister(unRegister);
 
         public static IUnRegister UnRegisterWhenCurrentSceneUnloaded(this IUnRegister self) =>
             UnRegisterCurrentSceneUnloadedTrigger.Get.AddUnRegister(self);
@@ -156,7 +166,7 @@ namespace AxuFrameKit.Common.Utility.Event
 
         public void UnRegister()
         {
-            OnUnRegister.Invoke();
+            OnUnRegister?.Invoke();
             OnUnRegister = null;
         }
     }
@@ -202,32 +212,6 @@ namespace AxuFrameKit.Common.Utility.Event
         {
             return Register(Action);
             void Action(T _) => onEvent();
-        }
-    }
-
-    // 中间间
-    // 负责存储IEvent
-    public class EventContainer
-    {
-        private const int DefaultCapacity = 16;
-
-        private readonly Dictionary<Type, IEvent> _typeEvents = new(DefaultCapacity);
-
-        public void Register<T>() where T : IEvent, new() => AddEvent<T>();
-
-        private void AddEvent<T>() where T : IEvent, new() => _typeEvents.Add(typeof(T), new T());
-
-        public T GetEvent<T>() where T : IEvent => _typeEvents.TryGetValue(typeof(T), out var e) ? (T)e : default;
-
-        public T GetOrAddEvent<T>() where T : IEvent, new()
-        {
-            var eType = typeof(T);
-            if (_typeEvents.TryGetValue(eType, out var e))
-                return (T)e;
-
-            var t = new T();
-            _typeEvents.Add(eType, t);
-            return t;
         }
     }
 }
