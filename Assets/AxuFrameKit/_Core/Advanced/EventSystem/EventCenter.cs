@@ -9,9 +9,7 @@ namespace AxuFrameKit._Core.Advanced.EventSystem
     /// </summary>
     public static class EventCenter
     {
-        private const int DefaultCapacity = 16;
-        
-        private static readonly Dictionary<Type, List<Delegate>> _handlers = new(DefaultCapacity);
+        private static readonly Dictionary<Type, List<Delegate>> _handlers = new(16);
 
         /// <summary>
         /// 订阅事件
