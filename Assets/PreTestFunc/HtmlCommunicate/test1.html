@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <title>Unity GM Console — Dark Network</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+        /* ================= 1. 暗色主题变量 ================= */
+        :root {
+            --bg-color: #050505; /* 深空黑背景 */
+
+            /* 深色磨砂玻璃 */
+            --card-bg: rgba(20, 20, 25, 0.65);
+            --card-border: rgba(255, 255, 255, 0.1);
+
+            /* 强调色 (高亮蓝/青) */
+            --accent-primary: #4285f4;
+            --accent-secondary: #24c1e0;
+
+            /* 文字 */
+            --text-main: #e8eaed;
+            --text-sub: #9aa0a6;
+
+            --radius-lg: 24px;
+            --radius-md: 12px;
+            --font-sans: 'Roboto', 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            height: 100vh;
+            background-color: var(--bg-color);
+            font-family: var(--font-sans);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* Canvas 背景 (置于最底层) */
+        #networkCanvas {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+        }
+
+        /* ================= 2. 主面板 ================= */
+        .main-panel {
+            width: 92%; max-width: 1000px; height: 85vh;
+
+            /* 深色玻璃质感 */
+            background: var(--card-bg);
+            backdrop-filter: blur(5px) saturate(120%);
+            -webkit-backdrop-filter: blur(20px) saturate(120%);
+
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5); /* 深色投影 */
+
+            display: flex; flex-direction: column;
+            padding: 30px; box-sizing: border-box;
+        }
+
+        h2 {
+            margin: 0 0 24px 0;
+            text-align: center; font-weight: 300; letter-spacing: 1px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .content-area {
+            display: flex; gap: 24px; flex: 1; overflow: hidden;
+        }
+
+        .list-section {
+            flex: 1; display: flex; flex-direction: column;
+            background: rgba(0, 0, 0, 0.2); /* 列表底色更深 */
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px; overflow: hidden;
+        }
+
+        .section-header {
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            font-size: 12px; font-weight: 700; color: var(--text-sub);
+            text-transform: uppercase; letter-spacing: 1.2px; text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .scroll-box {
+            flex: 1; overflow-y: overlay; padding: 10px;
+        }
+        /* 滚动条美化 */
+        .scroll-box::-webkit-scrollbar { width: 5px; }
+        .scroll-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+        .scroll-box::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+        /* ================= 3. 表格行 (关键修复) ================= */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+
+        tr.row-item {
+            cursor: pointer;
+            transition: transform 0.1s ease; /* 仅让位移有动画，避免尺寸动画导致的模糊 */
+        }
+
+        tr.row-item td {
+            background: rgba(255, 255, 255, 0.15);
+            vertical-align: middle;
+            border: 1px solid transparent; /* 预留边框位置，防止跳动 */
+
+            /* --- 关键修复：强制高度一致 --- */
+            height: 60px; /* 固定每一行的高度 */
+            box-sizing: border-box;
+            padding: 0 12px; /* 左右内边距 */
+        }
+
+        /* 圆角处理 */
+        tr.row-item td:first-child { border-top-left-radius: var(--radius-md); border-bottom-left-radius: var(--radius-md); }
+        tr.row-item td:last-child { border-top-right-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); }
+
+        /* Hover */
+        tr.row-item:hover td {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Active (按压微缩) */
+        tr.row-item:active { transform: scale(0.95); }
+
+        /* --- 选中状态 (关键修复：使用内阴影代替边框) --- */
+        /* 玩家选中 */
+        tr.selected-player td {
+            background: rgba(66, 133, 244, 0.15) !important;
+            border-color: rgba(66, 133, 244, 0.3) !important;
+        }
+        tr.selected-player td:first-child {
+            /* 使用 inset shadow 代替 border-left，解决抖动 */
+            box-shadow: inset 4px 0 0 var(--accent-primary);
+        }
+
+        /* 礼物选中 */
+        tr.selected-gift td {
+            background: rgba(36, 193, 224, 0.15) !important;
+            border-color: rgba(36, 193, 224, 0.3) !important;
+        }
+        tr.selected-gift td:first-child {
+            box-shadow: inset 4px 0 0 var(--accent-secondary);
+        }
+
+        /* ================= 4. 内容组件 ================= */
+        /* 强制图片垂直居中 */
+        .img-wrapper {
+            display: flex; align-items: center; justify-content: center;
+            height: 100%; width: 50px;
+        }
+        .avatar, .gift-icon {
+            width: 40px; height: 40px; border-radius: 50%;
+            object-fit: cover; border: 2px solid rgba(255,255,255,0.1);
+            background: #222;
+        }
+        .gift-icon { border-radius: 8px; }
+
+        .info-col {
+            display: flex; flex-direction: column; justify-content: center;
+            height: 100%; /* 填满 td 高度 */
+        }
+        .name-text { font-size: 14px; font-weight: 500; color: #fff; }
+        .id-text { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
+
+        .amount-input {
+            width: 48px; padding: 6px; border-radius: 6px;
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2);
+            color: white; text-align: center; outline: none; transition: 0.2s;
+            font-size: 14px;
+        }
+        .amount-input:focus {
+            border-color: var(--accent-secondary); background: rgba(0,0,0,0.8);
+        }
+
+        .footer-controls { margin-top: 25px; text-align: center; }
+
+        .send-btn {
+            width: 100%; max-width: 420px; padding: 16px;
+            font-size: 16px; font-weight: 600; border: none; border-radius: 12px;
+            cursor: pointer; color: white;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            box-shadow: 0 8px 20px rgba(66, 133, 244, 0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .send-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(66, 133, 244, 0.3); }
+        .send-btn:active { transform: scale(0.97); }
+        .send-btn:disabled {
+            background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.3);
+            box-shadow: none; cursor: not-allowed; transform: none;
+        }
+
+        #status { margin-top: 15px; font-size: 12px; color: var(--text-sub); }
+    </style>
+</head>
+<body>
+
+<canvas id="networkCanvas"></canvas>
+
+<div class="main-panel">
+    <h2>GM Command Center</h2>
+
+    <div class="content-area">
+        <div class="list-section">
+            <div class="section-header">Online Players</div>
+            <div class="scroll-box">
+                <table><tbody id="playerTableBody"></tbody></table>
+            </div>
+        </div>
+
+        <div class="list-section">
+            <div class="section-header">Gift Inventory</div>
+            <div class="scroll-box">
+                <table><tbody id="giftTableBody"></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-controls">
+        <button id="sendBtn" class="send-btn" onclick="sendData()" disabled>Select Player & Item</button>
+        <div id="status">System Ready</div>
+    </div>
+</div>
+
+<script>
+    // ================= 1. 白色粒子动画 (Dark Mode) =================
+    const canvas = document.getElementById('networkCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    const PARTICLE_COUNT = 70;
+    const CONNECT_DISTANCE = 160;
+    const PARTICLE_SPEED = 0.4; // 稍微减慢速度增加优雅感
+
+    // --- 修改点：改为白色粒子 ---
+    const DOT_COLOR = "rgba(255, 255, 255, 0.9)";
+    const LINE_COLOR_BASE = "255, 255, 255"; // RGB值，用于拼接透明度
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.vx = (Math.random() - 0.5) * PARTICLE_SPEED * 2;
+            this.vy = (Math.random() - 0.5) * PARTICLE_SPEED * 2;
+            this.size = Math.random() * 3 + 1;
+        }
+
+        update() {
+            this.x += this.vx; this.y += this.vy;
+            if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+            if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = DOT_COLOR;
+            ctx.fill();
+
+            // 可选：增加一点辉光效果
+            ctx.shadowBlur = 10; ctx.shadowColor = "white";
+            ctx.fill();
+            // ctx.shadowBlur = 0; // 重置
+        }
+    }
+
+    function initParticles() {
+        particles = [];
+        for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        particles.forEach(p => { p.update(); p.draw(); });
+
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const p1 = particles[i]; const p2 = particles[j];
+                const dx = p1.x - p2.x; const dy = p1.y - p2.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < CONNECT_DISTANCE) {
+                    const opacity = 1 - (distance / CONNECT_DISTANCE);
+                    ctx.beginPath();
+                    
+                    // 连线：白色带透明度
+                    ctx.strokeStyle = `rgba(${LINE_COLOR_BASE}, ${opacity * 0.5})`;
+                    ctx.lineWidth = 1 * opacity * 3;
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                }
+            }
+        }
+        requestAnimationFrame(animate);
+    }
+
+    initParticles();
+    animate();
+
+
+    // ================= 2. 业务逻辑 (HTML生成部分微调了结构) =================
+    const playerConfig = [
+        { id: "1001", name: "勇者阿力", avatar: "https://c-ssl.duitang.com/uploads/blog/202211/15/20221115121911_a9ab2.png" },
+        { id: "1002", name: "法师琳娜", avatar: "https://pic.616pic.com/ys_img/01/09/20/PiMyMvTrJm.jpg" },
+        { id: "1003", name: "狂战士老王", avatar: "https://c-ssl.dtstatic.com/uploads/blog/202104/25/20210425081224_7ccab.thumb.400_0.jpeg" },
+        { id: "1004", name: "刺客信条", avatar: "https://c-ssl.dtstatic.com/uploads/blog/202302/01/20230201113159_787ac.thumb.400_0.jpeg" },
+        { id: "1005", name: "牧师安安", avatar: "https://bpic.588ku.com/element_pic/25/03/10/089ed64278a048c13dccfb3aed8b32be.jpg!/fw/300/unsharp/true" },
+        { id: "1006", name: "测试玩家A", avatar: "https://ts1.tc.mm.bing.net/th/id/OIP-C.UyaBji0AU_6M3VDA2F1RvgAAAA?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3" },
+        { id: "1007", name: "测试玩家B", avatar: "https://tu.tuhenmei.com/uploads/allimg/240605/1_060521131R322.jpg" },
+    ];
+
+    const giftConfig = [
+        { name: "红苹果",   image: "https://c-ssl.dtstatic.com/uploads/blog/202302/01/20230201113159_787ac.thumb.400_0.jpeg" },
+        { name: "魔法药水", image: "https://c-ssl.dtstatic.com/uploads/blog/202302/17/20230217120759_a33ae.thumb.400_0.jpg" },
+        { name: "黄金剑",   image: "https://c-ssl.dtstatic.com/uploads/item/201911/14/20191114164546_hJvQr.thumb.400_0.jpeg" },
+        { name: "大钻石",   image: "https://www.keaitupian.cn/cjpic/frombd/2/253/3315366793/2321372572.jpg" },
+        { name: "复活币",   image: "https://via.placeholder.com/150" },
+    ];
+
+    let state = { player: null, gift: null, amount: 1 };
+
+    window.onload = function() { renderPlayers(); renderGifts(); };
+
+    function renderPlayers() {
+        const tbody = document.getElementById('playerTableBody');
+        playerConfig.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.className = 'row-item';
+            tr.onclick = () => selectPlayer(tr, p);
+
+            // 使用 img-wrapper 保证居中
+            tr.innerHTML = `
+                <td width="60">
+                    <div class="img-wrapper"><img src="${p.avatar}" class="avatar"></div>
+                </td>
+                <td>
+                    <div class="info-col">
+                        <span class="name-text">${p.name}</span>
+                        <span class="id-text">ID: ${p.id}</span>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderGifts() {
+        const tbody = document.getElementById('giftTableBody');
+        giftConfig.forEach(g => {
+            const tr = document.createElement('tr');
+            tr.className = 'row-item';
+            tr.onclick = (e) => { if(e.target.tagName !== 'INPUT') selectGift(tr, g.name); };
+
+            const tdImg = `
+                <td width="60">
+                    <div class="img-wrapper"><img src="${g.image}" class="gift-icon"></div>
+                </td>`;
+
+            const tdName = `<td><div class="info-col"><span class="name-text">${g.name}</span></div></td>`;
+
+            const tdInput = document.createElement('td');
+            tdInput.width = "70"; // 稍微给宽一点
+            const input = document.createElement('input');
+            input.type = 'number'; input.className = 'amount-input'; input.value = 1; input.min = 1;
+            input.onclick = (e) => e.stopPropagation();
+            input.onchange = (e) => {
+                if(state.gift && state.gift.name === g.name) { state.amount = e.target.value; updateBtnText(); }
+            };
+            tdInput.appendChild(input);
+
+            tr.innerHTML = tdImg + tdName; tr.appendChild(tdInput); tbody.appendChild(tr);
+        });
+    }
+
+    function selectPlayer(row, playerData) {
+        document.querySelectorAll('#playerTableBody .row-item').forEach(r => r.classList.remove('selected-player'));
+        row.classList.add('selected-player');
+        state.player = playerData; checkReady();
+    }
+
+    function selectGift(row, giftName) {
+        document.querySelectorAll('#giftTableBody .row-item').forEach(r => r.classList.remove('selected-gift'));
+        row.classList.add('selected-gift');
+        const amount = row.querySelector('input').value;
+        state.gift = { name: giftName }; state.amount = amount; checkReady();
+    }
+
+    function checkReady() {
+        const btn = document.getElementById('sendBtn');
+        if (state.player && state.gift) { btn.disabled = false; updateBtnText(); }
+        else { btn.disabled = true; btn.innerText = "Select Player & Item"; }
+    }
+
+    function updateBtnText() {
+        const btn = document.getElementById('sendBtn');
+        if (state.player && state.gift) btn.innerText = `SEND ${state.gift.name} (x${state.amount}) TO ${state.player.name}`;
+    }
+
+    function sendData() {
+        if (!state.player || !state.gift) return;
+        const statusEl = document.getElementById('status');
+        statusEl.innerText = "Sending command...";
+
+        const params = new URLSearchParams({
+            giftName: state.gift.name, amount: state.amount,
+            playerId: state.player.id, playerName: state.player.name, playerAvatar: state.player.avatar
+        });
+
+        fetch(`http://localhost:8080/gift?${params.toString()}`)
+            .then(res => res.text())
+            .then(text => { statusEl.innerText = "✅ Unity Reply: " + text; statusEl.style.color = "#4285f4"; })
+            .catch(err => { statusEl.innerText = "❌ Unity not running"; statusEl.style.color = "#ff5252"; });
+    }
+</script>
+
+</body>
+</html>
