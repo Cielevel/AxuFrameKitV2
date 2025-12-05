@@ -1,9 +1,9 @@
 using UnityEngine;
 using AxuFrameKit._Core.DesignPattern;
 
-namespace AxuFrameKit.TestAndSample.Sample_Core_DesignPattern
+namespace TestAndSample.Sample_Core_DesignPattern
 {
-    public class Sample_Memento : MonoBehaviour
+    public class SampleMemento : MonoBehaviour
     {
         private PlayerCharacter _player;
         private Caretaker<PlayerState> _caretaker;
@@ -46,9 +46,9 @@ namespace AxuFrameKit.TestAndSample.Sample_Core_DesignPattern
         [System.Serializable]
         public class PlayerState
         {
-            public int Level;
-            public int Health;
-            public string Name;
+            public int Level { get; set; }
+            public int Health { get; set; }
+            public string Name { get; set; }
 
             public override string ToString()
             {
@@ -88,9 +88,9 @@ namespace AxuFrameKit.TestAndSample.Sample_Core_DesignPattern
             public void Restore(Memento<PlayerState> memento)
             {
                 var state = memento.State;
-                _level = state.Level;
+                _level  = state.Level;
                 _health = state.Health;
-                _name = state.Name;
+                _name   = state.Name;
             }
         }
     }

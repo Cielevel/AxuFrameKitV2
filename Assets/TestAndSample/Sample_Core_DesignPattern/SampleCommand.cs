@@ -1,9 +1,9 @@
 using UnityEngine;
 using AxuFrameKit._Core.DesignPattern;
 
-namespace AxuFrameKit.TestAndSample.Sample_Core_DesignPattern
+namespace TestAndSample.Sample_Core_DesignPattern
 {
-    public class Sample_Command : MonoBehaviour
+    public class SampleCommand : MonoBehaviour
     {
         private CommandInvoker _invoker;
         private int _value = 0;
@@ -70,10 +70,10 @@ namespace AxuFrameKit.TestAndSample.Sample_Core_DesignPattern
         // Concrete Command
         private class AddValueCommand : ICommand
         {
-            private readonly Sample_Command _receiver;
+            private readonly SampleCommand _receiver;
             private readonly int _amount;
 
-            public AddValueCommand(Sample_Command receiver, int amount)
+            public AddValueCommand(SampleCommand receiver, int amount)
             {
                 _receiver = receiver;
                 _amount = amount;

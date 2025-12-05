@@ -1,18 +1,18 @@
 using UnityEngine;
 using AxuFrameKit._Core.DesignPattern;
 
-namespace AxuFrameKit.TestAndSample.Sample_Core_DesignPattern
+namespace TestAndSample.Sample_Core_DesignPattern
 {
-    public class Sample_ChainOfResponsibility : MonoBehaviour
+    public class SampleChainOfResponsibility : MonoBehaviour
     {
         private IHandler<string> _handlerChain;
 
         private void Start()
         {
             // Build the chain: Info -> Warning -> Error
-            var infoHandler = new InfoHandler();
+            var infoHandler    = new InfoHandler();
             var warningHandler = new WarningHandler();
-            var errorHandler = new ErrorHandler();
+            var errorHandler   = new ErrorHandler();
 
             infoHandler.SetNext(warningHandler).SetNext(errorHandler);
             _handlerChain = infoHandler;

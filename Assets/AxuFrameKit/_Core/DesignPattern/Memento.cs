@@ -32,7 +32,7 @@ namespace AxuFrameKit._Core.DesignPattern
     /// </summary>
     public class Caretaker<TState>
     {
-        private readonly List<Memento<TState>> _history = new List<Memento<TState>>();
+        private readonly List<Memento<TState>> _history = new(8);
         private readonly IOriginator<TState> _originator;
 
         public Caretaker(IOriginator<TState> originator)
@@ -49,7 +49,7 @@ namespace AxuFrameKit._Core.DesignPattern
         {
             if (_history.Count == 0) return;
 
-            var memento = _history[_history.Count - 1];
+            var memento = _history[^1];
             _history.RemoveAt(_history.Count - 1);
 
             _originator.Restore(memento);
@@ -57,8 +57,7 @@ namespace AxuFrameKit._Core.DesignPattern
 
         public Memento<TState> GetLast()
         {
-             if (_history.Count == 0) return null;
-             return _history[_history.Count - 1];
+            return _history.Count == 0 ? null : _history[^1];
         }
 
         public void Clear()

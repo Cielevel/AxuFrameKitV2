@@ -16,8 +16,10 @@ namespace AxuFrameKit._Core.DesignPattern
     /// </summary>
     public class CommandInvoker
     {
-        private readonly Stack<ICommand> _undoStack = new Stack<ICommand>();
-        private readonly Stack<ICommand> _redoStack = new Stack<ICommand>();
+        private const int DefaultCapacity = 8;
+        
+        private readonly Stack<ICommand> _undoStack = new(DefaultCapacity);
+        private readonly Stack<ICommand> _redoStack = new(DefaultCapacity);
 
         /// <summary>
         /// 执行一个命令并将其推入历史记录
