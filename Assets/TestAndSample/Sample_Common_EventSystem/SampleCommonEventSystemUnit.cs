@@ -1,7 +1,6 @@
 using System;
 using AxuFrameKit.Common.Utility.Event;
 using UnityEngine;
-using UnityEngine.InputSystem.LowLevel;
 
 namespace TestAndSample.Sample_Common_EventSystem
 {
@@ -11,7 +10,7 @@ namespace TestAndSample.Sample_Common_EventSystem
 
         public TestEvent(int count) => Count = count;
     }
-    
+
     public class SampleCommonEventSystemUnit : MonoBehaviour
     {
         private void Awake()
