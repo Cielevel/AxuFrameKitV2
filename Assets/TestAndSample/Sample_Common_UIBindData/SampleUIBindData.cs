@@ -9,9 +9,7 @@ namespace TestAndSample.Sample_Common_UIBindData
 
         private void Start()
         {
-            bindParent1.SetData(UIData.Id("text_name", "this is name"));
-            bindParent1.SetData(UIData.Id("text_age", 12));
-            bindParent1.SetData(UIData.Id("text_height", 168.55f));
+            bindParent1.SetData(UIData.Id("text_name", "this is name"), UIData.Id("text_age", 12), UIData.Id("text_height", 168.55f));
         }
     }
 }
