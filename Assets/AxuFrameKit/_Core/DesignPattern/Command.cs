@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace AxuFrameKit._Core.DesignPattern
 {
     /// <summary>
-    /// Command Interface
+    /// 命令模式接口
     /// </summary>
     public interface ICommand
     {
@@ -12,7 +12,7 @@ namespace AxuFrameKit._Core.DesignPattern
     }
 
     /// <summary>
-    /// Generic Command Invoker with Undo/Redo support
+    /// 支持撤销/重做的通用命令调用者 (Command Invoker)
     /// </summary>
     public class CommandInvoker
     {
@@ -20,17 +20,17 @@ namespace AxuFrameKit._Core.DesignPattern
         private readonly Stack<ICommand> _redoStack = new Stack<ICommand>();
 
         /// <summary>
-        /// Executes a command and pushes it to the history
+        /// 执行一个命令并将其推入历史记录
         /// </summary>
         public void Execute(ICommand command)
         {
             command.Execute();
             _undoStack.Push(command);
-            _redoStack.Clear(); // Clear redo stack on new action
+            _redoStack.Clear(); // 执行新操作时清空重做栈
         }
 
         /// <summary>
-        /// Undoes the last command
+        /// 撤销上一个命令
         /// </summary>
         public void Undo()
         {
@@ -43,7 +43,7 @@ namespace AxuFrameKit._Core.DesignPattern
         }
 
         /// <summary>
-        /// Redoes the last undone command
+        /// 重做上一个撤销的命令
         /// </summary>
         public void Redo()
         {

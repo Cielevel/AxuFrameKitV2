@@ -1,9 +1,9 @@
 namespace AxuFrameKit._Core.DesignPattern
 {
     /// <summary>
-    /// Interface for a handler in the Chain of Responsibility
+    /// 责任链模式中的处理者接口
     /// </summary>
-    /// <typeparam name="TRequest">The type of request to handle</typeparam>
+    /// <typeparam name="TRequest">需要处理的请求类型</typeparam>
     public interface IHandler<TRequest>
     {
         IHandler<TRequest> SetNext(IHandler<TRequest> handler);
@@ -11,7 +11,7 @@ namespace AxuFrameKit._Core.DesignPattern
     }
 
     /// <summary>
-    /// Abstract base class for handlers
+    /// 处理者的抽象基类
     /// </summary>
     public abstract class BaseHandler<TRequest> : IHandler<TRequest>
     {
@@ -20,7 +20,7 @@ namespace AxuFrameKit._Core.DesignPattern
         public IHandler<TRequest> SetNext(IHandler<TRequest> handler)
         {
             _nextHandler = handler;
-            // Return the passed handler so we can link like: handlerA.SetNext(handlerB).SetNext(handlerC)
+            // 返回传入的处理者以便进行链式调用，例如：handlerA.SetNext(handlerB).SetNext(handlerC)
             return handler;
         }
 

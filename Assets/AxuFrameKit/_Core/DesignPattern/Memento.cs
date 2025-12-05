@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace AxuFrameKit._Core.DesignPattern
 {
     /// <summary>
-    /// Represents a snapshot of state
+    /// 表示状态的快照 (Memento)
     /// </summary>
     public class Memento<TState>
     {
@@ -19,7 +19,7 @@ namespace AxuFrameKit._Core.DesignPattern
     }
 
     /// <summary>
-    /// Interface for the Originator (the object whose state needs saving)
+    /// 原发器 (Originator) 接口，即需要保存状态的对象
     /// </summary>
     public interface IOriginator<TState>
     {
@@ -28,7 +28,7 @@ namespace AxuFrameKit._Core.DesignPattern
     }
 
     /// <summary>
-    /// Caretaker manages the history of mementos
+    /// 负责人 (Caretaker) 用于管理备忘录的历史记录
     /// </summary>
     public class Caretaker<TState>
     {

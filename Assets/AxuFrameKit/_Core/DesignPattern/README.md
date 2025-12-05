@@ -1,39 +1,39 @@
-# Design Patterns
+# 设计模式 (Design Patterns)
 
-This directory contains generic, Unity-agnostic implementations of common Game Design Patterns. These are pure C# implementations located in the `AxuFrameKit._Core.DesignPattern` namespace.
+此目录包含了常用的游戏设计模式的通用实现。这些代码位于 `AxuFrameKit._Core.DesignPattern` 命名空间下，是纯 C# 实现，不依赖于 Unity API。
 
-## Available Patterns
+## 可用模式
 
-### 1. Singleton (`Singleton.cs`)
-A thread-safe, lazy-loaded Singleton base class.
-- **Usage**: Inherit from `Singleton<T>`.
-- **Note**: This is for pure C# classes. For Unity `MonoBehaviour` singletons, look for a `MonoSingleton` in the Unity-specific extensions of the framework (outside `_Core`).
+### 1. 单例模式 (Singleton) - `Singleton.cs`
+线程安全的懒加载单例基类。
+- **用法**: 继承 `Singleton<T>`。
+- **注意**: 这是针对纯 C# 类的单例。对于 Unity 的 `MonoBehaviour` 单例，请查找框架中位于 `_Core` 之外的 Unity 特定扩展 (`MonoSingleton`)。
 
-### 2. Command (`Command.cs`)
-Encapsulates a request as an object, thereby letting you parameterize clients with different requests, queue or log requests, and support undoable operations.
-- **Components**:
-    - `ICommand`: Interface with `Execute()` and `Undo()`.
-    - `CommandInvoker`: Manages `Undo` and `Redo` stacks.
+### 2. 命令模式 (Command) - `Command.cs`
+将请求封装为对象，从而使你可用不同的请求对客户进行参数化；对请求排队或记录请求日志，以及支持可撤销的操作。
+- **组件**:
+    - `ICommand`: 包含 `Execute()` 和 `Undo()` 的接口。
+    - `CommandInvoker`: 管理 `Undo` (撤销) 和 `Redo` (重做) 栈。
 
-### 3. Chain of Responsibility (`ChainOfResponsibility.cs`)
-Avoids coupling the sender of a request to its receiver by giving more than one object a chance to handle the request.
-- **Components**:
-    - `IHandler<TRequest>`: Interface for handlers.
-    - `BaseHandler<TRequest>`: Abstract base class that simplifies linking handlers (`SetNext`).
+### 3. 责任链模式 (Chain of Responsibility) - `ChainOfResponsibility.cs`
+避免请求发送者与接收者耦合在一起，让多个对象都有可能接收请求，将这些对象连接成一条链，并且沿着这条链传递请求，直到有对象处理它为止。
+- **组件**:
+    - `IHandler<TRequest>`: 处理者接口。
+    - `BaseHandler<TRequest>`: 简化处理者链接 (`SetNext`) 的抽象基类。
 
-### 4. Memento (`Memento.cs`)
-Captures and externalizes an object's internal state so that the object can be restored to this state later, without violating encapsulation.
-- **Components**:
-    - `Memento<TState>`: Holds the state snapshot.
-    - `IOriginator<TState>`: Interface for objects that support saving/loading state.
-    - `Caretaker<TState>`: Manages the history of backups.
+### 4. 备忘录模式 (Memento) - `Memento.cs`
+在不破坏封装性的前提下，捕获一个对象的内部状态，并在该对象之外保存这个状态，以便以后当需要时能将该对象恢复到原先保存的状态。
+- **组件**:
+    - `Memento<TState>`: 保存状态快照。
+    - `IOriginator<TState>`: 支持保存/加载状态的对象接口。
+    - `Caretaker<TState>`: 管理备份历史记录。
 
 ---
 
-## Other Patterns in `_Core`
+## `_Core` 中的其他模式
 
-Some complex patterns are located in `_Core/Advanced` due to their size or complexity:
+由于某些模式较为复杂或代码量较大，它们被放置在 `_Core/Advanced` 目录下：
 
-- **Object Pool**: `AxuFrameKit._Core.Advanced.ObjectPool`
-- **Finite State Machine (FSM)**: `AxuFrameKit._Core.Advanced.FSM`
-- **Event System (Observer)**: `AxuFrameKit._Core.Advanced.EventSystem`
+- **对象池 (Object Pool)**: `AxuFrameKit._Core.Advanced.ObjectPool`
+- **有限状态机 (FSM)**: `AxuFrameKit._Core.Advanced.FSM`
+- **事件系统 (Event System / Observer)**: `AxuFrameKit._Core.Advanced.EventSystem`
