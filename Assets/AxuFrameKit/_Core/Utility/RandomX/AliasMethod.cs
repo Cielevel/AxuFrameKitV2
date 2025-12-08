@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxuFrameKit._Core.Utility.Common;
@@ -15,7 +14,7 @@ namespace AxuFrameKit._Core.Utility.RandomX
     {
         private readonly double[] _probabilities;
         private readonly int[] _aliases;
-        private readonly Random _random;
+        private readonly System.Random _random;
         private readonly int _n;
 
         public AliasMethod(double[] weights)
@@ -35,7 +34,7 @@ namespace AxuFrameKit._Core.Utility.RandomX
             _n             = weights.Length;
             _probabilities = new double[_n];
             _aliases       = new int[_n];
-            _random        = new Random();
+            _random        = new System.Random();
 
             BuildAliasStructure(weights);
         }
