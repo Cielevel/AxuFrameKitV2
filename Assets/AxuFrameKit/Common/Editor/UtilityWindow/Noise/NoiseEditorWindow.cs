@@ -1,39 +1,39 @@
 using System.IO;
-using AxuFrameKit._Core.Utility.Noise;
 using UnityEditor;
 using UnityEngine;
+using AxuFrameKit._Core.Utility.Noise;
 
 namespace AxuFrameKit.Common.Editor.UtilityWindow.Noise
 {
     public class NoiseEditorWindow : EditorWindow
     {
         // --- 设置参数 ---
-        private int resolution = 512;
-        private float scale = 10f;
-        private int seed = 12345;
+        private int _resolution = 512;
+        private float _scale = 10f;
+        private int _seed = 12345;
     
         // 偏移量
-        private Vector2 offset = Vector2.zero;
+        private Vector2 _offset = Vector2.zero;
 
         // FBM (分形) 参数
-        private int octaves = 4;
-        private float persistence = 0.5f;
-        private float lacunarity = 2.0f;
+        private int _octaves = 4;
+        private float _persistence = 0.5f;
+        private float _lacunarity = 2.0f;
 
         // 噪声类型
-        public enum NoiseType { StandardPerlin, FractalPerlin, WhiteNoise }
-        private NoiseType currentType = NoiseType.FractalPerlin;
+        private enum NoiseType { StandardPerlin, FractalPerlin, WhiteNoise }
+        private NoiseType _currentType = NoiseType.FractalPerlin;
 
         // --- 新增：Alpha 剔除参数 ---
-        private bool enableAlphaCulling = false;
-        private float alphaThreshold = 0.5f;
+        private bool _enableAlphaCulling = false;
+        private float _alphaThreshold = 0.5f;
 
         // 预览
-        private Texture2D previewTexture;
-        private bool autoUpdate = true;
+        private Texture2D _previewTexture;
+        private bool _autoUpdate = true;
     
         // 滚动视图位置
-        private Vector2 scrollPos;
+        private Vector2 _scrollPos;
 
         [MenuItem("AxuFrameKit/Utility/Noise Generator")]
         public static void ShowWindow()
@@ -49,7 +49,7 @@ namespace AxuFrameKit.Common.Editor.UtilityWindow.Noise
 
         private void OnGUI()
         {
-            scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
+            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
 
             GUILayout.Label("噪声生成设置 (Noise Settings)", EditorStyles.boldLabel);
 
@@ -57,44 +57,44 @@ namespace AxuFrameKit.Common.Editor.UtilityWindow.Noise
             EditorGUI.BeginChangeCheck();
 
             // 基础设置
-            resolution = EditorGUILayout.IntSlider("分辨率 (Resolution)", resolution, 64, 2048);
-            scale      = EditorGUILayout.Slider("缩放 (Scale)", scale, 0.1f, 100f);
-            offset     = EditorGUILayout.Vector2Field("偏移 (Offset)", offset);
-            seed       = EditorGUILayout.IntField("随机种子 (Seed)", seed);
+            _resolution = EditorGUILayout.IntSlider("分辨率 (Resolution)", _resolution, 64, 2048);
+            _scale      = EditorGUILayout.Slider("缩放 (Scale)", _scale, 0.1f, 100f);
+            _offset     = EditorGUILayout.Vector2Field("偏移 (Offset)", _offset);
+            _seed       = EditorGUILayout.IntField("随机种子 (Seed)", _seed);
         
             GUILayout.Space(10);
-            currentType = (NoiseType)EditorGUILayout.EnumPopup("噪声类型 (Type)", currentType);
+            _currentType = (NoiseType)EditorGUILayout.EnumPopup("噪声类型 (Type)", _currentType);
 
             // 仅在分形模式下显示的参数
-            if (currentType == NoiseType.FractalPerlin)
+            if (_currentType == NoiseType.FractalPerlin)
             {
                 EditorGUI.indentLevel++;
                 EditorGUILayout.LabelField("分形详情 (Fractal Details)", EditorStyles.miniLabel);
-                octaves     = EditorGUILayout.IntSlider("层数 (Octaves)", octaves, 1, 8);
-                persistence = EditorGUILayout.Slider("持久度 (Persistence)", persistence, 0.1f, 1f);
-                lacunarity  = EditorGUILayout.Slider("空隙度 (Lacunarity)", lacunarity, 1f, 4f);
+                _octaves     = EditorGUILayout.IntSlider("层数 (Octaves)", _octaves, 1, 8);
+                _persistence = EditorGUILayout.Slider("持久度 (Persistence)", _persistence, 0.1f, 1f);
+                _lacunarity  = EditorGUILayout.Slider("空隙度 (Lacunarity)", _lacunarity, 1f, 4f);
                 EditorGUI.indentLevel--;
             }
 
             // --- 新增：Alpha 剔除 UI ---
             GUILayout.Space(10);
             GUILayout.Label("后期处理 (Post Processing)", EditorStyles.boldLabel);
-            enableAlphaCulling = EditorGUILayout.Toggle("开启 Alpha 剔除", enableAlphaCulling);
+            _enableAlphaCulling = EditorGUILayout.Toggle("开启 Alpha 剔除", _enableAlphaCulling);
         
-            if (enableAlphaCulling)
+            if (_enableAlphaCulling)
             {
                 EditorGUI.indentLevel++;
-                alphaThreshold = EditorGUILayout.Slider("剔除阈值 (Threshold)", alphaThreshold, 0f, 1f);
+                _alphaThreshold = EditorGUILayout.Slider("剔除阈值 (Threshold)", _alphaThreshold, 0f, 1f);
                 EditorGUI.indentLevel--;
             }
 
             GUILayout.Space(10);
-            autoUpdate = EditorGUILayout.Toggle("自动刷新预览", autoUpdate);
+            _autoUpdate = EditorGUILayout.Toggle("自动刷新预览", _autoUpdate);
 
             // 如果参数改变且开启了自动刷新，则重新生成
             if (EditorGUI.EndChangeCheck())
             {
-                if (autoUpdate) GenerateTexture();
+                if (_autoUpdate) GenerateTexture();
             }
 
             GUILayout.Space(10);
@@ -108,7 +108,7 @@ namespace AxuFrameKit.Common.Editor.UtilityWindow.Noise
             GUILayout.Space(10);
         
             // --- 预览区域 ---
-            if (previewTexture != null)
+            if (_previewTexture != null)
             {
                 // 计算正方形尺寸：窗口宽度的 0.9 倍
                 float size = position.width * 0.9f;
@@ -122,7 +122,7 @@ namespace AxuFrameKit.Common.Editor.UtilityWindow.Noise
             
                 // 获取上一个控件（Box）的矩形区域并在其中绘制纹理
                 Rect lastRect = GUILayoutUtility.GetLastRect();
-                EditorGUI.DrawPreviewTexture(lastRect, previewTexture);
+                EditorGUI.DrawPreviewTexture(lastRect, _previewTexture);
 
                 GUILayout.FlexibleSpace(); // 右侧弹簧
                 GUILayout.EndHorizontal();
@@ -130,7 +130,7 @@ namespace AxuFrameKit.Common.Editor.UtilityWindow.Noise
                 // 下方文字也居中
                 GUILayout.BeginHorizontal();
                 GUILayout.FlexibleSpace();
-                GUILayout.Label($"当前预览: {previewTexture.width}x{previewTexture.height}");
+                GUILayout.Label($"当前预览: {_previewTexture.width}x{_previewTexture.height}");
                 GUILayout.FlexibleSpace();
                 GUILayout.EndHorizontal();
             }
@@ -151,71 +151,64 @@ namespace AxuFrameKit.Common.Editor.UtilityWindow.Noise
         private void GenerateTexture()
         {
             // 1. 初始化纯C#的噪声生成器
-            NoiseCreator.Init(seed);
+            NoiseCreator.Init(_seed);
 
             // 2. 创建 Texture2D
-            if (previewTexture == null || previewTexture.width != resolution || previewTexture.height != resolution)
+            if (_previewTexture == null || _previewTexture.width != _resolution || _previewTexture.height != _resolution)
             {
-                previewTexture            = new Texture2D(resolution, resolution, TextureFormat.RGB24, false);
-                previewTexture.filterMode = FilterMode.Bilinear;
+                _previewTexture = new Texture2D(_resolution, _resolution, TextureFormat.RGB24, false)
+                {
+                    filterMode = FilterMode.Bilinear
+                };
             }
 
-            Color[] pixels = new Color[resolution * resolution];
+            Color[] pixels = new Color[_resolution * _resolution];
 
             // 3. 遍历像素
-            for (int y = 0; y < resolution; y++)
+            for (int y = 0; y < _resolution; y++)
             {
-                for (int x = 0; x < resolution; x++)
+                for (int x = 0; x < _resolution; x++)
                 {
                     // 计算采样坐标 (使用纯C#逻辑传参)
                     // 加上 0.1f 避免整数边界问题
-                    double xCoord = (x / (double)resolution) * scale + offset.x + 0.1f;
-                    double yCoord = (y / (double)resolution) * scale + offset.y + 0.1f;
+                    double xCoord = (x / (double)_resolution) * _scale + _offset.x + 0.1f;
+                    double yCoord = (y / (double)_resolution) * _scale + _offset.y + 0.1f;
 
-                    double sample = 0;
-
-                    switch (currentType)
+                    double sample = _currentType switch
                     {
-                        case NoiseType.StandardPerlin:
-                            // 标准 Perlin 输出约为 -1~1，映射到 0~1
-                            sample = (NoiseCreator.Perlin(xCoord, yCoord) + 1.0) * 0.5;
-                            break;
-                        case NoiseType.FractalPerlin:
-                            // 已经在 FractalNoise 内部映射到 0~1
-                            sample = NoiseCreator.FractalNoise(xCoord, yCoord, octaves, persistence, lacunarity);
-                            break;
-                        case NoiseType.WhiteNoise:
-                            sample = NoiseCreator.WhiteNoise(xCoord, yCoord);
-                            break;
-                    }
+                        NoiseType.StandardPerlin => (NoiseCreator.Perlin(xCoord, yCoord) + 1.0) * 0.5, // 标准 Perlin 输出约为 -1~1，映射到 0~1
+                        NoiseType.FractalPerlin => NoiseCreator.FractalNoise(xCoord, yCoord, _octaves, _persistence, _lacunarity), // 已经在 FractalNoise 内部映射到 0~1
+                        NoiseType.WhiteNoise => NoiseCreator.WhiteNoise(xCoord, yCoord),
+                        _ => 0
+                    };
 
                     // 钳制到 0-1
                     float val = Mathf.Clamp01((float)sample);
 
                     // --- 新增：Alpha 剔除逻辑 ---
-                    if (enableAlphaCulling)
+                    if (_enableAlphaCulling)
                     {
                         // 小于阈值为黑色(0)，大于等于阈值为白色(1)
-                        val = val < alphaThreshold ? 0f : 1f;
+                        val = val < _alphaThreshold ? 0f : 1f;
                     }
 
-                    pixels[y * resolution + x] = new Color(val, val, val, 1.0f);
+                    pixels[y * _resolution + x] = new Color(val, val, val, 1.0f);
                 }
             }
 
-            previewTexture.SetPixels(pixels);
-            previewTexture.Apply();
+            _previewTexture.SetPixels(pixels);
+            _previewTexture.Apply();
         }
 
         private void SaveTexture()
         {
-            if (previewTexture == null) return;
+            if (_previewTexture == null) return;
 
             string path = EditorUtility.SaveFilePanel("保存噪声贴图", Application.dataPath, "NewNoise", "png");
         
             if (!string.IsNullOrEmpty(path))
             {
-                byte[] bytes = previewTexture.EncodeToPNG();
+                byte[] bytes = _previewTexture.EncodeToPNG();
                 File.WriteAllBytes(path, bytes);
             
                 // 刷新 AssetDatabase 以便在 Unity 编辑器中立即看到文件
@@ -234,9 +227,9 @@ namespace AxuFrameKit.Common.Editor.UtilityWindow.Noise
         // 窗口关闭时清理内存
         private void OnDestroy()
         {
-            if (previewTexture != null)
+            if (_previewTexture != null)
             {
-                DestroyImmediate(previewTexture);
+                DestroyImmediate(_previewTexture);
             }
         }
     }

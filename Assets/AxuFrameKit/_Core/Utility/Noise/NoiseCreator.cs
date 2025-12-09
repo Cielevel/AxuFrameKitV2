@@ -8,7 +8,7 @@ namespace AxuFrameKit._Core.Utility.Noise
     public static class NoiseCreator
     {
         // 预计算的排列表 (Permutation Table)
-        private static readonly int[] p = new int[512];
+        private static readonly int[] P = new int[512];
 
         private static int[] _permutation =
         {
@@ -27,7 +27,7 @@ namespace AxuFrameKit._Core.Utility.Noise
             138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180
         };
 
-        private static bool initialized = false;
+        private static bool _initialized = false;
 
         /// <summary>
         /// 使用种子初始化排列表
@@ -37,8 +37,9 @@ namespace AxuFrameKit._Core.Utility.Noise
             Random rnd = new Random(seed);
 
             // 洗牌算法
-            int[] tempPermutation                            = new int[256];
-            for (int i = 0; i < 256; i++) tempPermutation[i] = i;
+            int[] tempPermutation = new int[256];
+            for (int i = 0; i < 256; i++) 
+                tempPermutation[i] = i;
 
             for (int i = 0; i < 256; i++)
             {
@@ -48,17 +49,17 @@ namespace AxuFrameKit._Core.Utility.Noise
 
             for (int i = 0; i < 256; i++)
             {
-                p[i]       = tempPermutation[i];
-                p[256 + i] = tempPermutation[i];
+                P[i]       = tempPermutation[i];
+                P[256 + i] = tempPermutation[i];
             }
 
-            initialized = true;
+            _initialized = true;
         }
 
         // 默认初始化
         static NoiseCreator()
         {
-            if (!initialized) Init(12345);
+            if (!_initialized) Init(12345);
         }
 
         /// <summary>
@@ -67,8 +68,8 @@ namespace AxuFrameKit._Core.Utility.Noise
         public static double Perlin(double x, double y)
         {
             // 查找单位正方形包含点的坐标
-            int X = (int)System.Math.Floor(x) & 255;
-            int Y = (int)System.Math.Floor(y) & 255;
+            int xPos = (int)System.Math.Floor(x) & 255;
+            int yPos = (int)System.Math.Floor(y) & 255;
 
             // 查找在正方形中的相对 x,y
             x -= System.Math.Floor(x);
@@ -79,12 +80,12 @@ namespace AxuFrameKit._Core.Utility.Noise
             double v = Fade(y);
 
             // 哈希正方形的8个角坐标
-            int A = p[X] + Y,     AA = p[A], AB = p[A + 1];
-            int B = p[X + 1] + Y, BA = p[B], BB = p[B + 1];
+            int a = P[xPos] + yPos,     aa = P[a], ab = P[a + 1];
+            int b = P[xPos + 1] + yPos, ba = P[b], bb = P[b + 1];
 
             // 混合结果
-            return Lerp(v, Lerp(u, Grad(p[AA], x, y), Grad(p[BA], x - 1, y)),
-                        Lerp(u, Grad(p[AB], x, y - 1), Grad(p[BB], x - 1, y - 1)));
+            return Lerp(v, Lerp(u, Grad(P[aa], x, y), Grad(P[ba], x - 1, y)),
+                        Lerp(u, Grad(P[ab], x, y - 1), Grad(P[bb], x - 1, y - 1)));
         }
 
         /// <summary>
