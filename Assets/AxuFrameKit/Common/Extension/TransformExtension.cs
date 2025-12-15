@@ -9,6 +9,16 @@ namespace AxuFrameKit.Common.Extension
 {
     public static class TransformExtension
     {
+        /// <summary>
+        /// 一键重置位置、旋转和缩放 (常用于对象池回收时)
+        /// </summary>
+        public static void ResetTransformation(this Transform trans)
+        {
+            trans.position      = Vector3.zero;
+            trans.localRotation = Quaternion.identity;
+            trans.localScale    = Vector3.one;
+        }
+        
         public static void ResetLocalPosition(this Transform self) => self.localPosition = Vector3.zero;
         public static void ResetPosition(this Transform self) => self.position = Vector3.zero;
 

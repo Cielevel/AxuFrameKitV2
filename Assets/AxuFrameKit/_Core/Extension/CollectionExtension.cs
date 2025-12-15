@@ -57,11 +57,13 @@ namespace AxuFrameKit._Core.Extension
         }
 
         /// <summary>
-        /// 洗牌算法 (Fisher-Yates Shuffle) - 就地修改 List
+        /// 洗牌算法 (Fisher-Yates Shuffle) - 就地修改List
         /// </summary>
         public static void Shuffle<T>(this IList<T> list)
         {
-            if (list == null) throw new ArgumentNullException(nameof(list));
+            if (list == null) 
+                throw new ArgumentNullException(nameof(list));
+            
             int n = list.Count;
             while (n > 1)
             {
