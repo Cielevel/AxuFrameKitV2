@@ -1,9 +1,9 @@
-using UnityEngine;
-using UnityEngine.UI;
 using AxuFrameKit._Core.Utility.Math.Interpolation;
 using AxuFrameKit.Common.Utility.Math.Interpolation;
+using UnityEngine;
+using UnityEngine.UI;
 
-namespace AxuFrameKit.Modules.LiveStream.Script.UI
+namespace AxuFrameKit.Modules.LiveStream.Script.Utility
 {
     [RequireComponent(typeof(ScrollRect))]
     public class UIScrollViewAutoDown : MonoBehaviour

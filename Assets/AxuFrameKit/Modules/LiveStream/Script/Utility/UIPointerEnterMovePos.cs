@@ -1,9 +1,9 @@
-using UnityEngine;
-using UnityEngine.EventSystems;
 using AxuFrameKit._Core.Utility.Math.Interpolation;
 using AxuFrameKit.Common.Utility.Math.Interpolation;
+using UnityEngine;
+using UnityEngine.EventSystems;
 
-namespace AxuFrameKit.Modules.LiveStream.Script.UI
+namespace AxuFrameKit.Modules.LiveStream.Script.Utility
 {
     [RequireComponent(typeof(RectTransform))]
     public class UIPointerEnterMovePos : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
