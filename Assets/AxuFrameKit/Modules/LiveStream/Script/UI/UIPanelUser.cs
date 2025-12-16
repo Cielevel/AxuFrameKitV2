@@ -12,8 +12,12 @@ namespace AxuFrameKit.Modules.LiveStream.Script.UI
 {
     public class UIPanelUser : UIBasePanel
     {
-        public LoopVerticalScrollRect loopVerticalScrollRect;
+        [SerializeField] private LoopVerticalScrollRect _loopVerticalScrollRect;
 
+        [Space] 
+        
+        [SerializeField] private UIPanelComment _uiPanelComment;
+        
         [Space] 
         
         [SerializeField] private string _bindUserNickname = "PLAYER_NICKNAME";
@@ -23,19 +27,25 @@ namespace AxuFrameKit.Modules.LiveStream.Script.UI
 
         [SerializeField] private List<UserDataUnit> _userDataList;
         
+        private Dictionary<string, UserDataUnit> _userDataDict;
+        
         public void SetUserData(IEnumerable<UserDataUnit> userDataCollection)
         {
             _userDataList = userDataCollection.ToList();
-            
-            loopVerticalScrollRect.onUpdateItem += OnUpdateItem;
 
-            loopVerticalScrollRect.RefillCells(_userDataList.Count);
+            _userDataDict = _userDataList.ToDictionary(e => e.ID);
             
-            loopVerticalScrollRect.GetComponentsInChildren<Button>().Do(btn =>
+            _loopVerticalScrollRect.onUpdateItem += OnUpdateItem;
+
+            _loopVerticalScrollRect.RefillCells(_userDataList.Count);
+            
+            _loopVerticalScrollRect.GetComponentsInChildren<Button>().Do(btn =>
             {
                 btn.onClick.AddListener(() =>
                 {
-                    Debug.Log("CLICK: " + btn.GetComponent<UIUnitUserID>().UserID);
+                    var id = btn.GetComponent<UIUnitUserID>().UserID;
+                    if (_userDataDict.TryGetValue(id, out var userData))
+                        _uiPanelComment.OnSelectUser(userData.Nickname);
                 });
             });
         }

@@ -7195,6 +7195,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1388053740}
+  - component: {fileID: 1388053741}
   m_Layer: 0
   m_Name: "Panel \u53D1\u9001\u5F39\u5E55"
   m_TagString: Untagged
@@ -7222,6 +7223,22 @@ RectTransform:
   m_AnchoredPosition: {x: -200, y: 0}
   m_SizeDelta: {x: 200, y: 100}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1388053741
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1388053739}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bdc0c05c044d47ddaef5c26c4f84606, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  <Name>k__BackingField: "\u53D1\u9001\u5F39\u5E55"
+  <HideContentOnStart>k__BackingField: 0
+  <Content>k__BackingField: {fileID: 1849822975}
+  _input: {fileID: 2045757436}
 --- !u!1 &1404535644
 GameObject:
   m_ObjectHideFlags: 0
@@ -7875,7 +7892,8 @@ MonoBehaviour:
   <Name>k__BackingField: "\u9009\u62E9\u73A9\u5BB6"
   <HideContentOnStart>k__BackingField: 0
   <Content>k__BackingField: {fileID: 1247284312}
-  loopVerticalScrollRect: {fileID: 228296677}
+  _loopVerticalScrollRect: {fileID: 228296677}
+  _uiPanelComment: {fileID: 1388053741}
   _bindUserNickname: PLAYER_NICKNAME
   _bindUserAvatar: USER_AVATAR
   _userDataList: []
