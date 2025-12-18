@@ -91,8 +91,6 @@ namespace AxuFrameKit.Common.Utility.Net
         /// <summary>
         /// 发送Post请求，将发送一个json，返回json字符串
         /// </summary>
-        /// <param name="url"></param>
-        /// <param name="jsonData"></param>
         public static async Task<string> Post(string url, string jsonData)
         {
             using UnityWebRequest uwr = new(url, PostMethod);
@@ -164,8 +162,7 @@ namespace AxuFrameKit.Common.Utility.Net
             Debug.LogWarning($"{httpType}出错，url为：{url}。Result：{ uwr.result}, code：{uwr.responseCode}");
         }
         
-        private static void VerifyHeader(string url, string requestType,
-                                         params (string headName, string headValue)[] @params)
+        private static void VerifyHeader(string url, string requestType, params (string headName, string headValue)[] @params)
         {
             HashSet<string> headNamesHs = new(@params.Length);
             for (int i = 0; i < @params.Length; i++)
