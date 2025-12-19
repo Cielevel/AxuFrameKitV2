@@ -1,9 +1,8 @@
 using System.IO;
 using UnityEditor;
 using UnityEngine;
-using AxuFrameKit._Core.Utility.Noise;
 
-namespace AxuFrameKit.Common.Editor.UtilityWindow.Noise
+namespace AxuFrameKit.Modules.Noise.SimpleNoise.Editor
 {
     public class NoiseEditorWindow : EditorWindow
     {

@@ -1,3 +1,4 @@
+using AxuFrameKit.Modules.Noise.FastNoiseLite;
 using UnityEngine;
 
 [ExecuteInEditMode]

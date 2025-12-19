@@ -1,6 +1,6 @@
 using System;
 
-namespace AxuFrameKit._Core.Utility.Noise
+namespace AxuFrameKit.Modules.Noise.SimpleNoise
 {
     /// <summary>
     /// 纯C#实现的噪声生成器，不依赖UnityEngine

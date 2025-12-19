@@ -10,7 +10,7 @@ using Cysharp.Threading.Tasks;
 
 namespace AxuFrameKit.Common.Utility.Net
 {
-    public static class HttpX
+    public static class HttpUtil
     {
         private const string PostMethod = "POST";
         private const string GetMethod = "GET";
