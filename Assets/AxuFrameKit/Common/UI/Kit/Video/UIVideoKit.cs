@@ -6,7 +6,7 @@ using UnityEngine.UI;
 using UnityEngine.Video;
 using Object = UnityEngine.Object;
 
-namespace AxuFrameKit.Common.UI.Kit
+namespace AxuFrameKit.Common.UI.Kit.Video
 {
     public class UIVideoKitHandler : MonoBehaviour { }
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal; // 引入 ReorderableList 的命名空间
@@ -93,6 +94,12 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind.Editor
             if (GUILayout.Button("Refresh List from Children"))
                 RefreshList();
 
+            if (GUILayout.Button("CheckIdOrIndex"))
+                CheckIdOrIndex();
+
+            if (GUILayout.Button("FillIdOrIndex"))
+                FillIdOrIndex();
+
             serializedObject.ApplyModifiedProperties();
         }
 
@@ -114,6 +121,98 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind.Editor
                 _listProp.InsertArrayElementAtIndex(i);
                 _listProp.GetArrayElementAtIndex(i).objectReferenceValue = components[i];
             }
+        }
+
+        private void CheckIdOrIndex()
+        {
+            int bindTypeIndex = _bindTypeProp.enumValueIndex;
+            
+            if (bindTypeIndex == 0) // ID 模式
+            {
+                HashSet<string> hs = new HashSet<string>(_listProp.arraySize);
+                for (int i = 0; i < _listProp.arraySize; i++)
+                {
+                    var element = _listProp.GetArrayElementAtIndex(i);
+                    
+                    var componentRef = element.objectReferenceValue as UIBindComponent;
+                    if (componentRef != null && string.IsNullOrEmpty(componentRef.ID))
+                        Debug.LogWarning($"UIBindComponent at index {i} has an empty ID.");
+
+                    if (componentRef == null)
+                    {
+                        Debug.LogError($"UIBindComponent at {i} reference is null.");
+                        continue;
+                    }
+                    
+                    if (hs.Add(componentRef.ID) == false)
+                        Debug.LogWarning($"UIBindComponent.ID '{componentRef.ID}' is duplicated. At {i}");
+                }
+            }
+            else if (bindTypeIndex == 1) // Index 模式
+            {
+                HashSet<int> hs = new HashSet<int>(_listProp.arraySize);
+                for (int i = 0; i < _listProp.arraySize; i++)
+                {
+                    var element = _listProp.GetArrayElementAtIndex(i);
+                    
+                    var componentRef = element.objectReferenceValue as UIBindComponent;
+                    if (componentRef != null && string.IsNullOrEmpty(componentRef.ID))
+                        Debug.LogWarning($"UIBindComponent at index {i} has an empty ID.");
+
+                    if (componentRef == null)
+                    {
+                        Debug.LogError($"UIBindComponent at {i} reference is null.");
+                        continue;
+                    }
+                    
+                    if (hs.Add(componentRef.Index) == false)
+                        Debug.LogWarning($"UIBindComponent.Index '{componentRef.Index}' is duplicated. At {i}");
+                }
+            }
+            
+            Debug.Log("Check Completed.");
+        }
+
+        private void FillIdOrIndex()
+        {
+            int bindTypeIndex = _bindTypeProp.enumValueIndex;
+            
+            if (bindTypeIndex == 0) // ID 模式
+            {
+                for (int i = 0; i < _listProp.arraySize; i++)
+                {
+                    var element = _listProp.GetArrayElementAtIndex(i);
+                    
+                    var componentRef = element.objectReferenceValue as UIBindComponent;
+
+                    if (componentRef == null)
+                    {
+                        Debug.LogError($"UIBindComponent at {i} reference is null.");
+                        continue;
+                    }
+                    
+                    ((IUIBindComponent)componentRef).SetID(componentRef.name.ToLower().Replace(' ', '_'));
+                }
+            }
+            else if (bindTypeIndex == 1) // Index 模式
+            {
+                for (int i = 0; i < _listProp.arraySize; i++)
+                {
+                    var element = _listProp.GetArrayElementAtIndex(i);
+                    
+                    var componentRef = element.objectReferenceValue as UIBindComponent;
+
+                    if (componentRef == null)
+                    {
+                        Debug.LogError($"UIBindComponent at {i} reference is null.");
+                        continue;
+                    }
+                    
+                    ((IUIBindComponent)componentRef).SetIndex(i);
+                }
+            }
+            
+            Debug.Log("Fill Completed.");
         }
     }
 }
