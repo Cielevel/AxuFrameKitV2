@@ -24,31 +24,21 @@ namespace AxuFrameKit.Modules.GizmosUtil.Editor
 
             // 绘制默认的 Script 字段
             using (new EditorGUI.DisabledScope(true))
-            {
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("m_Script"));
-            }
 
             EditorGUILayout.Space();
 
             // 绘制自定义的 ReorderableList
             if (_drawerList != null)
-            {
                 _drawerList.DoLayoutList();
-            }
 
             serializedObject.ApplyModifiedProperties();
         }
 
         private void CreateReorderableList()
         {
-            _drawerList = new ReorderableList(
-                                              serializedObject,
-                                              _drawerListProperty,
-                                              true, // draggable
-                                              true, // displayHeader
-                                              true, // displayAddButton
-                                              true  // displayRemoveButton
-                                             )
+            _drawerList = new ReorderableList(serializedObject, _drawerListProperty, 
+                                              true, true, true, true)
             {
                 // 绘制头部
                 drawHeaderCallback = (Rect rect) =>
