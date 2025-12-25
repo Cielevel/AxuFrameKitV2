@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace AxuFrameKit.Common.UI.Kit.ToggleGroup
 {
-    public class ToggleParent : MonoBehaviour
+    public class UIToggleParent : MonoBehaviour
     {
         public event Action<string> OnToggleIdChanged;
         public event Action<int> OnToggleIndexChanged; 
@@ -31,7 +31,7 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleGroup
             if (_childWrapperList == null || _childWrapperList.Count == 0)
             {
                 Debug.LogWarning($"ToggleParent({gameObject.name})的child列表为空，将默认设置子物体中的child到列表中");
-                _childWrapperList = GetComponentsInChildren<ToggleChild>()
+                _childWrapperList = GetComponentsInChildren<UIToggleChild>()
                                     .Select(e => new ToggleChildWrapper() { Child = e }).ToList();
 
                 if (_childWrapperList == null || _childWrapperList.Count == 0)
@@ -164,7 +164,7 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleGroup
         // 建议将填充逻辑抽离，使 OnValidate 结构清晰
         private void SyncChildList()
         {
-            var children = GetComponentsInChildren<ToggleChild>();
+            var children = GetComponentsInChildren<UIToggleChild>();
             
             _childWrapperList ??= new List<ToggleChildWrapper>();
 
@@ -198,7 +198,7 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleGroup
         [Serializable]
         private class ToggleChildWrapper
         {
-            [field: SerializeField] public ToggleChild Child { get; set; }
+            [field: SerializeField] public UIToggleChild Child { get; set; }
             
             [field: SerializeField] public bool DefaultState { get; set; }
             

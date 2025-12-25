@@ -16,7 +16,6 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind
         }
     }
     
-    // 这是一个非泛型的接口，任何 DataUnit<T> 都要实现它
     public interface IUIDataUnit
     {
         string TargetId { get; }
@@ -28,7 +27,6 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind
         void TryApply(UIBindComponent component);
     }
     
-    // 泛型结构体，避免GC（Struct）
     public readonly struct UIDataUnit<T> : IUIDataUnit
     {
         public bool UseIndex { get; }
@@ -61,14 +59,10 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind
             // 核心：这里进行类型检查。
             // 只有当组件是泛型组件，且泛型类型 T 与本数据的 T 一致时才执行。
             if (component is UIBindComponentGeneric<T> typedComponent)
-            {
                 typedComponent.SetData(_value);
-            }
             else
-            {
                 // 可选：在这里加日志，提示类型不匹配（例如把 String 发给了 Image）
-                // Debug.LogWarning($"类型不匹配: 组件 {component.name} 期望 {typeof(T)} 但并未实现对应泛型类。");
-            }
+                UnityEngine.Debug.LogWarning($"类型不匹配: 组件 {component.name} 期望 {typeof(T)} 但并未实现对应泛型类。");
         }
     }
 }

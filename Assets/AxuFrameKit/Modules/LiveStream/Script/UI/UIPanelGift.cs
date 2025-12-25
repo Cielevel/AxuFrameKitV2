@@ -12,7 +12,7 @@ namespace AxuFrameKit.Modules.LiveStream.Script.UI
 {
     public class UIPanelGift : UIBasePanel
     {
-        public LoopVerticalScrollRect loopVerticalScrollRect;
+        public UILoopVerticalScrollRect uiLoopVerticalScrollRect;
 
         [Space] 
         
@@ -27,11 +27,11 @@ namespace AxuFrameKit.Modules.LiveStream.Script.UI
         {
             _giftDataList = giftDataCollection.ToList();
             
-            loopVerticalScrollRect.onUpdateItem += OnUpdateItem;
+            uiLoopVerticalScrollRect.onUpdateItem += OnUpdateItem;
 
-            loopVerticalScrollRect.RefillCells(_giftDataList.Count);
+            uiLoopVerticalScrollRect.RefillCells(_giftDataList.Count);
             
-            loopVerticalScrollRect.GetComponentsInChildren<Button>().Do(btn =>
+            uiLoopVerticalScrollRect.GetComponentsInChildren<Button>().Do(btn =>
             {
                 btn.onClick.AddListener(() =>
                 {

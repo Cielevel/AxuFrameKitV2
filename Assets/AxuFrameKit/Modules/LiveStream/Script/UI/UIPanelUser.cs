@@ -12,7 +12,7 @@ namespace AxuFrameKit.Modules.LiveStream.Script.UI
 {
     public class UIPanelUser : UIBasePanel
     {
-        [SerializeField] private LoopVerticalScrollRect _loopVerticalScrollRect;
+        [SerializeField] private UILoopVerticalScrollRect uiLoopVerticalScrollRect;
 
         [Space] 
         
@@ -35,11 +35,11 @@ namespace AxuFrameKit.Modules.LiveStream.Script.UI
 
             _userDataDict = _userDataList.ToDictionary(e => e.ID);
             
-            _loopVerticalScrollRect.onUpdateItem += OnUpdateItem;
+            uiLoopVerticalScrollRect.onUpdateItem += OnUpdateItem;
 
-            _loopVerticalScrollRect.RefillCells(_userDataList.Count);
+            uiLoopVerticalScrollRect.RefillCells(_userDataList.Count);
             
-            _loopVerticalScrollRect.GetComponentsInChildren<Button>().Do(btn =>
+            uiLoopVerticalScrollRect.GetComponentsInChildren<Button>().Do(btn =>
             {
                 btn.onClick.AddListener(() =>
                 {

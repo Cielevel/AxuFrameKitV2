@@ -10,7 +10,7 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleGroup
     /// 一个物体上对ToggleUnit进行控制的组件；同时处理逻辑层
     /// </summary>
     [RequireComponent(typeof(Button))]
-    public class ToggleChild : MonoBehaviour
+    public class UIToggleChild : MonoBehaviour
     {
         /// <summary>
         /// 可用于直接引用注册
@@ -21,16 +21,16 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleGroup
         
         [SerializeField] private bool _autoValidate;
         
-        [SerializeField] private List<ToggleBaseUnit> _unitList;
+        [SerializeField] private List<UIToggleBaseUnit> _unitList;
 
-        [SerializeField] private ToggleParent _parent;
+        [SerializeField] private UIToggleParent _parent;
 
         public bool State { get; private set; }
 
         private string _id;
         private int _index;
 
-        public void Init(ToggleParent parent, string id, int index, Action<string> onToggleId, Action<int> onToggleIndex)
+        public void Init(UIToggleParent parent, string id, int index, Action<string> onToggleId, Action<int> onToggleIndex)
         {
             _parent = parent;
             _id     = id;
@@ -72,9 +72,9 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleGroup
             
             if (_autoValidate == false) return;
             
-            _parent = transform.parent.GetComponent<ToggleParent>();
+            _parent = transform.parent.GetComponent<UIToggleParent>();
             
-            _unitList = GetComponents<ToggleBaseUnit>().ToList();
+            _unitList = GetComponents<UIToggleBaseUnit>().ToList();
         }
     }
 }

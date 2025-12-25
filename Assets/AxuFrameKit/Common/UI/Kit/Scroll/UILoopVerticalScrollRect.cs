@@ -5,7 +5,7 @@ using UnityEngine.UI;
 namespace AxuFrameKit.Common.UI.Kit.Scroll
 {
     [RequireComponent(typeof(ScrollRect))]
-    public class LoopVerticalScrollRect : MonoBehaviour
+    public class UILoopVerticalScrollRect : MonoBehaviour
     {
         [Header("配置")]
         public GameObject itemPrefab;

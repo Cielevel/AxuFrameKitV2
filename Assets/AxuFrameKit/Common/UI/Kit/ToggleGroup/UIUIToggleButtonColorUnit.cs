@@ -4,8 +4,8 @@ using UnityEngine.UI;
 
 namespace AxuFrameKit.Common.UI.Kit.ToggleGroup
 {
-    [RequireComponent(typeof(Image)), RequireComponent(typeof(ToggleChild))]
-    public class ToggleButtonColorUnit : ToggleBaseUnit
+    [RequireComponent(typeof(Image)), RequireComponent(typeof(UIToggleChild))]
+    public class UIUIToggleButtonColorUnit : UIToggleBaseUnit
     {
         [SerializeField] private Image _image;
 

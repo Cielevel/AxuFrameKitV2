@@ -2,13 +2,14 @@ using System.Collections.Generic;
 using AxuFrameKit.Common.UI.Kit.Scroll;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace TestAndSample.Sample_Common_Opt_Scroll
 {
     public class SampleOptScroll : MonoBehaviour
     {
-        public LoopVerticalScrollRect loopList;
+        [FormerlySerializedAs("loopList")] public UILoopVerticalScrollRect uiLoopList;
     
         // 模拟数据源
         private List<string> myDataList = new List<string>();
@@ -23,10 +24,10 @@ namespace TestAndSample.Sample_Common_Opt_Scroll
 
             // 2. 绑定回调函数 (核心步骤)
             // 当列表滚动时，LoopVerticalScrollRect 会调用这个方法让你更新UI
-            loopList.onUpdateItem = OnUpdateItem;
+            uiLoopList.onUpdateItem = OnUpdateItem;
 
             // 3. 初始化列表
-            loopList.RefillCells(myDataList.Count);
+            uiLoopList.RefillCells(myDataList.Count);
         }
 
         // 更新Item的具体逻辑
@@ -55,7 +56,7 @@ namespace TestAndSample.Sample_Common_Opt_Scroll
         {
             myDataList.Add($"新道具 {Random.Range(0, 100)}");
             // 保持位置刷新
-            loopList.RefillCells(myDataList.Count, false);
+            uiLoopList.RefillCells(myDataList.Count, false);
         }
     }
 }

@@ -7,17 +7,6 @@ using UnityEngine;
 
 namespace AxuFrameKit.Common.UI.Kit.Toast
 {
-    public enum ToastSide
-    {
-        Left,
-        Right
-    }
-
-    public enum UnitRecycleType
-    {
-        Fade,
-    }
-
     public enum PushDirection
     {
         Up,
@@ -42,7 +31,7 @@ namespace AxuFrameKit.Common.UI.Kit.Toast
 
         [Header("纵向挤压配置")] 
         [SerializeField] private float _verticalInterval; // 纵向挤压时，Unit之间的间隔
-        [SerializeField] private int _maxShowingCount = 2;                   // 纵向上最多同时显示几个Unit
+        [SerializeField] private int _maxShowingCount = 2; // 纵向上最多同时显示几个Unit
         [SerializeField] private PushDirection _pushDirection;
 
         [Header("Tween设置")]
