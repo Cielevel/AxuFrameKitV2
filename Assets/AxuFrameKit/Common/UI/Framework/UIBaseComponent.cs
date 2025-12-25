@@ -4,8 +4,13 @@ namespace AxuFrameKit.Common.UI.Framework
 {
     public class UIBaseComponent : MonoBehaviour
     {
+        [SerializeField] private bool _autoValidate;
+        
         [field: SerializeField]
         public string Name { get; set; }
+        
+        [field: SerializeField]
+        public string ID { get; set; }
         
         [field: SerializeField]
         public bool HideContentOnStart { get; private set; }
@@ -54,7 +59,12 @@ namespace AxuFrameKit.Common.UI.Framework
         
         protected virtual void OnValidate()
         {
+            if (_autoValidate == false)
+                return;
+            
             Name = transform.name.Split(' ')[^1];
+
+            ID = transform.name.ToLower().Replace(' ', '_');
             
             Content = transform.Find("Content")?.gameObject;
 
