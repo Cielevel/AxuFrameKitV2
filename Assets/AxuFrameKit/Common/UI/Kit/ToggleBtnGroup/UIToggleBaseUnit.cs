@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace AxuFrameKit.Common.UI.Kit.ToggleGroup
+namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
 {
     /// <summary>
     /// 只关心表现层，不关心逻辑

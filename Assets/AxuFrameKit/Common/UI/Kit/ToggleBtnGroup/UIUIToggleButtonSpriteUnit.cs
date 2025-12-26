@@ -1,8 +1,7 @@
-using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AxuFrameKit.Common.UI.Kit.ToggleGroup
+namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
 {
     [RequireComponent(typeof(Image)), RequireComponent(typeof(UIToggleChild))]
     public class UIUIToggleButtonSpriteUnit : UIToggleBaseUnit
