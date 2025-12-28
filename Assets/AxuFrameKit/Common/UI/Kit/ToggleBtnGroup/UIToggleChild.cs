@@ -7,7 +7,6 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
 {
     /// <summary>
     /// Toggle子单元
-    /// <para>改进点：移除自身的逻辑判断，变为纯粹的执行层（View）</para>
     /// </summary>
     [RequireComponent(typeof(Button))]
     public class UIToggleChild : MonoBehaviour

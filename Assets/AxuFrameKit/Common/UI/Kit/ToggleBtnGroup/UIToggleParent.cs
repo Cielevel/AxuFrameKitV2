@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
 {
@@ -11,7 +12,7 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
     /// </summary>
     public class UIToggleParent : MonoBehaviour
     {
-        #region Events
+        #region Inner Events
         
         /// <summary> 单选模式下，选中的ID变化 </summary>
         public event Action<string> OnIdChanged;
@@ -19,11 +20,14 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
         public event Action<int> OnIndexChanged;
         
         /// <summary> 多选模式下，选中的ID列表变化 </summary>
-        public event Action<List<string>> OnMultipleSelectionChanged;
+        public event Action<List<string>> OnMultipleSelectionIdChanged;
+        public event Action<List<int>> OnMultipleSelectionIndexChanged;
         
         #endregion
 
         #region Settings
+
+        public bool AllowMultipleOn => _allowMultipleOn;
         
         [Header("Settings")]
         [Tooltip("是否允许多选")]
@@ -34,15 +38,18 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
         
         [Tooltip("是否在Start时自动查找子物体并初始化")]
         [SerializeField] private bool _initOnStart = true;
+
+        [Tooltip("是否在Start时发送变更事件？")]
+        [SerializeField] private bool _triggerEventOnInit;
         
         #endregion
 
         #region Data
         
         // 包装类由内部维护，不直接暴露给Inspector，防止配置脱节
-        [SerializeField] private List<ToggleChildConfig> _childConfigs = new();
+        [SerializeField] protected List<ToggleChildConfig> _childConfigs = new();
         
-        private List<UIToggleChild> _runtimeChildren = new();
+        protected List<UIToggleChild> _runtimeChildren = new();
         
         #endregion
 
@@ -59,14 +66,14 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
         /// </summary>
         public void InitializeGroup()
         {
-            // 1. 收集场景中的 Child 组件
+            // 收集场景中的 Child 组件
             // 如果 _childConfigs 为空或数量不匹配，尝试重新搜集
             var childrenComponents = GetComponentsInChildren<UIToggleChild>(true); // include inactive
             
             _runtimeChildren.Clear();
             _runtimeChildren.AddRange(childrenComponents);
 
-            // 2. 确保配置列表和组件对应（简单的一一对应策略）
+            // 确保配置列表和组件对应（简单的一一对应策略）
             // 如果你在编辑器里配好了 Config，就用 Config 的默认值；
             // 如果没配（动态生成的），就用默认值 false
             
@@ -88,7 +95,7 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
                 child.Init(this, id, index, defaultState);
             }
 
-            // 3. 初始化的逻辑校验（确保满足 单选/必选 规则）
+            // 初始化的逻辑校验（确保满足 单选/必选 规则）
             ValidateStates();
         }
 
@@ -162,6 +169,9 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
                     _runtimeChildren[0].SetState(true);
                     activeChildren.Add(_runtimeChildren[0]);
                 }
+                
+                if (_triggerEventOnInit)
+                    NotifyMultipleChange();
             }
             else
             {
@@ -171,12 +181,20 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
                     // 如果有多个开着，只保留第一个，其他全关
                     for (int i = 1; i < activeChildren.Count; i++)
                         activeChildren[i].SetState(false);
+                    
+                    activeChildren[0].SetState(true);
+
+                    if (_triggerEventOnInit)
+                        NotifySingleChange(activeChildren[0].ID, activeChildren[0].Index);
                 }
-                else if (activeChildren.Count == 0 && !_allowNoneOn && _runtimeChildren.Count > 0)
+                else if (activeChildren.Count == 0 && _allowNoneOn == false && _runtimeChildren.Count > 0)
                 {
                     // 如果全是关的，且不允许空，默认开第一个
                     _runtimeChildren[0].SetState(true);
                     // 此时不一定触发回调，看具体需求。通常初始化不触发回调，或者在Init结束后手动触发一次。
+                    
+                    if (_triggerEventOnInit)
+                        NotifySingleChange(activeChildren[0].ID, activeChildren[0].Index);
                 }
             }
         }
@@ -218,8 +236,12 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
 
         private void NotifyMultipleChange()
         {
-            var ids = _runtimeChildren.Where(c => c.IsOn).Select(c => c.ID).ToList();
-            OnMultipleSelectionChanged?.Invoke(ids);
+            var onCollection = _runtimeChildren.Where(c => c.IsOn).ToArray();
+
+            var ids = onCollection.Select(c => c.ID).ToList();
+            var indexes = onCollection.Select(c => c.Index).ToList();
+            OnMultipleSelectionIdChanged?.Invoke(ids);
+            OnMultipleSelectionIndexChanged?.Invoke(indexes);
         }
 
         // 编辑器数据结构，用于Inspector配置

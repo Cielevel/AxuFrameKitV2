@@ -72,6 +72,7 @@ namespace AxuFrameKit.Common.UI.Framework
             {
                 Content = new GameObject("Content");
                 Content.transform.SetParent(transform);
+                Content.AddComponent<RectTransform>();
                 Content.transform.localPosition = Vector3.zero;
                 Content.transform.localRotation = Quaternion.identity;
                 Content.transform.localScale = Vector3.one;
