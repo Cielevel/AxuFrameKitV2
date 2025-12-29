@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace AxuFrameKit._Core.Advanced.FSM
 {
-    public interface IState<T>
+    public interface IState<in T>
     {
         void OnEnter(T owner);
         void OnUpdate(T owner);

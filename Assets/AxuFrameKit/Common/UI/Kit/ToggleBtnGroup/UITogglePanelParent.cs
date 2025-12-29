@@ -40,7 +40,7 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
             }
         }
 
-        public void OnIdChanged(string id) // 单选开启
+        private void OnIdChanged(string id) // 单选开启
         {
             _panelList.ForEach(e =>
             {
@@ -51,7 +51,7 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
             });
         }
 
-        public void OnIndexChanged(int index) // 单选开启
+        private void OnIndexChanged(int index) // 单选开启
         {
             _panelList.ForEach(e =>
             {
@@ -62,7 +62,7 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
             });
         }
 
-        public void OnMultipleSelectionIdChanged(List<string> multipleSelection)
+        private void OnMultipleSelectionIdChanged(List<string> multipleSelection)
         {
             _panelList.ForEach(e =>
             {
@@ -73,7 +73,7 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
             });
         }
         
-        public void OnMultipleSelectionIndexChanged(List<int> multipleSelection)
+        private void OnMultipleSelectionIndexChanged(List<int> multipleSelection)
         {
             _panelList.ForEach(e =>
             {
