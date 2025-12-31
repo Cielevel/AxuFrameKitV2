@@ -21,19 +21,19 @@ namespace AxuFrameKit.Common.Editor.Window
         {
             public string groupName = "New Group";
             public bool isExpanded = true;
-            public List<FavoriteItem> items = new List<FavoriteItem>();
+            public List<FavoriteItem> items = new();
         }
 
         [Serializable]
         public class SaveData
         {
-            public List<FavoriteGroup> groups = new List<FavoriteGroup>();
+            public List<FavoriteGroup> groups = new();
         }
 
         // ------------- 运行时变量 -------------
         private static SaveData _data;
         private Vector2 _scrollPos;
-        private const string PREFS_KEY = "AssetFavoritesWindow_Data";
+        private const string PrefsKey = "AssetFavoritesWindow_Data";
 
         // ------------- 菜单入口 -------------
         
@@ -361,7 +361,7 @@ namespace AxuFrameKit.Common.Editor.Window
         {
             if (_data != null) return;
 
-            string json = EditorPrefs.GetString(PREFS_KEY, "");
+            string json = EditorPrefs.GetString(PrefsKey, "");
             if (!string.IsNullOrEmpty(json))
             {
                 _data = JsonUtility.FromJson<SaveData>(json);
@@ -374,7 +374,7 @@ namespace AxuFrameKit.Common.Editor.Window
         {
             if (_data == null) return;
             string json = JsonUtility.ToJson(_data);
-            EditorPrefs.SetString(PREFS_KEY, json);
+            EditorPrefs.SetString(PrefsKey, json);
         }
     }
 }
