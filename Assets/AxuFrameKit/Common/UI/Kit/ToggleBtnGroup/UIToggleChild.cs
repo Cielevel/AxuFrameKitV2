@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,8 +13,10 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
     public class UIToggleChild : MonoBehaviour
     {
         // 事件：当状态发生真正改变时回调
-        public event Action<bool> OnStateChanged; 
+        public event Action<bool> OnStateChanged;
 
+        [SerializeField] private bool _includeChildUnit;
+        
         [SerializeField] private Button _button;
         
         [Tooltip("表现层单元列表")]
@@ -94,7 +97,9 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
         // 供编辑器脚本或Parent自动获取Unit使用
         public void CollectUnits()
         {
-            _unitList = new List<UIToggleBaseUnit>(GetComponents<UIToggleBaseUnit>());
+            _unitList = _includeChildUnit
+                ? new List<UIToggleBaseUnit>(GetComponentsInChildren<UIToggleBaseUnit>())
+                : new List<UIToggleBaseUnit>(GetComponents<UIToggleBaseUnit>());
         }
     }
 }

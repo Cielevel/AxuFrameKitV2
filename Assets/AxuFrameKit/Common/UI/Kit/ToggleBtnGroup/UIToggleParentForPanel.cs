@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
 {
-    public class UITogglePanelParent : MonoBehaviour
+    public class UIToggleParentForPanel : MonoBehaviour
     {
         [SerializeField] private bool _autoValidate;
 
