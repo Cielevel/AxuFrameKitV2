@@ -67,6 +67,7 @@ namespace AxuFrameKit.Common.Editor.Window
                     {
                         _data.groups.Clear();
                         _data.ungroupedGuids.Clear();
+                        _data.starredGuids.Clear();
                         SaveDataToPrefs();
                     }
                 }
@@ -76,14 +77,14 @@ namespace AxuFrameKit.Common.Editor.Window
             // ---- 分组管理 ----
             DrawGroupManagement();
 
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(10);
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
 
             // 1. 绘制自定义分组
             foreach (var group in _data.groups.ToList())
             {
                 DrawGroupSection(group);
-                EditorGUILayout.Space(5);
+                EditorGUILayout.Space(10);
             }
 
             // 2. 绘制未分组资源
@@ -106,44 +107,56 @@ namespace AxuFrameKit.Common.Editor.Window
 
         private void DrawGroupManagement()
         {
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Create Group:", GUILayout.Width(90));
+            _newGroupName = EditorGUILayout.TextField(_newGroupName);
+            if (GUILayout.Button("Create", GUILayout.Width(70)))
             {
-                _newGroupName = EditorGUILayout.TextField(_newGroupName);
-                if (GUILayout.Button("Create Group", GUILayout.Width(100)))
+                if (!string.IsNullOrEmpty(_newGroupName) && !_data.groups.Any(g => g.groupName == _newGroupName))
                 {
-                    if (!string.IsNullOrEmpty(_newGroupName) && !_data.groups.Any(g => g.groupName == _newGroupName))
-                    {
-                        _data.groups.Add(new FavoriteGroup { groupName = _newGroupName });
-                        _newGroupName = "";
-                        SaveDataToPrefs();
-                    }
+                    _data.groups.Add(new FavoriteGroup { groupName = _newGroupName });
+                    _newGroupName = "";
+                    SaveDataToPrefs();
                 }
             }
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndVertical();
         }
 
         private void DrawGroupSection(FavoriteGroup group)
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
-            using (new EditorGUILayout.HorizontalScope())
+            // 标题背景色装饰
+            Color originalBg = GUI.backgroundColor;
+            GUI.backgroundColor = new Color(0.4f, 0.4f, 0.6f);
+            EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+            GUI.backgroundColor = originalBg;
+
+            GUIStyle titleStyle = new GUIStyle(EditorStyles.boldLabel)
             {
-                EditorGUILayout.LabelField(group.groupName, EditorStyles.boldLabel);
-                if (GUILayout.Button("×", EditorStyles.miniButton, GUILayout.Width(20)))
+                fontSize = 13,
+                normal = { textColor = Color.white }
+            };
+            EditorGUILayout.LabelField($"📂 分组: {group.groupName}", titleStyle, GUILayout.Height(22));
+
+            if (GUILayout.Button("×", EditorStyles.miniButton, GUILayout.Width(20)))
+            {
+                if (EditorUtility.DisplayDialog("Delete Group", $"Delete group '{group.groupName}'? Assets will move to Ungrouped.", "Yes", "No"))
                 {
-                    if (EditorUtility.DisplayDialog("Delete Group", $"Delete group '{group.groupName}'? Assets will move to Ungrouped.", "Yes", "No"))
+                    foreach (var guid in group.guids)
                     {
-                        foreach (var guid in group.guids)
-                        {
-                            if (!_data.ungroupedGuids.Contains(guid)) _data.ungroupedGuids.Add(guid);
-                        }
-                        _data.groups.Remove(group);
-                        SaveDataToPrefs();
-                        GUIUtility.ExitGUI();
+                        if (!_data.ungroupedGuids.Contains(guid)) _data.ungroupedGuids.Add(guid);
                     }
+                    _data.groups.Remove(group);
+                    SaveDataToPrefs();
+                    GUIUtility.ExitGUI();
                 }
             }
+            EditorGUILayout.EndHorizontal();
 
-            EditorGUILayout.Space(2);
+            GUILayout.Space(5);
 
             if (group.guids.Count == 0)
             {
@@ -157,7 +170,7 @@ namespace AxuFrameKit.Common.Editor.Window
                 }
             }
 
-            // 组内拖拽
+            // 组内拖拽 - 增加稍微大一点的交互区域感
             HandleBoxDragDrop(GUILayoutUtility.GetLastRect(), group);
 
             EditorGUILayout.EndVertical();
@@ -166,8 +179,22 @@ namespace AxuFrameKit.Common.Editor.Window
         private void DrawUngroupedSection()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("Ungrouped", EditorStyles.boldLabel);
-            EditorGUILayout.Space(2);
+
+            // 标题背景色装饰
+            Color originalBg = GUI.backgroundColor;
+            GUI.backgroundColor = new Color(0.3f, 0.5f, 0.7f);
+            EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+            GUI.backgroundColor = originalBg;
+
+            GUIStyle titleStyle = new GUIStyle(EditorStyles.boldLabel)
+            {
+                fontSize = 13,
+                normal = { textColor = Color.white }
+            };
+            EditorGUILayout.LabelField("📦 未分组资源 (Ungrouped)", titleStyle, GUILayout.Height(22));
+            EditorGUILayout.EndHorizontal();
+
+            GUILayout.Space(5);
 
             foreach (var guid in _data.ungroupedGuids.ToList())
             {
@@ -180,40 +207,42 @@ namespace AxuFrameKit.Common.Editor.Window
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
             UnityEngine.Object obj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
-            string name = obj != null ? obj.name : "(Missing Asset)";
+            string name = obj != null ? obj.name : $"(Missing: {guid})";
             Texture icon = obj != null ? AssetDatabase.GetCachedIcon(path) : EditorGUIUtility.IconContent("console.erroricon").image;
 
             bool isStarred = _data.starredGuids.Contains(guid);
 
-            // 设置背景色逻辑：如果被收藏（Star），整行背景变绿
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.BeginHorizontal();
+
+            // 1. Star 按钮
             Color originalColor = GUI.backgroundColor;
-            if (isStarred)
-                GUI.backgroundColor = Color.green;
-
-            // 使用 "box" 样式以确保背景色能显示出来
-            // EditorGUILayout.BeginHorizontal(isStarred ? "box" : GUIStyle.none);
-            EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-
-            // Star 按钮
             GUI.backgroundColor = isStarred ? Color.yellow : originalColor;
-            if (GUILayout.Button(isStarred ? "★" : "☆", GUILayout.Width(30)))
+            if (GUILayout.Button(isStarred ? "★" : "☆", GUILayout.Width(28), GUILayout.Height(24)))
             {
                 ToggleStar(guid);
             }
-            if (isStarred)
-                GUI.backgroundColor = Color.green;
-            else
-                GUI.backgroundColor = originalColor; // 恢复为行背景色
+            GUI.backgroundColor = originalColor;
 
-            // 移除按钮 (✘)
-            if (GUILayout.Button("✘", GUILayout.Width(30)))
+            // 2. 移除按钮 (✘)
+            if (GUILayout.Button("✘", GUILayout.Width(28), GUILayout.Height(24)))
             {
                 RemoveFavorite(guid, currentGroup);
             }
 
-            // 资源按钮
-            GUIContent content = new GUIContent(" " + name, icon);
-            if (GUILayout.Button(content, EditorStyles.label, GUILayout.Height(20), GUILayout.ExpandWidth(true)))
+            // 3. 资源主按钮
+            if (isStarred) GUI.backgroundColor = new Color(0.6f, 0.9f, 0.6f, 0.5f);
+
+            GUIStyle btnStyle = new GUIStyle(EditorStyles.label)
+            {
+                alignment = TextAnchor.MiddleLeft,
+                padding = new RectOffset(5, 5, 2, 2),
+                contentOffset = new Vector2(0, 1),
+                fixedHeight = 24
+            };
+
+            GUIContent content = new GUIContent(" " + name, icon, path);
+            if (GUILayout.Button(content, btnStyle, GUILayout.ExpandWidth(true)))
             {
                 if (obj != null)
                 {
@@ -221,15 +250,16 @@ namespace AxuFrameKit.Common.Editor.Window
                     Selection.activeObject = obj;
                 }
             }
+            GUI.backgroundColor = originalColor;
 
-            // Group 按钮
-            if (GUILayout.Button("Group", GUILayout.Width(60)))
+            // 4. Group 按钮
+            if (GUILayout.Button("Group", GUILayout.Width(55), GUILayout.Height(24)))
             {
                 ShowGroupMenu(guid, currentGroup);
             }
 
-            // Find 按钮
-            if (GUILayout.Button("Find", GUILayout.Width(50)))
+            // 5. Find 按钮 (定位)
+            if (GUILayout.Button("📍", GUILayout.Width(28), GUILayout.Height(24)))
             {
                 if (obj != null)
                 {
@@ -239,7 +269,7 @@ namespace AxuFrameKit.Common.Editor.Window
             }
 
             EditorGUILayout.EndHorizontal();
-            GUI.backgroundColor = originalColor;
+            EditorGUILayout.EndVertical();
         }
 
         private void ToggleStar(string guid)

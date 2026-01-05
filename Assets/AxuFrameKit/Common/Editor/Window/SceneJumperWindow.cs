@@ -87,19 +87,21 @@ namespace AxuFrameKit.Common.Editor.Window
             EditorGUILayout.Space(5);
 
             // Group Creation Header
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Create Group:", GUILayout.Width(90));
+            newGroupName = EditorGUILayout.TextField(newGroupName);
+            if (GUILayout.Button("Create", GUILayout.Width(70)))
             {
-                newGroupName = EditorGUILayout.TextField(newGroupName);
-                if (GUILayout.Button("Create Group", GUILayout.Width(100)))
+                if (!string.IsNullOrEmpty(newGroupName) && !customGroups.Any(g => g.Name == newGroupName))
                 {
-                    if (!string.IsNullOrEmpty(newGroupName) && !customGroups.Any(g => g.Name == newGroupName))
-                    {
-                        customGroups.Add(new SceneGroup { Name = newGroupName });
-                        newGroupName = "";
-                        SaveGroups();
-                    }
+                    customGroups.Add(new SceneGroup { Name = newGroupName });
+                    newGroupName = "";
+                    SaveGroups();
                 }
             }
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndVertical();
 
             EditorGUILayout.Space(10);
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
@@ -108,51 +110,61 @@ namespace AxuFrameKit.Common.Editor.Window
             foreach (var group in customGroups.ToList())
             {
                 var scenesInGroup = allScenes.Where(s => group.SceneGuids.Contains(s.Guid)).ToList();
-                DrawSceneCategory(group.Name, scenesInGroup, group);
-                EditorGUILayout.Space(5);
+                DrawSceneCategory($"📂 分组: {group.Name}", scenesInGroup, new Color(0.4f, 0.4f, 0.6f), group);
+                EditorGUILayout.Space(10);
             }
 
             // 2. In Build Scenes
-            DrawSceneCategory("In Build Scenes", allScenes.Where(s => s.IsInBuild).ToList());
-            EditorGUILayout.Space(20);
+            DrawSceneCategory("🏗 构建场景", allScenes.Where(s => s.IsInBuild).ToList(), new Color(0.3f, 0.6f, 0.4f));
+            EditorGUILayout.Space(15);
 
             // 3. Other Scenes
-            DrawSceneCategory("Other Scenes", allScenes.Where(s => !s.IsInBuild).ToList());
+            DrawSceneCategory("📁 其他场景资源", allScenes.Where(s => !s.IsInBuild).ToList(), new Color(0.3f, 0.5f, 0.7f));
 
             EditorGUILayout.EndScrollView();
         }
 
         // 绘制单个场景分类
-        private void DrawSceneCategory(string categoryName, List<SceneInfo> scenesToDraw, SceneGroup group = null)
+        private void DrawSceneCategory(string categoryName, List<SceneInfo> scenesToDraw, Color headerColor, SceneGroup group = null)
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
-            using (new EditorGUILayout.HorizontalScope())
+            // 标题背景色装饰
+            Color originalBg = GUI.backgroundColor;
+            GUI.backgroundColor = headerColor;
+            EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+            GUI.backgroundColor = originalBg;
+
+            GUIStyle titleStyle = new GUIStyle(EditorStyles.boldLabel)
             {
-                EditorGUILayout.LabelField(categoryName, EditorStyles.boldLabel);
-                if (group != null)
+                fontSize = 13,
+                normal = { textColor = Color.white }
+            };
+            EditorGUILayout.LabelField(categoryName, titleStyle, GUILayout.Height(22));
+
+            if (group != null)
+            {
+                if (GUILayout.Button("×", EditorStyles.miniButton, GUILayout.Width(20)))
                 {
-                    if (GUILayout.Button("×", EditorStyles.miniButton, GUILayout.Width(20)))
+                    if (EditorUtility.DisplayDialog("Delete Group", $"Delete group '{categoryName}'?", "Yes", "No"))
                     {
-                        if (EditorUtility.DisplayDialog("Delete Group", $"Delete group '{categoryName}'?", "Yes", "No"))
-                        {
-                            customGroups.Remove(group);
-                            SaveGroups();
-                            GUIUtility.ExitGUI();
-                        }
+                        customGroups.Remove(group);
+                        SaveGroups();
+                        GUIUtility.ExitGUI();
                     }
                 }
             }
 
-            EditorGUILayout.Space(5);
+            EditorGUILayout.EndHorizontal();
 
-            if (scenesToDraw.Count == 0 && group == null)
+            GUILayout.Space(5);
+
+            if (scenesToDraw.Count == 0)
             {
-                EditorGUILayout.HelpBox($"No {categoryName} found.", MessageType.Info);
-            }
-            else if (scenesToDraw.Count == 0 && group != null)
-            {
-                EditorGUILayout.LabelField("Group is empty.", EditorStyles.miniLabel);
+                if (group != null)
+                    EditorGUILayout.LabelField("Group is empty. Click [Group] on a scene to add.", EditorStyles.miniLabel);
+                else
+                    EditorGUILayout.HelpBox($"No {categoryName} found.", MessageType.Info);
             }
             else
             {
@@ -167,41 +179,44 @@ namespace AxuFrameKit.Common.Editor.Window
         // 绘制单个场景的按钮和收藏星标
         private void DrawSceneButton(SceneInfo scene)
         {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.BeginHorizontal();
 
-            // 收藏星标按钮
-            GUIStyle starButtonStyle = new GUIStyle(GUI.skin.button);
-            starButtonStyle.fixedWidth = 30;
-            starButtonStyle.fixedHeight = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-            starButtonStyle.fontSize = 15;
-
+            // 1. 收藏星标
             Color originalColor = GUI.backgroundColor;
             GUI.backgroundColor = scene.IsFavorite ? Color.yellow : originalColor;
-
-            if (GUILayout.Button(scene.IsFavorite ? "★" : "☆", starButtonStyle))
+            if (GUILayout.Button(scene.IsFavorite ? "★" : "☆", GUILayout.Width(28), GUILayout.Height(24)))
             {
                 ToggleFavorite(scene);
             }
-
             GUI.backgroundColor = originalColor;
 
-            // 场景跳转按钮
-            if (scene.IsFavorite) GUI.backgroundColor = Color.green;
+            // 2. 场景跳转按钮
+            bool isCurrent = UnityEngine.SceneManagement.SceneManager.GetActiveScene().path == scene.Path;
+            if (isCurrent) GUI.backgroundColor = new Color(0.4f, 0.8f, 0.4f);
+            else if (scene.IsFavorite) GUI.backgroundColor = new Color(0.6f, 0.9f, 0.6f, 0.5f);
 
-            if (GUILayout.Button(scene.Name))
+            GUIStyle btnStyle = new GUIStyle(GUI.skin.button)
+            {
+                alignment = TextAnchor.MiddleLeft,
+                padding = new RectOffset(5, 5, 2, 2),
+                fontStyle = isCurrent ? FontStyle.Bold : FontStyle.Normal
+            };
+
+            if (GUILayout.Button(new GUIContent(scene.Name, scene.Path), btnStyle, GUILayout.Height(24)))
             {
                 OpenScene(scene.Path);
             }
             GUI.backgroundColor = originalColor;
 
-            // Group Button
-            if (GUILayout.Button("Group", GUILayout.Width(60)))
+            // 3. Group Button
+            if (GUILayout.Button("Group", GUILayout.Width(55), GUILayout.Height(24)))
             {
                 ShowGroupMenu(scene);
             }
 
-            // 定位按钮
-            if (GUILayout.Button("Find", GUILayout.Width(50)))
+            // 4. 定位按钮
+            if (GUILayout.Button("📍", GUILayout.Width(28), GUILayout.Height(24)))
             {
                 UnityEngine.Object sceneAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(scene.Path);
                 if (sceneAsset != null)
@@ -212,6 +227,7 @@ namespace AxuFrameKit.Common.Editor.Window
             }
 
             EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndVertical();
         }
 
         private void ShowGroupMenu(SceneInfo scene)
