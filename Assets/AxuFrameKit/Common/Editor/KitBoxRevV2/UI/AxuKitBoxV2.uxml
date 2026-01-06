@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../../../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:VisualElement name="root-container">
+        <!-- Sidebar -->
+        <ui:VisualElement name="sidebar">
+            <ui:VisualElement name="sidebar-header">
+                <ui:Label text="Axu工具集 V2 (Rev)" name="sidebar-header-label" />
+            </ui:VisualElement>
+            <ui:ScrollView name="nav-scroll-view">
+                <ui:VisualElement name="nav-container" />
+            </ui:ScrollView>
+            <ui:VisualElement name="sidebar-footer">
+                <ui:Button name="refresh-button" text="🔄 刷新" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Main Content Area -->
+        <ui:VisualElement name="main-content">
+            <ui:VisualElement name="content-header">
+                <ui:Label text="欢迎" name="content-title" />
+            </ui:VisualElement>
+            <ui:VisualElement name="content-body">
+                <ui:ScrollView name="content-scroll-view">
+                    <ui:VisualElement name="content-container" />
+                </ui:ScrollView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

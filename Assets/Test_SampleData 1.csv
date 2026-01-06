@@ -1,0 +1,7 @@
+﻿ID,Name,Type,Strength,Agility,Intelligence,Description
+1,Antigravity,AI,10,20,99,A powerful agentic coding assistant.
+2,Warrior,Player,85,45,10,A brave fighter with high defense.
+3,Mage,Player,15,30,95,A master of arcane spells.
+4,Slime,Monster,5,10,2,A common low-level enemy.
+5,Dragon,Boss,500,200,150,A legendary fire-breathing beast.
+6,Healer,NPC,20,25,80,Provides healing support to the party.
