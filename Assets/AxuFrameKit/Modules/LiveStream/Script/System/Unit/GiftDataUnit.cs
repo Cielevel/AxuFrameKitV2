@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace AxuFrameKit.Modules.LiveStream.Script.System
+namespace AxuFrameKit.Modules.LiveStream.Script.System.Unit
 {
     [Serializable]
     public class GiftDataUnit

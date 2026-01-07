@@ -7,7 +7,7 @@ namespace AxuFrameKit._Core.DesignPattern
      * 可用于实现撤销/重做功能，或保存对象状态以便后续恢复；
      * 比如：游戏中存档之间的切换。
      */
-    
+
     /// <summary>
     /// 表示状态的快照 (Memento)
     /// </summary>

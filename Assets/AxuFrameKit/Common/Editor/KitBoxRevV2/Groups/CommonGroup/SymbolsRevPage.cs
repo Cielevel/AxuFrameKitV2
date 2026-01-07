@@ -54,7 +54,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
 
             _symbolListView = new ListView(InnerSymbols.AllSymbols, 32, MakeItem, BindItem);
             _symbolListView.selectionType = SelectionType.Single;
-            _symbolListView.onSelectionChange += OnSymbolSelected;
+            _symbolListView.selectionChanged += OnSymbolSelected;
             _symbolListView.style.flexGrow = 1;
             leftPanel.Add(_symbolListView);
 

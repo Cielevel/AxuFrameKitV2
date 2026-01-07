@@ -6,7 +6,7 @@ using AxuFrameKit._Core.Extension;
 using AxuFrameKit.Common.UI.Framework;
 using AxuFrameKit.Common.UI.Kit.Scroll;
 using AxuFrameKit.Common.UI.Kit.DataBind;
-using AxuFrameKit.Modules.LiveStream.Script.System;
+using AxuFrameKit.Modules.LiveStream.Script.System.Unit;
 
 namespace AxuFrameKit.Modules.LiveStream.Script.UI
 {
@@ -14,28 +14,28 @@ namespace AxuFrameKit.Modules.LiveStream.Script.UI
     {
         public UILoopVerticalScrollRect uiLoopVerticalScrollRect;
 
-        [Space] 
-        
+        [Space]
+
         [SerializeField] private string _bindGiftName = "GIFT_NAME";
         [SerializeField] private string _bindGiftImg = "GIFT_IMG";
 
         [Space]
 
         [SerializeField] private List<GiftDataUnit> _giftDataList;
-        
+
         public void SetUserData(IEnumerable<GiftDataUnit> giftDataCollection)
         {
             _giftDataList = giftDataCollection.ToList();
-            
+
             uiLoopVerticalScrollRect.onUpdateItem += OnUpdateItem;
 
             uiLoopVerticalScrollRect.RefillCells(_giftDataList.Count);
-            
+
             uiLoopVerticalScrollRect.GetComponentsInChildren<Button>().Do(btn =>
             {
                 btn.onClick.AddListener(() =>
                 {
-                    
+
                 });
             });
         }

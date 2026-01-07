@@ -1,6 +1,6 @@
-using AxuFrameKit.Common.UI.Framework;
 using TMPro;
 using UnityEngine;
+using AxuFrameKit.Common.UI.Framework;
 
 namespace AxuFrameKit.Modules.LiveStream.Script.UI
 {
@@ -17,7 +17,7 @@ namespace AxuFrameKit.Modules.LiveStream.Script.UI
 
         private void OnInput(string text)
         {
-            
+
         }
 
         public void OnSelectUser(string userNickname)
