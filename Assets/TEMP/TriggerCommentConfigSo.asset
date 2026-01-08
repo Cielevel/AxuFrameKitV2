@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea319ae76f8394f188e944463f1faab6, type: 3}
+  m_Name: TriggerCommentConfigSo
+  m_EditorClassIdentifier: 
+  <TriggerCommentConfigUnitList>k__BackingField:
+  - triggerRemark: "\u52A0\u5165:\u52A0\u5165\u6E38\u620F"
+    _comment: "\u52A0\u5165"
+    _useRegex: 0
+    _regexComment: 
+    _trigger: {fileID: 11400000, guid: dcb3bef2280574349b411ea9738cc582, type: 2}
+  - triggerRemark: "$\u52A0\u5165^:\u52A0\u5165\u6E38\u620F"
+    _comment: "\u52A0\u5165"
+    _useRegex: 1
+    _regexComment: "$\u52A0\u5165^"
+    _trigger: {fileID: 11400000, guid: dcb3bef2280574349b411ea9738cc582, type: 2}

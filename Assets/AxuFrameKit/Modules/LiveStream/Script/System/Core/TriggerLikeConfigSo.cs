@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace AxuFrameKit.Modules.LiveStream
 {
-    [CreateAssetMenu(fileName = "TriggerLikeConfigUnitSo", menuName = "AxuFrameKit/LiveStream/TriggerLikeConfigUnitSo")]
-    public class TriggerLikeConfigUnitSo : ScriptableObject
+    [CreateAssetMenu(fileName = "TriggerLikeConfigSo", menuName = "AxuFrameKit/LiveStream/TriggerLikeConfigSo")]
+    public class TriggerLikeConfigSo : ScriptableObject
     {
         [field: SerializeField, ListDrawerSettings(ListElementLabelName = "TriggerRemark")]
         public List<TriggerLikeConfigUnit> TriggerLikeConfigUnitList { get; private set; } = new();
@@ -19,13 +19,13 @@ namespace AxuFrameKit.Modules.LiveStream
         public void PushLike(UserDataLike unit) // TODO 点赞目前只会处理第一个指令
         {
             if (TriggerLikeConfigUnitList is { Count: > 0 })
-                TriggerLikeConfigUnitList[0].LiveTriggerLike.Trigger(unit, unit.LikeCount);
+                TriggerLikeConfigUnitList[0].TriggerContent.Trigger(unit, unit.LikeCount);
         }
 
         private void OnValidate()
         {
             foreach (var item in TriggerLikeConfigUnitList)
-                item.triggerRemark = $"点赞x{item.LikeCount}:{item.LiveTriggerLike?.Remark}";
+                item.triggerRemark = $"点赞x{item.LikeCount}:{item.TriggerContent?.Remark}";
         }
     }
 
@@ -35,10 +35,16 @@ namespace AxuFrameKit.Modules.LiveStream
         [HideInInspector]
         public string triggerRemark;
 
-        [field: SerializeField]
-        public int LikeCount { get; private set; } = 1;
+        [Header("Like Setting")]
 
-        [field: SerializeField]
-        public LiveTriggerLikeBase LiveTriggerLike { get; private set; }
+        [SerializeField]
+        private int _likeCount;
+        public int LikeCount => _likeCount;
+
+        [Header("Trigger")]
+
+        [SerializeField]
+        private LiveTriggerLikeBase _trigger;
+        public LiveTriggerLikeBase TriggerContent => _trigger;
     }
 }

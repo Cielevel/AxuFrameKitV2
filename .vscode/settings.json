@@ -56,5 +56,7 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "AxuFrameKitV2.sln"
+    "dotnet.defaultSolution": "AxuFrameKitV2.sln",
+    "omnisharp.useModernNet": false,
+    "omnisharp.monoPath": "/Library/Frameworks/Mono.framework/Versions/Current"
 }
