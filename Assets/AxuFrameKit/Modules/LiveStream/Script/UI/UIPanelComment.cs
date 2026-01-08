@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using AxuFrameKit.Common.UI.Framework;
 
-namespace AxuFrameKit.Modules.LiveStream.Script.UI
+namespace AxuFrameKit.Modules.LiveStream
 {
     public class UIPanelComment : UIBasePanel
     {

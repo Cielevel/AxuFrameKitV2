@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using AxuFrameKit.Common.CustomAttribute;
-using AxuFrameKit.Modules.LiveStream.Script.System.Unit;
 
-namespace AxuFrameKit.Modules.LiveStream.Script.System.Base
+namespace AxuFrameKit.Modules.LiveStream
 {
     [CreateAssetMenu(fileName = "TriggerLikeConfigUnitSo", menuName = "AxuFrameKit/LiveStream/TriggerLikeConfigUnitSo")]
     public class TriggerLikeConfigUnitSo : ScriptableObject
@@ -27,9 +25,7 @@ namespace AxuFrameKit.Modules.LiveStream.Script.System.Base
         private void OnValidate()
         {
             foreach (var item in TriggerLikeConfigUnitList)
-            {
                 item.triggerRemark = $"点赞x{item.LikeCount}:{item.LiveTriggerLike?.Remark}";
-            }
         }
     }
 
