@@ -13,6 +13,8 @@ namespace AxuFrameKit.Common.Utility.Net
     {
         // 概念与AddressLoader一致，提供可直接调用的异步方法，也提供返回Task的异步任务，方便AsyncHandler集中处理
 
+        private static readonly Vector2 _pivot = new Vector2(0.5f, 0.5f);
+
 #if UNI_TASK
         private static async Task<Texture2D> DownloadTextureTask(string url, CancellationTokenSource tokenSource = null)
         {
@@ -42,14 +44,14 @@ namespace AxuFrameKit.Common.Utility.Net
         public static async Task<Sprite> DownloadSpriteAsync(string url, CancellationTokenSource tokenSource = null)
         {
             var texture = await DownloadTextureTask(url, tokenSource);
-            return texture == null ? null : Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), Vector2.one * 0.5f);
+            return texture == null ? null : Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), _pivot);
         }
 #endif
-        
+
         public static async Task<Sprite> DownloadSpriteAsync(string url, float pixelPerUnit)
         {
             var texture = await DownloadTextureTask(url);
-            return texture == null ? null : Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), Vector2.one * 0.5f, pixelPerUnit);
+            return texture == null ? null : Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), _pivot, pixelPerUnit);
         }
 
         private static async Task<Texture2D> DownloadTextureTask(string url)
@@ -63,10 +65,10 @@ namespace AxuFrameKit.Common.Utility.Net
             switch (uwr.result)
             {
                 case UnityWebRequest.Result.Success:
-                {
-                    Texture2D texture = DownloadHandlerTexture.GetContent(uwr);
-                    return texture;
-                }
+                    {
+                        Texture2D texture = DownloadHandlerTexture.GetContent(uwr);
+                        return texture;
+                    }
                 case UnityWebRequest.Result.ConnectionError
                     or UnityWebRequest.Result.DataProcessingError
                     or UnityWebRequest.Result.ProtocolError:
@@ -85,12 +87,12 @@ namespace AxuFrameKit.Common.Utility.Net
             switch (uwr.result)
             {
                 case UnityWebRequest.Result.Success:
-                {
-                    Texture2D texture = DownloadHandlerTexture.GetContent(uwr);
-                    Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f), pixelPerUnit);
-                    callback(sprite);
-                    break;
-                }
+                    {
+                        Texture2D texture = DownloadHandlerTexture.GetContent(uwr);
+                        Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), _pivot, pixelPerUnit);
+                        callback(sprite);
+                        break;
+                    }
                 case UnityWebRequest.Result.ConnectionError
                     or UnityWebRequest.Result.DataProcessingError
                     or UnityWebRequest.Result.ProtocolError:

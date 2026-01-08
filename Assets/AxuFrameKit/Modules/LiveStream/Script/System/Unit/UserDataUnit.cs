@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace AxuFrameKit.Modules.LiveStream.Script.System.Unit
+namespace AxuFrameKit.Modules.LiveStream
 {
     [Serializable]
     public class UserDataUnit

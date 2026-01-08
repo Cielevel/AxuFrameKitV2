@@ -14,7 +14,7 @@ namespace AxuFrameKit.Common.Utility.Net
     {
         private const string PostMethod = "POST";
         private const string GetMethod = "GET";
-        
+
 #if UNI_TASK
         /// <summary>
         /// 发送Post请求，将发送一个json，返回json字符串
@@ -94,7 +94,7 @@ namespace AxuFrameKit.Common.Utility.Net
         public static async Task<string> Post(string url, string jsonData)
         {
             using UnityWebRequest uwr = new(url, PostMethod);
-            uwr.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonData));
+            uwr.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonData));
             uwr.downloadHandler = new DownloadHandlerBuffer();
             uwr.SetRequestHeader("Content-Type", "application/json");
 
@@ -113,7 +113,7 @@ namespace AxuFrameKit.Common.Utility.Net
         public static async Task<string> Post(string url, string jsonData = null, params (string headName, string headValue)[] @params)
         {
             VerifyHeader(url, PostMethod, @params);
-            
+
             using UnityWebRequest uwr = new(url, PostMethod);
 
             if (jsonData != null && jsonData.IsNotNullOrEmpty())
@@ -121,7 +121,7 @@ namespace AxuFrameKit.Common.Utility.Net
                 uwr.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonData));
                 uwr.SetRequestHeader("Content-Type", "application/json");
             }
-            
+
             for (int i = 0; i < @params.Length; i++)
                 uwr.SetRequestHeader(@params[i].headName, @params[i].headValue);
 
@@ -161,40 +161,52 @@ namespace AxuFrameKit.Common.Utility.Net
         {
             Debug.LogWarning($"{httpType}出错，url为：{url}。Result：{ uwr.result}, code：{uwr.responseCode}");
         }
-        
+
+        private static readonly HashSet<string> _reservedHeaders = new()
+        {
+            "host",
+            "content-length",
+            "connection",
+            "transfer-encoding",
+            "host",
+            "content-length",
+            "connection",
+            "transfer-encoding",
+            "upgrade"
+        };
+
         private static void VerifyHeader(string url, string requestType, params (string headName, string headValue)[] @params)
         {
+            if (@params == null || @params.Length == 0) return;
+
+
+
             HashSet<string> headNamesHs = new(@params.Length);
+
             for (int i = 0; i < @params.Length; i++)
             {
-                if (!headNamesHs.Add(@params[i].headName))
-                    Debug.LogWarning($"对url：[{url}]的{requestType}请求中，键{@params[i].headName}重复了，继续请求将覆盖以及添加进去的值！");
+                var headerName = @params[i].headName;
 
-                // 空
-                if (string.IsNullOrEmpty(@params[i].headName))
+                if (string.IsNullOrEmpty(headerName))
+                {
                     Debug.LogError($"对url：[{url}]的{requestType}请求中，有一个键的值为空！");
+                    continue;
+                }
+
+                if (!headNamesHs.Add(headerName))
+                    Debug.LogWarning($"对url：[{url}]的{requestType}请求中，键{headerName}重复了，继续请求将覆盖以及添加进去的值！");
 
                 // 空格
-                if (@params[i].headName.Contains(' '))
+                if (headerName.Contains(' '))
                     Debug.LogError($"对url：[{url}]的{requestType}请求中，有一个键的值包含了空格，这是不被允许的！");
 
                 // #,$,%,&
-                if (@params[i].headName.Contains('#') || @params[i].headName.Contains('$') ||
-                    @params[i].headName.Contains('%') || @params[i].headName.Contains('&'))
+                if (headerName.IndexOfAny(new[] { '#', '$', '%', '&' }) >= 0)
                     Debug.LogError($"对url：[{url}]的{requestType}请求中，有一个键的值包含了#,$,%,&，这是不被允许的！");
 
-                if (IsReservedHeader(@params[i].headName))
+                if (_reservedHeaders.Contains(headerName.ToLower()))
                     Debug.LogError($"对url：[{url}]的{requestType}请求中，有一个键的值是保留的头信息！");
             }
-
-            bool IsReservedHeader(string headerName)
-            {
-                List<string> reservedHeaders = new()
-                    { "host", "content-length", "connection", "transfer-encoding", "connection", "upgrade" };
-                return reservedHeaders.Contains(headerName.ToLower());
-            }
-
-            // TODO 小写化 键的验证（因为服务器将按照小写来统一处理，并不区分大小写）
         }
     }
 }

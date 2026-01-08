@@ -3,7 +3,7 @@ using AxuFrameKit.Common.Utility.Math.Interpolation;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AxuFrameKit.Modules.LiveStream.Script.Utility
+namespace AxuFrameKit.Modules.LiveStream
 {
     [RequireComponent(typeof(ScrollRect))]
     public class UIScrollViewAutoDown : MonoBehaviour
@@ -13,7 +13,7 @@ namespace AxuFrameKit.Modules.LiveStream.Script.Utility
         [SerializeField] private RectTransform _content;
 
         [SerializeField] private float _refreshRate = 0.1f;
-        
+
         [SerializeField] private float _tweenDuration = 0.5f;
 
         private float _timer;
@@ -21,7 +21,7 @@ namespace AxuFrameKit.Modules.LiveStream.Script.Utility
         private int _lastContentChildCount;
 
         private AxuTweener<object> _tween;
-        
+
         private void Start()
         {
             if (_scrollRect == null)
@@ -55,7 +55,7 @@ namespace AxuFrameKit.Modules.LiveStream.Script.Utility
             _lastContentChildCount = _content.childCount;
 
             _tween.Kill();
-            
+
             _tween = AxuTween.Custom(_scrollRect.verticalNormalizedPosition, 0f, _tweenDuration, value => _scrollRect.verticalNormalizedPosition = value);
 
             _tween.Start();

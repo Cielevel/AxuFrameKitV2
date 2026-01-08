@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace AxuFrameKit.Common.CustomAttribute
+namespace AxuFrameKit.Modules.LiveStream
 {
     /// <summary>
     /// 自定义列表绘制设置，类似于 Odin 的 ListDrawerSettings

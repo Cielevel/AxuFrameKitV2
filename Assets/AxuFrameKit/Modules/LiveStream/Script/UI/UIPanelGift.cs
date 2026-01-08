@@ -6,9 +6,8 @@ using AxuFrameKit._Core.Extension;
 using AxuFrameKit.Common.UI.Framework;
 using AxuFrameKit.Common.UI.Kit.Scroll;
 using AxuFrameKit.Common.UI.Kit.DataBind;
-using AxuFrameKit.Modules.LiveStream.Script.System.Unit;
 
-namespace AxuFrameKit.Modules.LiveStream.Script.UI
+namespace AxuFrameKit.Modules.LiveStream
 {
     public class UIPanelGift : UIBasePanel
     {

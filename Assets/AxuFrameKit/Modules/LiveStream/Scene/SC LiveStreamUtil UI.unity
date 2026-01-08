@@ -5099,10 +5099,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4abd85fdb074f0092c1a9550e3eba04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _autoValidate: 0
   <Name>k__BackingField: "\u8D60\u9001\u793C\u7269"
+  <ID>k__BackingField: 
   <HideContentOnStart>k__BackingField: 0
   <Content>k__BackingField: {fileID: 1250376230}
-  loopVerticalScrollRect: {fileID: 1647453010}
+  uiLoopVerticalScrollRect: {fileID: 1647453010}
   _bindGiftName: GIFT_NAME
   _bindGiftImg: GIFT_IMG
   _giftDataList: []
@@ -8622,7 +8624,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2bdc0c05c044d47ddaef5c26c4f84606, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _autoValidate: 0
   <Name>k__BackingField: "\u53D1\u9001\u5F39\u5E55"
+  <ID>k__BackingField: 
   <HideContentOnStart>k__BackingField: 0
   <Content>k__BackingField: {fileID: 1849822975}
   _input: {fileID: 2045757436}
@@ -8931,10 +8935,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3705655d02a85e42ab12680c23c329e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _autoValidate: 0
   <Name>k__BackingField: "\u9009\u62E9\u73A9\u5BB6"
+  <ID>k__BackingField: 
   <HideContentOnStart>k__BackingField: 0
   <Content>k__BackingField: {fileID: 1497847819}
-  loopVerticalScrollRect: {fileID: 1277694413}
+  uiLoopVerticalScrollRect: {fileID: 1277694413}
+  _uiPanelComment: {fileID: 1388053741}
   _bindUserNickname: PLAYER_NICKNAME
   _bindUserAvatar: USER_AVATAR
   _userDataList: []
@@ -9986,10 +9993,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3705655d02a85e42ab12680c23c329e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _autoValidate: 0
   <Name>k__BackingField: "\u9009\u62E9\u73A9\u5BB6"
+  <ID>k__BackingField: 
   <HideContentOnStart>k__BackingField: 0
   <Content>k__BackingField: {fileID: 1247284312}
-  _loopVerticalScrollRect: {fileID: 228296677}
+  uiLoopVerticalScrollRect: {fileID: 0}
   _uiPanelComment: {fileID: 1388053741}
   _bindUserNickname: PLAYER_NICKNAME
   _bindUserAvatar: USER_AVATAR

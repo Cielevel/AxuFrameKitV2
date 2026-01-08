@@ -1,10 +1,7 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
-using AxuFrameKit.Modules.LiveStream.Script.UI;
-using AxuFrameKit.Modules.LiveStream.Script.System.Unit;
 
-namespace AxuFrameKit.Modules.LiveStream.Script.Test
+namespace AxuFrameKit.Modules.LiveStream
 {
     public class TestPanelUser : MonoBehaviour
     {

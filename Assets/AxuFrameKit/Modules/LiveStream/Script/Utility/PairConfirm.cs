@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AxuFrameKit.Common.Utility.Singleton;
 
-namespace AxuFrameKit.Modules.LiveStream.Script.Utility
+namespace AxuFrameKit.Modules.LiveStream
 {
     /// <summary>
     /// 简易-配对确认
@@ -67,14 +67,14 @@ namespace AxuFrameKit.Modules.LiveStream.Script.Utility
                 Requester = requester;
                 Responder = responder;
             }
-            
+
             public bool Contains(T target) => Requester.Equals(target) || Responder.Equals(target);
-            
+
             /// <summary>
             /// 完全相同
             /// </summary>
             public bool IsSame(T requester, T responder) => Requester.Equals(requester) && Responder.Equals(responder);
-            
+
             /// <summary>
             /// 反向相同；请求者变成答应者，答应者变成请求者
             /// </summary>

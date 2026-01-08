@@ -1,9 +1,8 @@
 using System;
 using System.Text.RegularExpressions;
 using UnityEngine;
-using AxuFrameKit.Modules.LiveStream.Script.System.Unit;
 
-namespace AxuFrameKit.Modules.LiveStream.Script.System.Base
+namespace AxuFrameKit.Modules.LiveStream
 {
     [Serializable]
     public abstract class LiveTriggerBase : ScriptableObject
