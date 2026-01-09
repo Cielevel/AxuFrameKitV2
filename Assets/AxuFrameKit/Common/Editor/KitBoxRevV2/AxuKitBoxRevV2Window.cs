@@ -27,8 +27,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
         private int _currentPageIndex = -1;
         private IKitPageRevV2 _currentPage;
 
-        [MenuItem("AxuFrameKit/AxuEditor工具集V2-Rev")]
-        [MenuItem("Tools/Axu工具集 V2 %#m")]  // 快捷键: Ctrl+Shift+M
+        [MenuItem("AxuFrameKit/AxuEditor工具集V2-Rev %#m")]
         public static void Open()
         {
             var window = GetWindow<AxuKitBoxRevV2Window>();

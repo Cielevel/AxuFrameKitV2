@@ -410,7 +410,10 @@ namespace AxuFrameKit.Common.Utility.Analysis
         private static void InitPath()
         {
             // 创建专门的日志文件夹，而不是直接使用persistentDataPath根目录
-            _path = Path.Combine(Application.persistentDataPath, "Logs");
+            lock (_fileLock)
+            {
+                _path = Path.Combine(Application.persistentDataPath, "Logs");
+            }
 
             // 确保日志目录存在 - 这是关键步骤！
             try

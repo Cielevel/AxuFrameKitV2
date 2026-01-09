@@ -568,6 +568,77 @@
 /* ========================================
    SelectionToCsv Page Specific
    ======================================== */
+   
+.column-selection-container {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    background-color: #2b2b2b;
+    padding: 10px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: #1a1a1a;
+}
+
+.column-toggle-btn {
+    margin-right: 6px;
+    margin-bottom: 6px;
+    height: 26px;
+    border-radius: 13px; /* Pill shape */
+    background-color: #383838;
+    border-width: 1px;
+    border-color: #444;
+    color: #aeaeae;
+    transition-duration: 0.15s;
+}
+
+.column-toggle-btn:hover {
+    background-color: #484848;
+    color: white;
+}
+
+.column-toggle-btn.active {
+    background-color: #2ecc71;
+    border-color: #27ae60;
+    color: white;
+    -unity-font-style: bold;
+}
+
+.column-toggle-btn.active:hover {
+    background-color: #27ae60;
+}
+
+.helper-btn-row {
+    flex-direction: row;
+    margin-top: 8px;
+    border-top-width: 1px;
+    border-top-color: #3e3e3e;
+    padding-top: 8px;
+}
+
+.helper-text-btn {
+    background-color: transparent;
+    border-width: 0;
+    color: #3498db;
+    margin-right: 10px;
+    cursor: link; /* if supported, else just visual */
+    padding: 2px 5px;
+}
+
+.helper-text-btn:hover {
+    color: #5dade2;
+    background-color: #333;
+    border-radius: 4px;
+}
+
+.options-row {
+    flex-direction: row;
+    margin-bottom: 15px;
+    padding-left: 5px;
+}
+
+.option-toggle {
+    margin-right: 25px;
+}
 
 .asset-icon {
     width: 16px;
