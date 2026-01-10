@@ -12,7 +12,7 @@ namespace AxuFrameKit.Common.Utility.Analysis
 {
     // 注意：Rider中会显示 显式实参被传递给具有调用方信息特性的形参；但不必做任何修改，因为需要将外部的调用信息传递进来，避免日志记录点的信息丢失
 
-    public static class DebugX
+    public static class Debugger
     {
         #region 基础日志方法
 

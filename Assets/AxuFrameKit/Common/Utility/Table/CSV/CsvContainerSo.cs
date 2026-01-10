@@ -137,7 +137,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
         {
             if (string.IsNullOrEmpty(json))
             {
-                DebugX.LogError("PreloadFromJson: 输入的json字符串为空!");
+                Debugger.LogError("PreloadFromJson: 输入的json字符串为空!");
                 return false;
             }
 
@@ -156,7 +156,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
 
                 if (_tableUnitList == null || _tableUnitList.Count == 0)
                 {
-                    DebugX.LogError("解析Json后无任何内容！");
+                    Debugger.LogError("解析Json后无任何内容！");
                     return false;
                 }
 
@@ -164,7 +164,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
             }
             catch (Exception ex)
             {
-                DebugX.LogError($"PreloadFromJson反序列化失败: {ex.Message}\n{ex.StackTrace}");
+                Debugger.LogError($"PreloadFromJson反序列化失败: {ex.Message}\n{ex.StackTrace}");
                 _tableUnitList = new List<T>();
 
                 return false;
@@ -185,7 +185,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
         {
             if (TableUnitList == null)
             {
-                DebugX.LogError("TableUnitList is null, please preload data first.");
+                Debugger.LogError("TableUnitList is null, please preload data first.");
                 return;
             }
 
@@ -197,7 +197,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
         {
             if (TableUnitList == null)
             {
-                DebugX.LogError("TableUnitList is null, please preload data first.");
+                Debugger.LogError("TableUnitList is null, please preload data first.");
                 return null;
             }
 

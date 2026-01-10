@@ -32,7 +32,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
             {
                 foreach (var error in result.Errors)
                 {
-                    DebugX.LogError($"CsvTool Parse Error: {error}");
+                    Debugger.LogError($"CsvTool Parse Error: {error}");
                 }
             }
 
@@ -49,7 +49,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
         {
             if (table.IsNullOrEmpty())
             {
-                DebugX.LogWarning("获取到的table文本是空!");
+                Debugger.LogWarning("获取到的table文本是空!");
                 return null;
             }
 

@@ -4,7 +4,7 @@ namespace AxuFrameKit._Core.Utility.Common
     public static class Number
     {
         private static readonly System.Random Rd = new System.Random();
-        
+
         public const int Int0 = 0;
         public const int Int1 = 1;
         public const int Int2 = 2;
@@ -18,7 +18,7 @@ namespace AxuFrameKit._Core.Utility.Common
         public const int Int10 = 10;
 
         public const float Half = 0.5f;
-        
+
         public const float FloatDot0 = 0.0f;
         public const float FloatDot1 = 0.1f;
         public const float FloatDot2 = 0.2f;
@@ -30,12 +30,23 @@ namespace AxuFrameKit._Core.Utility.Common
         public const float FloatDot8 = 0.8f;
         public const float FloatDot9 = 0.9f;
 
+        public const int MinuteSec = 60;
+        public const int HourSec = 60 * 60;
+        public const int DaySec = 60 * 60 * 24;
+        public const int WeekSec = 60 * 60 * 24 * 7;
+        public const int MonthSec = 60 * 60 * 24 * 30;
+        public const int YearSec = 60 * 60 * 24 * 365;
+
+        public const int WeekDay = 7;
+        public const int MonthDay = 30;
+        public const int YearDay = 365;
+
         public static float Random(float min, float max) => min + (float)Rd.NextDouble() * (max - min);
-        
+
         public static int Random(int min, int max) => Rd.Next(min, max);
 
         public static float Random0(float max) => Random(0f, max);
-        
+
         public static int Random0(int max) => Rd.Next(max);
     }
 }
