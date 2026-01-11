@@ -1,0 +1,109 @@
+:root {
+    --sidebar-bg: #222222;
+    --main-bg: #2a2a2a;
+    --header-bg: #252525;
+    --border-color: #111111;
+    --text-color: #e0e0e0;
+    --btn-primary-bg: #3498db;
+    --btn-primary-hover: #2980b9;
+    --selected-green-bg: #4caf50;
+    --selected-green-text: #ffffff;
+}
+
+/* Root */
+.ue5-root {
+    background-color: var(--main-bg);
+    color: var(--text-color);
+    font-size: 13px;
+}
+
+/* Headers */
+.header-label {
+    height: 30px;
+    background-color: var(--header-bg);
+    color: #ffffff;
+    -unity-font-style: bold;
+    font-size: 12px;
+    padding-left: 10px;
+    padding-top: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--border-color);
+}
+
+/* Split View Generic */
+.unity-two-pane-split-view__handle {
+    background-color: var(--border-color);
+    width: 2px;
+}
+
+/* List View Container */
+.unity-list-view {
+    background-color: var(--sidebar-bg);
+    border-color: var(--border-color);
+    border-width: 1px;
+}
+
+/* List Items - Rounded & Card-like */
+.unity-list-view__item {
+    margin: 2px 4px; /* Creates spacing so it's not full width */
+    padding: 6px 10px;
+    border-radius: 6px; /* Rounded corners */
+    border-width: 0;
+    background-color: transparent; /* Or a slight tint if desired for unselected */
+    color: var(--text-color);
+    transition-duration: 0.1s;
+    -unity-text-align: middle-left;
+}
+
+.unity-list-view__item:hover {
+    background-color: #333333;
+}
+
+/* High Specificity for Selection (Green) */
+.green-selected-list .unity-collection-view__item--selected,
+.green-selected-list .unity-list-view__item--selected {
+    background-color: var(--selected-green-bg) !important;
+    color: var(--selected-green-text) !important;
+}
+
+/* Inner label color fix for selected items */
+.green-selected-list .unity-collection-view__item--selected .unity-label,
+.green-selected-list .unity-list-view__item--selected .unity-label {
+    color: var(--selected-green-text) !important;
+}
+
+/* Selection Hover */
+.green-selected-list .unity-collection-view__item--selected:hover,
+.green-selected-list .unity-list-view__item--selected:hover {
+    background-color: #43a047 !important;
+}
+
+/* Buttons */
+.ue5-button {
+    height: 30px;
+    font-size: 12px;
+    -unity-font-style: bold;
+    background-color: var(--btn-primary-bg);
+    color: white;
+    border-width: 0;
+    border-radius: 4px;
+    margin: 10px;
+}
+
+.ue5-button:hover {
+    background-color: var(--btn-primary-hover);
+}
+
+.ue5-button:active {
+    background-color: #1f6391;
+}
+
+.ue5-button:disabled {
+    background-color: #555555;
+    color: #888888;
+}
+
+/* Scrollbars */
+.unity-scroller {
+    background-color: transparent;
+}

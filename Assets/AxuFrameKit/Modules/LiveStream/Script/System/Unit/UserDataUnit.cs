@@ -6,7 +6,7 @@ namespace AxuFrameKit.Modules.LiveStream
     [Serializable]
     public class UserDataUnit
     {
-        [field: SerializeField] public string ID { get; set; }
+        [field: SerializeField] public string Uid { get; set; }
         [field: SerializeField] public string Nickname { get; set; }
         [field: SerializeField] public string AvatarUrl { get; set; }
         [field: SerializeField] public Sprite Avatar { get; set; }
