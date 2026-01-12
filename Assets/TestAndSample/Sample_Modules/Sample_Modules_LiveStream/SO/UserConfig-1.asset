@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 87cb1d9d5fd06479e8b3386160afecf1, type: 3}
-  m_Name: UserConfig
+  m_Name: UserConfig-1
   m_EditorClassIdentifier: 
   _generateCount: 8
   _userIdLength: 10
@@ -21,32 +21,32 @@ MonoBehaviour:
   - <Uid>k__BackingField: A0Tt4DREcp
     <Nickname>k__BackingField: "\u6731\u51AC\u68A6"
     <AvatarUrl>k__BackingField: 
-    <Avatar>k__BackingField: {fileID: 0}
+    <Avatar>k__BackingField: {fileID: 21300000, guid: 69445253ef3f0cb4eaaa1e684fef6c70, type: 3}
   - <Uid>k__BackingField: 7JQafjD3p5
     <Nickname>k__BackingField: "\u65BD\u4FAF\u7D2B\u5357"
     <AvatarUrl>k__BackingField: 
-    <Avatar>k__BackingField: {fileID: 0}
+    <Avatar>k__BackingField: {fileID: 21300000, guid: 5265da832264042439d7a3b873a1df28, type: 3}
   - <Uid>k__BackingField: 3yLQO6Cxsj
     <Nickname>k__BackingField: "\u97E6\u6587\u50B2\u83E1"
     <AvatarUrl>k__BackingField: 
-    <Avatar>k__BackingField: {fileID: 0}
+    <Avatar>k__BackingField: {fileID: 21300000, guid: 25d416df084331b41999e05c0b872f60, type: 3}
   - <Uid>k__BackingField: 0ywwdW84pd
     <Nickname>k__BackingField: "\u5B5F\u8431\u4E39"
     <AvatarUrl>k__BackingField: 
-    <Avatar>k__BackingField: {fileID: 0}
+    <Avatar>k__BackingField: {fileID: 21300000, guid: ce60b062ae51e464f8a84a6913ad7e16, type: 3}
   - <Uid>k__BackingField: vf4qzxBiLn
     <Nickname>k__BackingField: "\u5F6D\u95EE\u8BED"
     <AvatarUrl>k__BackingField: 
-    <Avatar>k__BackingField: {fileID: 0}
+    <Avatar>k__BackingField: {fileID: 21300000, guid: 81abaab2d61c3b14395f286a03e9e374, type: 3}
   - <Uid>k__BackingField: YYqHuCe3Ux
     <Nickname>k__BackingField: "\u94B1\u771F\u5E73"
     <AvatarUrl>k__BackingField: 
-    <Avatar>k__BackingField: {fileID: 0}
+    <Avatar>k__BackingField: {fileID: 21300000, guid: 7297a95a62f762248b5d9690f2281c92, type: 3}
   - <Uid>k__BackingField: 0ULsp9NUx8
     <Nickname>k__BackingField: "\u53F2\u5CB3\u8BED\u83E1"
     <AvatarUrl>k__BackingField: 
-    <Avatar>k__BackingField: {fileID: 0}
+    <Avatar>k__BackingField: {fileID: 21300000, guid: f98e15040ce1d2a45b6d28863b20a953, type: 3}
   - <Uid>k__BackingField: a9EBAOtURR
     <Nickname>k__BackingField: "\u5434\u66FC\u96C5"
     <AvatarUrl>k__BackingField: 
-    <Avatar>k__BackingField: {fileID: 0}
+    <Avatar>k__BackingField: {fileID: 21300000, guid: 930f698e19e72f34f8331844c399afd9, type: 3}

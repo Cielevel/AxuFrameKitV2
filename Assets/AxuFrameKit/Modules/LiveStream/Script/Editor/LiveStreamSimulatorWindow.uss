@@ -1,0 +1,898 @@
+/* ==================================================================
+   LiveStream User Config Window - UE5 Style Theme
+   Inspired by Unreal Engine 5 Editor Interface
+   ================================================================== */
+
+/* ===== CSS Variables (UE5 Color Palette) ===== */
+:root {
+    /* Primary Background Colors */
+    --ue5-bg-darkest: #1a1a1a;
+    --ue5-bg-dark: #1e1e1e;
+    --ue5-bg-panel: #242424;
+    --ue5-bg-element: #2a2a2a;
+    --ue5-bg-hover: #333333;
+    --ue5-bg-active: #3a3a3a;
+    
+    /* Accent Colors (UE5 Orange) */
+    --ue5-accent-primary: #ff9500;
+    --ue5-accent-secondary: #e68a00;
+    --ue5-accent-glow: rgba(255, 149, 0, 0.15);
+    --ue5-accent-border: rgba(255, 149, 0, 0.4);
+    
+    /* Border Colors */
+    --ue5-border-dark: #0d0d0d;
+    --ue5-border-subtle: #383838;
+    --ue5-border-light: #454545;
+    
+    /* Text Colors */
+    --ue5-text-primary: #e8e8e8;
+    --ue5-text-secondary: #a0a0a0;
+    --ue5-text-disabled: #666666;
+    --ue5-text-highlight: #ffffff;
+    
+    /* Selection Colors */
+    --ue5-selected-bg: #ff9500;
+    --ue5-selected-text: #1a1a1a;
+    --ue5-selected-hover: #ffaa33;
+    
+    /* Button Colors */
+    --ue5-btn-bg: #3d3d3d;
+    --ue5-btn-hover: #4a4a4a;
+    --ue5-btn-active: #555555;
+    --ue5-btn-primary-bg: #ff9500;
+    --ue5-btn-primary-hover: #ffaa33;
+    --ue5-btn-primary-active: #cc7700;
+}
+
+/* ===== Root Container ===== */
+.ue5-root {
+    background-color: var(--ue5-bg-darkest);
+    color: var(--ue5-text-primary);
+    font-size: 12px;
+    -unity-font-style: normal;
+}
+
+/* ===== Header Labels ===== */
+.header-label {
+    height: 28px;
+    min-height: 28px;
+    background-color: var(--ue5-bg-dark);
+    color: var(--ue5-text-secondary);
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 1px;
+    -unity-text-align: middle-left;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ue5-border-dark);
+    border-top-width: 1px;
+    border-top-color: var(--ue5-border-subtle);
+}
+
+/* ===== Split View Handle ===== */
+.unity-two-pane-split-view__handle {
+    background-color: var(--ue5-border-dark);
+    width: 2px;
+    min-width: 2px;
+}
+
+.unity-two-pane-split-view__handle:hover {
+    background-color: var(--ue5-accent-primary);
+}
+
+/* ===== Main Vertical Split View (Draggable Orange Separator) ===== */
+.main-vertical-split > .unity-two-pane-split-view__dragline-anchor > .unity-two-pane-split-view__dragline {
+    background-color: var(--ue5-accent-primary);
+    height: 4px;
+    min-height: 4px;
+}
+
+.main-vertical-split > .unity-two-pane-split-view__dragline-anchor > .unity-two-pane-split-view__dragline:hover {
+    background-color: var(--ue5-accent-secondary);
+    cursor: ns-resize;
+}
+
+/* ===== Panel Containers ===== */
+.unity-two-pane-split-view > * {
+    background-color: var(--ue5-bg-panel);
+}
+
+/* ===== List View Container ===== */
+.unity-list-view {
+    background-color: var(--ue5-bg-panel);
+    border-width: 0;
+    border-color: transparent;
+}
+
+.unity-list-view__scroll-view {
+    background-color: var(--ue5-bg-panel);
+}
+
+/* ===== List View Items ===== */
+.unity-list-view__item {
+    margin: 1px 4px;
+    padding: 5px 10px;
+    border-radius: 2px;
+    border-width: 1px;
+    border-color: transparent;
+    background-color: transparent;
+    color: var(--ue5-text-primary);
+    -unity-text-align: middle-left;
+    transition-duration: 0.08s;
+}
+
+.unity-list-view__item:hover {
+    background-color: var(--ue5-bg-hover);
+    border-color: var(--ue5-border-subtle);
+}
+
+.unity-list-view__item:active {
+    background-color: var(--ue5-bg-active);
+}
+
+/* ===== Selected Items - UE5 Orange Style ===== */
+.green-selected-list .unity-collection-view__item--selected,
+.green-selected-list .unity-list-view__item--selected {
+    background-color: var(--ue5-selected-bg) !important;
+    color: var(--ue5-selected-text) !important;
+    border-color: var(--ue5-accent-secondary) !important;
+    border-width: 1px !important;
+    border-radius: 2px !important;
+}
+
+/* Inner Labels for Selected Items */
+.green-selected-list .unity-collection-view__item--selected .unity-label,
+.green-selected-list .unity-list-view__item--selected .unity-label,
+.green-selected-list .unity-collection-view__item--selected Label,
+.green-selected-list .unity-list-view__item--selected Label {
+    color: var(--ue5-selected-text) !important;
+    -unity-font-style: bold;
+}
+
+/* Selected Item Hover */
+.green-selected-list .unity-collection-view__item--selected:hover,
+.green-selected-list .unity-list-view__item--selected:hover {
+    background-color: var(--ue5-selected-hover) !important;
+}
+
+/* ===== Buttons - UE5 Style ===== */
+.ue5-button {
+    height: 26px;
+    min-height: 26px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    
+    /* UE5 Button Gradient Effect */
+    background-color: var(--ue5-btn-bg);
+    color: var(--ue5-text-primary);
+    
+    /* Sharp Edges - Minimal Radius */
+    border-radius: 2px;
+    border-width: 1px;
+    border-color: var(--ue5-border-dark);
+    border-bottom-color: #0a0a0a;
+    
+    /* Top Highlight */
+    border-top-color: var(--ue5-border-light);
+    
+    margin: 8px 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+    
+    transition-duration: 0.1s;
+}
+
+.ue5-button:hover {
+    background-color: var(--ue5-btn-hover);
+    border-top-color: var(--ue5-border-light);
+    color: var(--ue5-text-highlight);
+}
+
+.ue5-button:active {
+    background-color: var(--ue5-btn-active);
+    border-top-color: var(--ue5-border-dark);
+    border-bottom-color: var(--ue5-border-light);
+}
+
+.ue5-button:disabled {
+    background-color: #2a2a2a;
+    color: var(--ue5-text-disabled);
+    border-color: #1a1a1a;
+}
+
+/* Primary Button (Accent Color) */
+.ue5-button-primary {
+    background-color: var(--ue5-btn-primary-bg);
+    color: var(--ue5-selected-text);
+    border-color: var(--ue5-accent-secondary);
+    border-top-color: var(--ue5-selected-hover);
+}
+
+.ue5-button-primary:hover {
+    background-color: var(--ue5-btn-primary-hover);
+    color: var(--ue5-selected-text);
+}
+
+.ue5-button-primary:active {
+    background-color: var(--ue5-btn-primary-active);
+}
+
+/* ===== Scrollbars - UE5 Slim Style ===== */
+.unity-scroller {
+    background-color: transparent;
+}
+
+.unity-scroller--vertical {
+    width: 10px;
+}
+
+.unity-scroller--horizontal {
+    height: 10px;
+}
+
+/* Scroller Track */
+.unity-scroller__slider {
+    background-color: var(--ue5-bg-dark);
+    border-radius: 0;
+    margin: 0;
+}
+
+/* Scroller Thumb/Dragger */
+.unity-base-slider__dragger {
+    background-color: #4a4a4a;
+    border-radius: 2px;
+    border-width: 0;
+    margin: 2px;
+}
+
+.unity-base-slider__dragger:hover {
+    background-color: #5a5a5a;
+}
+
+.unity-base-slider__dragger:active {
+    background-color: var(--ue5-accent-primary);
+}
+
+/* Arrow Buttons */
+.unity-scroller__low-button,
+.unity-scroller__high-button {
+    background-color: var(--ue5-bg-element);
+    border-width: 0;
+    border-radius: 0;
+}
+
+.unity-scroller__low-button:hover,
+.unity-scroller__high-button:hover {
+    background-color: var(--ue5-bg-hover);
+}
+
+/* ===== Text Fields ===== */
+.unity-text-field {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-dark);
+    border-radius: 2px;
+}
+
+.unity-text-field:focus {
+    border-color: var(--ue5-accent-primary);
+}
+
+.unity-text-field > .unity-text-field__input {
+    background-color: var(--ue5-bg-darkest);
+    color: var(--ue5-text-primary);
+    border-width: 0;
+    padding: 4px 8px;
+}
+
+/* ===== Foldouts ===== */
+.unity-foldout__toggle {
+    background-color: transparent;
+    border-width: 0;
+}
+
+.unity-foldout__toggle:hover {
+    background-color: var(--ue5-bg-hover);
+}
+
+.unity-foldout__content {
+    margin-left: 16px;
+}
+
+/* ===== Toggle/Checkbox ===== */
+.unity-toggle__checkmark {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 2px;
+    /* Hide checkmark when unchecked */
+    -unity-background-image-tint-color: rgba(0, 0, 0, 0);
+}
+
+.unity-toggle:checked .unity-toggle__checkmark {
+    background-color: var(--ue5-accent-primary);
+    border-color: var(--ue5-accent-secondary);
+    /* Show checkmark in dark color when checked */
+    -unity-background-image-tint-color: #1a1a1a;
+}
+
+
+/* ===== Dropdown/Popup ===== */
+.unity-popup-field {
+    background-color: var(--ue5-bg-element);
+    border-width: 1px;
+    border-color: var(--ue5-border-dark);
+    border-radius: 2px;
+}
+
+.unity-popup-field:hover {
+    border-color: var(--ue5-border-light);
+}
+
+.unity-popup-field:focus {
+    border-color: var(--ue5-accent-primary);
+}
+
+/* ===== Tool Tips & Focus States ===== */
+.unity-base-field:focus > .unity-base-field__label {
+    color: var(--ue5-accent-primary);
+}
+
+/* ===== Separator/Divider Lines ===== */
+.ue5-separator {
+    height: 1px;
+    background-color: var(--ue5-border-dark);
+    margin-top: 4px;
+    margin-bottom: 4px;
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+/* ===== Card/Panel Styling ===== */
+.ue5-panel {
+    background-color: var(--ue5-bg-element);
+    border-width: 1px;
+    border-color: var(--ue5-border-dark);
+    border-radius: 2px;
+    padding: 8px;
+    margin: 4px;
+}
+
+.ue5-panel-header {
+    background-color: var(--ue5-bg-dark);
+    padding: 6px 10px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ue5-border-dark);
+    margin-bottom: 6px;
+}
+
+/* ===== Status/Info Bar ===== */
+.ue5-status-bar {
+    height: 22px;
+    background-color: var(--ue5-bg-dark);
+    border-top-width: 1px;
+    border-top-color: var(--ue5-border-dark);
+    padding-left: 10px;
+    padding-right: 10px;
+    -unity-text-align: middle-left;
+    font-size: 10px;
+    color: var(--ue5-text-secondary);
+}
+
+/* ===== Icon Button Style ===== */
+.ue5-icon-button {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    background-color: transparent;
+    border-width: 0;
+    border-radius: 2px;
+    padding: 4px;
+}
+
+.ue5-icon-button:hover {
+    background-color: var(--ue5-bg-hover);
+}
+
+.ue5-icon-button:active {
+    background-color: var(--ue5-accent-glow);
+}
+
+/* ===== Tab/Toolbar Style ===== */
+.ue5-tab-bar {
+    flex-direction: row;
+    background-color: var(--ue5-bg-dark);
+    height: 28px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ue5-border-dark);
+}
+
+.ue5-tab {
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: transparent;
+    color: var(--ue5-text-secondary);
+    border-width: 0;
+    border-bottom-width: 2px;
+    border-bottom-color: transparent;
+    -unity-text-align: middle-center;
+}
+
+.ue5-tab:hover {
+    color: var(--ue5-text-primary);
+    background-color: var(--ue5-bg-hover);
+}
+
+.ue5-tab--active {
+    color: var(--ue5-text-highlight);
+    border-bottom-color: var(--ue5-accent-primary);
+}
+
+/* ===== Badge/Tag Style ===== */
+.ue5-badge {
+    background-color: var(--ue5-accent-primary);
+    color: var(--ue5-selected-text);
+    font-size: 9px;
+    -unity-font-style: bold;
+    padding: 2px 6px;
+    border-radius: 8px;
+    -unity-text-align: middle-center;
+}
+
+/* ===== Progress Bar ===== */
+.ue5-progress-bar {
+    height: 4px;
+    background-color: var(--ue5-bg-darkest);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.ue5-progress-bar__fill {
+    height: 100%;
+    background-color: var(--ue5-accent-primary);
+    border-radius: 2px;
+}
+
+/* ===== Context Menu Styling ===== */
+.unity-base-dropdown__container-outer {
+    background-color: var(--ue5-bg-panel);
+    border-width: 1px;
+    border-color: var(--ue5-border-dark);
+    border-radius: 2px;
+}
+
+.unity-base-dropdown__item {
+    padding: 4px 12px;
+    background-color: transparent;
+}
+
+.unity-base-dropdown__item:hover {
+    background-color: var(--ue5-bg-hover);
+}
+
+.unity-base-dropdown__item--selected {
+    background-color: var(--ue5-accent-primary);
+    color: var(--ue5-selected-text);
+}
+
+/* ===== User Avatar (Circular) ===== */
+.user-avatar {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    border-radius: 14px;
+    background-color: var(--ue5-bg-element);
+    border-width: 2px;
+    border-color: var(--ue5-border-subtle);
+    -unity-background-scale-mode: scale-to-fit;
+    overflow: hidden;
+}
+
+.user-avatar-empty {
+    background-color: #ffffff;
+    border-color: var(--ue5-accent-border);
+}
+
+/* Selected User Avatar */
+.green-selected-list .unity-collection-view__item--selected .user-avatar,
+.green-selected-list .unity-list-view__item--selected .user-avatar {
+    border-color: var(--ue5-selected-text);
+}
+
+/* ===== User UID Label ===== */
+.user-uid-label {
+    font-size: 10px;
+    color: #808080;
+    margin-right: 4px;
+    -unity-text-align: middle-right;
+}
+
+/* Selected User UID Label */
+.green-selected-list .unity-collection-view__item--selected .user-uid-label,
+.green-selected-list .unity-list-view__item--selected .user-uid-label {
+    color: rgba(26, 26, 26, 0.7);
+}
+
+/* ===== Gift Image ===== */
+.gift-img {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    border-radius: 4px;
+    background-color: var(--ue5-bg-element);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.gift-img-empty {
+    background-color: var(--ue5-bg-hover);
+    border-color: var(--ue5-accent-border);
+}
+
+/* Selected Gift Image */
+.green-selected-list .unity-collection-view__item--selected .gift-img,
+.green-selected-list .unity-list-view__item--selected .gift-img {
+    border-color: var(--ue5-selected-text);
+}
+
+/* ===== Config Section Styling ===== */
+.config-section {
+    flex-grow: 1;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ue5-border-dark);
+}
+
+/* ===== Gift Quantity Field ===== */
+.gift-quantity-field {
+    width: 50px;
+    min-width: 50px;
+    height: 24px;
+}
+
+.gift-quantity-field > .unity-text-field__input {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 2px;
+    color: var(--ue5-text-primary);
+    padding: 2px 6px;
+    -unity-text-align: middle-center;
+    font-size: 11px;
+}
+
+.gift-quantity-field > .unity-text-field__input:focus {
+    border-color: var(--ue5-accent-primary);
+}
+
+/* Selected item quantity field */
+.green-selected-list .unity-collection-view__item--selected .gift-quantity-field > .unity-text-field__input,
+.green-selected-list .unity-list-view__item--selected .gift-quantity-field > .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0.4);
+    border-color: rgba(0, 0, 0, 0.6);
+    color: #ffffff !important;
+}
+
+
+/* ===== UE5 Text Field ===== */
+.ue5-text-field {
+    flex-grow: 1;
+}
+
+.ue5-text-field > .unity-text-field__input {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 2px;
+    color: var(--ue5-text-primary);
+    padding: 4px 8px;
+    font-size: 12px;
+    min-height: 24px;
+}
+
+.ue5-text-field > .unity-text-field__input:hover {
+    border-color: var(--ue5-border-light);
+}
+
+.ue5-text-field > .unity-text-field__input:focus {
+    border-color: var(--ue5-accent-primary);
+}
+
+/* ===== Small Button ===== */
+.ue5-button-small {
+    height: 24px;
+    min-height: 24px;
+    font-size: 11px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+/* ===== Accent Button (Orange) ===== */
+.ue5-button-accent {
+    background-color: var(--ue5-btn-primary-bg);
+    color: var(--ue5-selected-text);
+    border-color: var(--ue5-accent-secondary);
+    border-top-color: var(--ue5-selected-hover);
+    -unity-font-style: bold;
+}
+
+.ue5-button-accent:hover {
+    background-color: var(--ue5-btn-primary-hover);
+    color: var(--ue5-selected-text);
+}
+
+.ue5-button-accent:active {
+    background-color: var(--ue5-btn-primary-active);
+}
+
+.ue5-button-accent:disabled {
+    background-color: #4a3d2a;
+    color: #7a6a5a;
+    border-color: #3a3025;
+}
+
+/* ===== Section Title ===== */
+.section-title {
+    font-size: 11px;
+    color: var(--ue5-text-secondary);
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* ==================================================================
+   Debugger Window Styles
+   ================================================================== */
+
+/* ===== Debugger Main Container ===== */
+.debugger-main {
+    flex-grow: 1;
+    flex-direction: row;
+}
+
+/* ===== Debugger Left Pane (Log Area) ===== */
+.debugger-left-pane {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+/* ===== Debugger Toolbar ===== */
+.debugger-toolbar {
+    flex-direction: row;
+    align-items: center;
+    background-color: #262626;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: #141414;
+}
+
+/* ===== Debugger Log ScrollView ===== */
+.debugger-log-scroll {
+    flex-grow: 1;
+    background-color: #1a1a1a;
+}
+
+/* ===== Debugger Filter Panel (Right Side) ===== */
+.debugger-filter-panel {
+    width: 130px;
+    min-width: 130px;
+    background-color: #1e1e1e;
+    border-left-width: 1px;
+    border-left-color: #141414;
+}
+
+.debugger-filter-container {
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 10px;
+}
+
+/* ===== Orange Separator Line (kept for compatibility) ===== */
+.debugger-separator {
+    height: 3px;
+    min-height: 3px;
+    background-color: var(--ue5-accent-primary);
+    flex-shrink: 0;
+}
+
+/* ===== Button-Style Toggle (Toolbar) ===== */
+.debugger-btn-toggle {
+    height: 24px;
+    min-height: 24px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    border-radius: 3px;
+    border-width: 1px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin: 0;
+    transition-duration: 0.1s;
+}
+
+.debugger-btn-toggle--active {
+    background-color: var(--ue5-accent-primary);
+    border-color: var(--ue5-accent-secondary);
+    color: #1a1a1a;
+}
+
+.debugger-btn-toggle--active:hover {
+    background-color: var(--ue5-accent-secondary);
+}
+
+.debugger-btn-toggle--inactive {
+    background-color: #3a3a3a;
+    border-color: #505050;
+    color: var(--ue5-text-primary);
+}
+
+.debugger-btn-toggle--inactive:hover {
+    background-color: #454545;
+    border-color: #606060;
+}
+
+/* ===== Button-Style Filter (Sidebar) ===== */
+.debugger-filter-btn {
+    height: 28px;
+    min-height: 28px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    border-radius: 3px;
+    border-width: 1px;
+    padding-left: 8px;
+    padding-right: 8px;
+    margin-bottom: 6px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    transition-duration: 0.1s;
+    -unity-text-align: middle-left;
+}
+
+
+
+/* ===== Log Entry Container ===== */
+.log-entry {
+    flex-direction: row;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: #262626;
+}
+
+.log-entry:hover {
+    background-color: #2a2a2a;
+}
+
+/* ===== Log Expand Button ===== */
+.log-expand-btn {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    font-size: 10px;
+    background-color: transparent;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    color: #999999;
+    margin-right: 4px;
+    padding: 0;
+}
+
+.log-expand-btn:hover {
+    color: #ffffff;
+    background-color: #333333;
+}
+
+/* ===== Log Avatar ===== */
+.log-avatar {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    margin-right: 8px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-color: #4a4a4a;
+    border-bottom-color: #4a4a4a;
+    border-left-color: #4a4a4a;
+    border-right-color: #4a4a4a;
+    background-color: #2a2a2a;
+}
+
+.log-avatar-empty {
+    background-color: #ffffff;
+}
+
+/* ===== Log Type Icon ===== */
+.log-type-icon {
+    width: 20px;
+    min-width: 20px;
+    -unity-text-align: middle-center;
+    font-size: 12px;
+}
+
+/* ===== Log Timestamp ===== */
+.log-timestamp {
+    width: 60px;
+    min-width: 60px;
+    color: #808080;
+    font-size: 10px;
+    -unity-text-align: middle-left;
+    margin-right: 8px;
+}
+
+/* ===== Log Player Name ===== */
+.log-player-name {
+    color: #e6b333;
+    font-size: 11px;
+    -unity-font-style: bold;
+    margin-right: 8px;
+    min-width: 60px;
+}
+
+/* ===== Log Message ===== */
+.log-message {
+    flex-grow: 1;
+    font-size: 11px;
+    white-space: normal;
+    -unity-text-align: middle-left;
+}
+
+/* Log Type Colors */
+.log-message-info { color: #b3d9ff; }
+.log-message-warning { color: #ffe666; }
+.log-message-error { color: #ff6666; }
+.log-message-gift { color: #ff9933; }
+.log-message-comment { color: #99ff99; }
+
+/* ===== Log Details Section (Expanded) ===== */
+.log-details {
+    background-color: #141414;
+    padding-left: 52px;
+    padding-right: 12px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: #1e1e1e;
+}
+
+/* ===== Log Detail Row ===== */
+.log-detail-row {
+    flex-direction: row;
+    margin-bottom: 4px;
+}
+
+.log-detail-label {
+    width: 60px;
+    min-width: 60px;
+    color: #808080;
+    font-size: 10px;
+}
+
+.log-detail-value {
+    flex-grow: 1;
+    color: #cccccc;
+    font-size: 10px;
+    white-space: normal;
+}

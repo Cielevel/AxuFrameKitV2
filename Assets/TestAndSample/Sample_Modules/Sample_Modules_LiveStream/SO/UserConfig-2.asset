@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87cb1d9d5fd06479e8b3386160afecf1, type: 3}
+  m_Name: UserConfig-2
+  m_EditorClassIdentifier: 
+  _generateCount: 8
+  _userIdLength: 10
+  _userNicknameLength:
+    min: 3
+    max: 5
+  _userDataUnitList:
+  - <Uid>k__BackingField: CwATfUpt0h
+    <Nickname>k__BackingField: "\u7AE5\u78A7\u7D2B"
+    <AvatarUrl>k__BackingField: 
+    <Avatar>k__BackingField: {fileID: 21300000, guid: 69445253ef3f0cb4eaaa1e684fef6c70, type: 3}
+  - <Uid>k__BackingField: lbl0EONo36
+    <Nickname>k__BackingField: "\u891A\u51AF\u68A6\u7EFF"
+    <AvatarUrl>k__BackingField: 
+    <Avatar>k__BackingField: {fileID: 21300000, guid: 5265da832264042439d7a3b873a1df28, type: 3}
+  - <Uid>k__BackingField: dx9ehK9cda
+    <Nickname>k__BackingField: "\u8303\u7F57\u4EE3\u5E73"
+    <AvatarUrl>k__BackingField: 
+    <Avatar>k__BackingField: {fileID: 21300000, guid: 25d416df084331b41999e05c0b872f60, type: 3}
+  - <Uid>k__BackingField: vNRcpykj4h
+    <Nickname>k__BackingField: "\u9C81\u5A01\u5F64"
+    <AvatarUrl>k__BackingField: 
+    <Avatar>k__BackingField: {fileID: 21300000, guid: ce60b062ae51e464f8a84a6913ad7e16, type: 3}
+  - <Uid>k__BackingField: olf0Qd94GY
+    <Nickname>k__BackingField: "\u6BD5\u4EE3\u4EE3"
+    <AvatarUrl>k__BackingField: 
+    <Avatar>k__BackingField: {fileID: 21300000, guid: 81abaab2d61c3b14395f286a03e9e374, type: 3}
+  - <Uid>k__BackingField: FG52ZFmVmK
+    <Nickname>k__BackingField: "\u97E9\u96C5\u971C"
+    <AvatarUrl>k__BackingField: 
+    <Avatar>k__BackingField: {fileID: 21300000, guid: 7297a95a62f762248b5d9690f2281c92, type: 3}
+  - <Uid>k__BackingField: LCGQlNA9AF
+    <Nickname>k__BackingField: "\u533A\u95EE\u84C9"
+    <AvatarUrl>k__BackingField: 
+    <Avatar>k__BackingField: {fileID: 21300000, guid: f98e15040ce1d2a45b6d28863b20a953, type: 3}
+  - <Uid>k__BackingField: dekMHrH9E3
+    <Nickname>k__BackingField: "\u6A0A\u53F6\u5E7B\u5BD2"
+    <AvatarUrl>k__BackingField: 
+    <Avatar>k__BackingField: {fileID: 21300000, guid: 930f698e19e72f34f8331844c399afd9, type: 3}
