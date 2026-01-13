@@ -2,7 +2,7 @@ using System;
 using AxuFrameKit._Core.Enum;
 using UnityEngine;
 
-namespace AxuFrameKit.Common.Utility.Auto.Follower
+namespace AxuFrameKit.Common.Utility.Auto.AutoFollower
 {
     /// <summary>
     /// 有中间过渡的跟随器

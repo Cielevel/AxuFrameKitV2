@@ -17,7 +17,8 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoCamera
 
         private void Update()
         {
-            transform.forward = MainCamera.transform.forward;
+            if (MainCamera != null)
+                transform.forward = MainCamera.transform.forward;
         }
 
         private void OnDestroy()

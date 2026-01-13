@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using AxuFrameKit._Core.Enum;
 
-namespace AxuFrameKit.Common.Utility.Auto.Follower
+namespace AxuFrameKit.Common.Utility.Auto.AutoFollower
 {
     public class PositionFollower : MonoBehaviour
     {

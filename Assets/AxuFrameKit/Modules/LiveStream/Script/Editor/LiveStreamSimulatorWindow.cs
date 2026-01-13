@@ -712,7 +712,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             if (_selectedUsers.Count == 0)
             {
                 LogWarning("请先选择至少一个用户！");
-                EditorUtility.DisplayDialog("提示", "请先选择至少一个用户！", "确定");
+                // EditorUtility.DisplayDialog("提示", "请先选择至少一个用户！", "确定");
                 return;
             }
 
@@ -720,7 +720,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             if (_selectedGift == null || _selectedGiftIndex < 0)
             {
                 LogWarning("请先选择一个礼物！");
-                EditorUtility.DisplayDialog("提示", "请先选择一个礼物！", "确定");
+                // EditorUtility.DisplayDialog("提示", "请先选择一个礼物！", "确定");
                 return;
             }
 
@@ -735,7 +735,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             if (quantity < 1)
             {
                 LogWarning("礼物数量不能小于 1！");
-                EditorUtility.DisplayDialog("提示", "礼物数量不能小于 1！", "确定");
+                // EditorUtility.DisplayDialog("提示", "礼物数量不能小于 1！", "确定");
                 return;
             }
 
