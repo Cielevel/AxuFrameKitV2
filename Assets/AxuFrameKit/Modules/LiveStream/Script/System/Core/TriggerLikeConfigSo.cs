@@ -7,7 +7,7 @@ namespace AxuFrameKit.Modules.LiveStream
     [CreateAssetMenu(fileName = "TriggerLikeConfigSo", menuName = "AxuFrameKit/LiveStream/TriggerLikeConfigSo")]
     public class TriggerLikeConfigSo : ScriptableObject
     {
-        [field: SerializeField, ListDrawerSettings(ListElementLabelName = "TriggerRemark")]
+        [field: SerializeField]
         public List<TriggerLikeConfigUnit> TriggerLikeConfigUnitList { get; private set; } = new();
 
         public bool IsDefault { get; private set; } = false;
@@ -21,19 +21,13 @@ namespace AxuFrameKit.Modules.LiveStream
             if (TriggerLikeConfigUnitList is { Count: > 0 })
                 TriggerLikeConfigUnitList[0].TriggerContent.Trigger(unit, unit.LikeCount);
         }
-
-        private void OnValidate()
-        {
-            foreach (var item in TriggerLikeConfigUnitList)
-                item.triggerRemark = $"点赞x{item.LikeCount}:{item.TriggerContent?.Remark}";
-        }
     }
 
     [Serializable]
     public class TriggerLikeConfigUnit
     {
         [HideInInspector]
-        public string triggerRemark;
+        public string Id => LikeCount.ToString();
 
         [Header("Like Setting")]
 

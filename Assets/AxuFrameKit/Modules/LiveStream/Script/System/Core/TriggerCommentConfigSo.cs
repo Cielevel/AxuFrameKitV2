@@ -7,7 +7,7 @@ namespace AxuFrameKit.Modules.LiveStream
     [CreateAssetMenu(fileName = "TriggerCommentConfigSo", menuName = "AxuFrameKit/LiveStream/TriggerCommentConfigSo")]
     public class TriggerCommentConfigSo : ScriptableObject
     {
-        [field: SerializeField, ListDrawerSettings(ListElementLabelName = "TriggerRemark")]
+        [field: SerializeField]
         public List<TriggerCommentConfigUnit> TriggerCommentConfigUnitList { get; private set; } = new();
 
         public bool IsDefault { get; private set; } = false;
@@ -21,19 +21,13 @@ namespace AxuFrameKit.Modules.LiveStream
             if (TriggerCommentConfigUnitList is { Count: > 0 })
                 TriggerCommentConfigUnitList[0].TriggerContent.Trigger(unit, unit.Comment);
         }
-
-        private void OnValidate()
-        {
-            foreach (var item in TriggerCommentConfigUnitList)
-                item.triggerRemark = $"{item.Comment}:{item.TriggerContent?.Remark}";
-        }
     }
 
     [Serializable]
     public class TriggerCommentConfigUnit
     {
         [HideInInspector]
-        public string triggerRemark;
+        public string Id => $"{Comment}:{TriggerContent?.Remark}";
 
         [Header("Comment Setting")]
 

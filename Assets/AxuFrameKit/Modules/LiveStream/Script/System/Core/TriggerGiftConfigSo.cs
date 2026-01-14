@@ -7,7 +7,7 @@ namespace AxuFrameKit.Modules.LiveStream
     [CreateAssetMenu(fileName = "TriggerGiftConfigSo", menuName = "AxuFrameKit/LiveStream/TriggerGiftConfigSo")]
     public class TriggerGiftConfigSo : ScriptableObject
     {
-        [field: SerializeField, ListDrawerSettings(ListElementLabelName = "TriggerRemark")]
+        [field: SerializeField]
         public List<TriggerGiftConfigUnit> TriggerGiftConfigUnitList { get; private set; } = new();
 
         public bool IsDefault { get; private set; } = false;
@@ -21,19 +21,13 @@ namespace AxuFrameKit.Modules.LiveStream
             if (TriggerGiftConfigUnitList is { Count: > 0 })
                 TriggerGiftConfigUnitList[0].TriggerContent.Trigger(unit, unit.GiftCount);
         }
-
-        private void OnValidate()
-        {
-            foreach (var item in TriggerGiftConfigUnitList)
-                item.triggerRemark = $"{item.GiftName}*{item.GiftCount}:{item.TriggerContent?.Remark}";
-        }
     }
 
     [Serializable]
     public class TriggerGiftConfigUnit
     {
         [HideInInspector]
-        public string triggerRemark;
+        public string Id => $"{GiftName}*{GiftCount}:{TriggerContent?.Remark}";
 
         [Header("Gift Setting")]
 

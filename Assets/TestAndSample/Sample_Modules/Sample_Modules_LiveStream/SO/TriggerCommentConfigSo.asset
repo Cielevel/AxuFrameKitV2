@@ -13,13 +13,11 @@ MonoBehaviour:
   m_Name: TriggerCommentConfigSo
   m_EditorClassIdentifier: 
   <TriggerCommentConfigUnitList>k__BackingField:
-  - triggerRemark: "\u52A0\u5165:\u52A0\u5165\u6E38\u620F"
-    _comment: "\u52A0\u5165"
+  - _comment: "\u52A0\u5165"
     _useRegex: 0
     _regexComment: 
     _trigger: {fileID: 11400000, guid: dcb3bef2280574349b411ea9738cc582, type: 2}
-  - triggerRemark: "$\u52A0\u5165^:\u52A0\u5165\u6E38\u620F"
-    _comment: "\u52A0\u5165"
+  - _comment: "\u52A0\u5165"
     _useRegex: 1
     _regexComment: "$\u52A0\u5165^"
     _trigger: {fileID: 11400000, guid: dcb3bef2280574349b411ea9738cc582, type: 2}

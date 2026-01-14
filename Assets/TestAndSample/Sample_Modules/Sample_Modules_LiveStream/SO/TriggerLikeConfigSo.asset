@@ -13,9 +13,7 @@ MonoBehaviour:
   m_Name: TriggerLikeConfigSo
   m_EditorClassIdentifier: 
   <TriggerLikeConfigUnitList>k__BackingField:
-  - triggerRemark: "\u70B9\u8D5Ex0:\u70B9\u8D5E\u53EC\u5524\u58EB\u5175"
-    _likeCount: 0
+  - _likeCount: 7
     _trigger: {fileID: 11400000, guid: 9638e1f80736ab14da10066f85c30add, type: 2}
-  - triggerRemark: "\u70B9\u8D5Ex3:\u70B9\u8D5E\u53EC\u5524\u58EB\u5175"
-    _likeCount: 3
+  - _likeCount: 3
     _trigger: {fileID: 11400000, guid: 9638e1f80736ab14da10066f85c30add, type: 2}

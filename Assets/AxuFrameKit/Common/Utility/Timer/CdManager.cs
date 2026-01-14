@@ -8,139 +8,240 @@ namespace AxuFrameKit.Common.Utility.Timer
 {
     public interface ICdManager
     {
-        void StartCd(float time, Action onComplete);
-        void StartCd(float time, Action<float> onTik, Action onComplete);
+        /// <summary>
+        /// 启动一个倒计时
+        /// </summary>
+        /// <param name="time">倒计时时长（秒）</param>
+        /// <param name="onComplete">完成回调</param>
+        /// <returns>计时器句柄，可用于取消或控制计时器</returns>
+        ICdHandle StartCd(float time, Action onComplete);
+
+        /// <summary>
+        /// 启动一个倒计时，带 Tick 回调
+        /// </summary>
+        /// <param name="time">倒计时时长（秒）</param>
+        /// <param name="onTick">每帧回调，参数为剩余时间</param>
+        /// <param name="onComplete">完成回调</param>
+        /// <returns>计时器句柄，可用于取消或控制计时器</returns>
+        ICdHandle StartCd(float time, Action<float> onTick, Action onComplete);
     }
-    
+
+    /// <summary>
+    /// 计时器句柄接口，用于控制单个计时器
+    /// </summary>
+    public interface ICdHandle
+    {
+        /// <summary>
+        /// 剩余时间
+        /// </summary>
+        float RemainingTime { get; }
+
+        /// <summary>
+        /// 是否已完成
+        /// </summary>
+        bool IsCompleted { get; }
+
+        /// <summary>
+        /// 是否已暂停
+        /// </summary>
+        bool IsPaused { get; }
+
+        /// <summary>
+        /// 是否已被取消
+        /// </summary>
+        bool IsCancelled { get; }
+
+        /// <summary>
+        /// 取消计时器
+        /// </summary>
+        void Cancel();
+
+        /// <summary>
+        /// 暂停计时器
+        /// </summary>
+        void Pause();
+
+        /// <summary>
+        /// 恢复计时器
+        /// </summary>
+        void Resume();
+    }
+
     /// <summary>
     /// CountDownManager，倒计时管理器；倒计时数量多时推荐使用。
     /// </summary>
     public class CdManager : SingletonMonoCrDs<CdManager>, ICdManager
     {
         private const int DefaultCapacity = 32;
-        
-        private SimpleObjPool<ICdUnit> _cdPool;
 
-        private List<ICdUnit> _cdRunningList;
+        private SimpleObjPool<CdUnit> _cdPool;
+        private List<CdUnit> _cdRunningList;
 
-        private int RunningCount => _cdRunningList.Count;
-        private int LastCount => RunningCount - 1;
+        // 用于在遍历过程中安全地标记需要移除的项
+        private List<int> _pendingRemoveIndices;
 
         protected override void Awake()
         {
             base.Awake();
 
-            _cdPool        = new SimpleObjPool<ICdUnit>(Constructor, OnGet, OnRelease, DefaultCapacity);
-            _cdRunningList = new List<ICdUnit>(DefaultCapacity);
+            _cdPool = new SimpleObjPool<CdUnit>(Constructor, OnGet, OnRelease, DefaultCapacity);
+            _cdRunningList = new List<CdUnit>(DefaultCapacity);
+            _pendingRemoveIndices = new List<int>(DefaultCapacity);
         }
 
         private void Update()
         {
+            if (_cdRunningList.Count == 0)
+                return;
+
+            var deltaTime = Time.deltaTime;
+
+            // 遍历所有计时器
             for (int i = 0; i < _cdRunningList.Count; i++)
             {
-                _cdRunningList[i].Tik(Time.deltaTime);
+                var unit = _cdRunningList[i];
 
-                if (_cdRunningList[i].IsCompleted())
-                    OnCdComplete(i);
+                // 跳过已暂停或已取消的
+                if (unit.IsPaused || unit.IsCancelled)
+                {
+                    if (unit.IsCancelled)
+                        _pendingRemoveIndices.Add(i);
+                    continue;
+                }
+
+                unit.Tick(deltaTime);
+
+                if (unit.IsCompleted)
+                {
+                    unit.InvokeComplete();
+                    _pendingRemoveIndices.Add(i);
+                }
             }
+
+            // 从后向前移除，避免索引偏移
+            RemovePendingUnits();
+        }
+
+        private void RemovePendingUnits()
+        {
+            if (_pendingRemoveIndices.Count == 0)
+                return;
+
+            // 从后向前移除，保证索引有效性
+            for (int i = _pendingRemoveIndices.Count - 1; i >= 0; i--)
+            {
+                var index = _pendingRemoveIndices[i];
+                var unit = _cdRunningList[index];
+
+                // 使用 swap-and-pop 优化移除性能（O(1) 而非 O(n)）
+                var lastIndex = _cdRunningList.Count - 1;
+                if (index != lastIndex)
+                {
+                    _cdRunningList[index] = _cdRunningList[lastIndex];
+                }
+
+                _cdRunningList.RemoveAt(lastIndex);
+                _cdPool.Release(unit);
+            }
+
+            _pendingRemoveIndices.Clear();
         }
 
         #region Pool Method
 
-        private ICdUnit Constructor() => new CdUnit();
+        private CdUnit Constructor() => new CdUnit();
 
-        private void OnGet(ICdUnit cdUnit) => cdUnit.Reset();
+        private void OnGet(CdUnit cdUnit) => cdUnit.Reset();
 
-        private void OnRelease(ICdUnit cdUnit) => cdUnit.Reset();
+        private void OnRelease(CdUnit cdUnit) => cdUnit.Reset();
 
         #endregion
 
-        void ICdManager.StartCd(float time, Action onComplete)
+        ICdHandle ICdManager.StartCd(float time, Action onComplete)
         {
             var unit = _cdPool.Get();
-            
-            unit.OnComplete += onComplete;
-            
+
+            unit.SetCallbacks(null, onComplete);
             unit.SetTime(time);
-            
+
             _cdRunningList.Add(unit);
+
+            return unit;
         }
-        
-        void ICdManager.StartCd(float time, Action<float> onTik, Action onComplete)
+
+        ICdHandle ICdManager.StartCd(float time, Action<float> onTick, Action onComplete)
         {
             var unit = _cdPool.Get();
-            
-            unit.OnTik      += onTik;
-            unit.OnComplete += onComplete;
-            
+
+            unit.SetCallbacks(onTick, onComplete);
             unit.SetTime(time);
-            
+
             _cdRunningList.Add(unit);
-        }
-        
-        private void OnCdComplete(int index)
-        {
-            if (index != LastCount)
-                (_cdRunningList[index], _cdRunningList[LastCount]) = (_cdRunningList[LastCount], _cdRunningList[index]);
 
-            _cdRunningList[LastCount].SetComplete();
-            
-            _cdPool.Release(_cdRunningList[LastCount]);
-            
-            _cdRunningList.RemoveAt(LastCount);
+            return unit;
         }
 
-        private interface ICdUnit
+        #region CdUnit
+
+        private class CdUnit : ICdHandle
         {
-            event Action<float> OnTik;
-            event Action OnComplete;
+            private Action<float> _onTick;
+            private Action _onComplete;
 
-            void SetTime(float time);
-            void Tik(float deltaTime);
-            
-            bool IsCompleted();
+            public float RemainingTime { get; private set; }
+            public bool IsCompleted => RemainingTime <= 0f && !IsCancelled;
+            public bool IsPaused { get; private set; }
+            public bool IsCancelled { get; private set; }
 
-            void SetComplete();
+            public void SetTime(float time) => RemainingTime = time;
 
-            void Reset();
-        }
-        
-        private class CdUnit : ICdUnit
-        {
-            public event Action<float> OnTik;
-
-            public event Action OnComplete;
-
-            public float Time { get; private set; }
-
-            public void SetTime(float time) => Time = time;
-
-            public void Tik(float deltaTime)
+            public void SetCallbacks(Action<float> onTick, Action onComplete)
             {
-                Time -= deltaTime;
-                
-                OnTik?.Invoke(Time);
+                _onTick = onTick;
+                _onComplete = onComplete;
             }
 
-            public bool IsCompleted() => Time <= 0f;
-
-            public void SetComplete()
+            public void Tick(float deltaTime)
             {
-                OnComplete?.Invoke();
+                RemainingTime -= deltaTime;
 
-                Time = 0f;
-                
-                OnTik      = delegate { };
-                OnComplete = delegate { };
+                // 只有剩余时间 > 0 时才调用 Tick
+                if (RemainingTime > 0f)
+                    _onTick?.Invoke(RemainingTime);
+            }
+
+            public void InvokeComplete()
+            {
+                _onComplete?.Invoke();
+            }
+
+            public void Cancel()
+            {
+                IsCancelled = true;
+            }
+
+            public void Pause()
+            {
+                IsPaused = true;
+            }
+
+            public void Resume()
+            {
+                IsPaused = false;
             }
 
             public void Reset()
             {
-                Time = 0f;
-                
-                OnTik      = delegate { };
-                OnComplete = delegate { };
+                RemainingTime = 0f;
+                IsPaused = false;
+                IsCancelled = false;
+
+                // 直接设为 null，避免 GC（不再创建空委托）
+                _onTick = null;
+                _onComplete = null;
             }
         }
+
+        #endregion
     }
 }
