@@ -14,7 +14,7 @@ namespace AxuFrameKit.Common.Utility.Multiton
 
         // ReSharper disable once StaticMemberInGenericType
         private static Transform _parent;
-        
+
         // ReSharper disable once StaticMemberInGenericType
         private static readonly object Lock = new();
 
@@ -22,27 +22,34 @@ namespace AxuFrameKit.Common.Utility.Multiton
 
         public static T GetInstance(string key)
         {
+            if (Instances.TryGetValue(key, out var instance) && instance != null)
+                return instance;
+
             lock (Lock)
             {
-                if (Instances.ContainsKey(key) == false)
+                if (Instances.TryGetValue(key, out instance) == false || instance == null)
                 {
-                    var instance = new GameObject($"[{typeof(T).Name}(key={key})]").AddComponent<T>();
+                    instance = new GameObject($"[{typeof(T).Name}(key={key})]").AddComponent<T>();
                     instance.Key = key;
-                    Instances.Add(key, instance);
-                    
+                    Instances[key] = instance;
+
                     OnCreate(instance);
                 }
 
-                return Instances[key];
+                return instance;
             }
         }
-        
+
         private static void OnCreate(T instance)
         {
             if (_parent == null)
                 _parent = new GameObject($"[Parent {typeof(T).Name}]").transform;
-            instance.transform.SetParent(_parent);
-            instance.OnThisCreated();
+
+            if (instance != null)
+            {
+                instance.transform.SetParent(_parent);
+                instance.OnThisCreated();
+            }
         }
 
         public static void DestroyInstance(string key)
@@ -56,7 +63,7 @@ namespace AxuFrameKit.Common.Utility.Multiton
                 }
             }
         }
-        
+
         public static void ClearAllInstances()
         {
             lock (Lock)
@@ -70,14 +77,14 @@ namespace AxuFrameKit.Common.Utility.Multiton
                 Instances.Clear();
             }
         }
-        
+
         private void OnDestroy()
         {
             // 理论上此处是不需要锁的，但是Instances在其他同步块内会使用，所以依旧保持锁。
             lock (Lock)
                 Instances.Remove(Key);
         }
-        
+
         protected virtual void OnThisCreated() { }
         protected virtual void OnThisDestroyed() { }
     }

@@ -1,7 +1,7 @@
 using UnityEngine;
 using AxuFrameKit._Core.Enum;
 
-namespace AxuFrameKit.Common.Utility.Auto.AutoFollower
+namespace AxuFrameKit.Common.Utility.Auto.AutoTracker
 {
     /// <summary>
     /// Directly tracks target position with optional offset on specified axes

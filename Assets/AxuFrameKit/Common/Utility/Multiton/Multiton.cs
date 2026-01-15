@@ -6,25 +6,28 @@ namespace AxuFrameKit.Common.Utility.Multiton
     public abstract class Multiton<T> : IDisposable where T : Multiton<T>, new()
     {
         public string Key { get; private set; }
-        
+
         private static readonly object Lock = new();
-        
+
         private static readonly Dictionary<string, T> Instances = new(8);
 
         public static T GetInstance(string key)
         {
+            if (Instances.TryGetValue(key, out var instance))
+                return instance;
+
             lock (Lock)
             {
-                if (Instances.ContainsKey(key) == false)
+                if (Instances.TryGetValue(key, out instance) == false)
                 {
-                    var instance = new T { Key = key };
+                    instance = new T { Key = key };
                     Instances.Add(key, instance);
                 }
 
-                return Instances[key];
+                return instance;
             }
         }
-        
+
         public static void DisposeInstance(string key)
         {
             lock (Lock)

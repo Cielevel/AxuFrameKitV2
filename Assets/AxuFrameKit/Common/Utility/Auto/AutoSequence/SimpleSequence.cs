@@ -19,6 +19,10 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
     {
         private enum SequenceUnitType { Action, Wait, CustomWait, Enumerator }
 
+        private bool _autoDestroy = false;
+
+        private bool _isLoop = false;
+
         /// <summary>
         /// 统一的操作单元，自包含类型和对应数据
         /// </summary>
@@ -141,15 +145,51 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
             return this;
         }
 
-        public void Stop() => this.StopCoroutine(_coroutine);
-        public void Run()
+        public SimpleSequence AutoDestroy()
         {
+            _autoDestroy = true;
+            return this;
+        }
+
+        public void Stop()
+        {
+            if (_coroutine != null)
+            {
+                this.StopCoroutine(_coroutine);
+                _coroutine = null;
+            }
+        }
+        public void Run(bool forceRestart = false)
+        {
+            if (forceRestart)
+            {
+                StopLoop();
+                Stop();
+            }
+
+            _isLoop = false;
+
             _coroutine = this.StartCoroutine(IESequence());
         }
 
-        public void StopLoop() => this.StopCoroutine(_loopCoroutine);
-        public void Loop(float interval)
+        public void StopLoop()
         {
+            if (_loopCoroutine != null)
+            {
+                this.StopCoroutine(_loopCoroutine);
+                _loopCoroutine = null;
+            }
+        }
+        public void Loop(float interval, bool forceRestart = false)
+        {
+            if (forceRestart)
+            {
+                StopLoop();
+                Stop();
+            }
+
+            _isLoop = true;
+
             _loopCoroutine = this.StartCoroutine(LoopAction());
             return;
 
@@ -189,6 +229,11 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
                         throw new ArgumentOutOfRangeException();
                 }
             }
+
+            if (!_isLoop && _autoDestroy)
+                this.Destroy();
+            else if (!_isLoop)
+                _coroutine = null;
         }
 
         // TODO inverseRun的可能性？

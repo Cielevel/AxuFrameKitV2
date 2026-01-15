@@ -31,28 +31,34 @@ namespace AxuFrameKit.Common.Utility.Multiton
         /// <returns></returns>
         public static T GetInstance(ulong key = 0, bool createWhenKeyInvalid = false)
         {
+            if (key != 0)
+            {
+                if (Instances.TryGetValue(key, out var instance1) && instance1 != null)
+                    return instance1;
+            }
+
             lock (Lock)
             {
                 if (key == 0)
                 {
-                    key = GetValidAutoIndex(); // 由于自增index与指定index可以混用，必要的验证
+                    key = GetValidAutoIndex();
                     var instance = new GameObject($"[{typeof(T).Name}(key={key})]").AddComponent<T>();
                     instance.Key = key;
-                    Instances.Add(key, instance);
+                    Instances[key] = instance;
 
                     OnCreate(instance);
                     
                     return instance;
                 }
 
-                if (Instances.TryGetValue(key, out var instance1))
-                    return instance1;
+                if (Instances.TryGetValue(key, out var instance2) && instance2 != null)
+                    return instance2;
 
                 if (createWhenKeyInvalid)
                 {
                     var instance = new GameObject($"[{typeof(T).Name}(key={key})]").AddComponent<T>();
                     instance.Key = key;
-                    Instances.Add(key, instance);
+                    Instances[key] = instance;
                     OnCreate(instance);
                     return instance;
                 }
@@ -73,7 +79,9 @@ namespace AxuFrameKit.Common.Utility.Multiton
         {
             if (_parent == null)
                 _parent = new GameObject($"[Parent {typeof(T).Name}]").transform;
-            instance.transform.SetParent(_parent);
+            
+            if (instance != null)
+                instance.transform.SetParent(_parent);
         }
         
         public static void DestroyInstance(ulong key)

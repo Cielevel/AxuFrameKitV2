@@ -7,16 +7,22 @@ namespace AxuFrameKit.Common.Utility.Multiton
     {
         // ReSharper disable once StaticMemberInGenericType
         private static ulong _index = 1;
-        
+
         public ulong Key { get; private set; }
-        
+
         // ReSharper disable once StaticMemberInGenericType
         private static readonly object Lock = new();
-        
+
         private static readonly Dictionary<ulong, T> Instances = new(8);
 
         public static T GetInstance(ulong key = 0)
         {
+            if (key != 0)
+            {
+                if (Instances.TryGetValue(key, out var instance1))
+                    return instance1;
+            }
+
             lock (Lock)
             {
                 if (key == 0)
@@ -24,28 +30,34 @@ namespace AxuFrameKit.Common.Utility.Multiton
                     key = _index++;
                     var instance = new T { Key = key };
                     Instances.Add(key, instance);
+                    return instance;
                 }
-                
-                if (0 < key && Instances.TryGetValue(key, out var instance1))
-                    return instance1;
+
+                if (Instances.TryGetValue(key, out var instance2))
+                    return instance2;
 
                 return null;
             }
         }
-        
+
         public static void DisposeInstance(ulong key)
         {
             lock (Lock)
             {
-                Instances.Remove(key, out var instance);
-                instance?.Dispose();
+                if (Instances.Remove(key, out var instance))
+                    instance?.Dispose();
             }
         }
 
         public static void DisposeAll()
         {
-            foreach (var instance in Instances.Values)
-                instance.Dispose();
+            lock (Lock)
+            {
+                foreach (var instance in Instances.Values)
+                    instance.Dispose();
+
+                Instances.Clear();
+            }
         }
 
         public abstract void Dispose();
