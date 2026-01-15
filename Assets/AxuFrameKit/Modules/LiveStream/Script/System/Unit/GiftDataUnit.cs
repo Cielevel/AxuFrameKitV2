@@ -6,6 +6,8 @@ namespace AxuFrameKit.Modules.LiveStream
     [Serializable]
     public class GiftDataUnit
     {
+        [HideInInspector] public string elementName;
+        
         [field: SerializeField] public string Name { get; set; }
         [field: SerializeField] public string ImgUrl { get; set; }
         [field: SerializeField] public Sprite Img { get; set; }

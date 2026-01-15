@@ -52,8 +52,8 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
         private UserConfigSo _selectedUserConfig;
         private GiftConfigSo _selectedGiftConfig;
         private List<UserDataUnit> _selectedUsers = new List<UserDataUnit>();
-        private GiftDataUnit _selectedGift;
-        private int _selectedGiftIndex = -1;
+        private List<GiftDataUnit> _selectedGifts = new List<GiftDataUnit>();
+        private List<int> _selectedGiftIndices = new List<int>();
         #endregion
 
         #region Debugger Fields
@@ -392,7 +392,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
 
             if (uid != null)
             {
-                uid.text = user.Uid ?? "";
+                uid.text = user.UserId ?? "";
             }
 
             if (avatar != null)
@@ -425,7 +425,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             _giftListView.makeItem = () => CreateGiftListItem();
             _giftListView.bindItem = BindGiftListItem;
             _giftListView.itemsSource = _currentDisplayedGifts;
-            _giftListView.selectionType = SelectionType.Single;
+            _giftListView.selectionType = SelectionType.Multiple;
             _giftListView.selectionChanged += OnGiftSelectionChanged;
             _giftListView.AddToClassList("green-selected-list");
             _giftListView.style.flexGrow = 1;
@@ -643,13 +643,15 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
 
         private void OnGiftSelectionChanged(IEnumerable<object> selection)
         {
-            _selectedGift = null;
-            _selectedGiftIndex = -1;
+            _selectedGifts.Clear();
+            _selectedGiftIndices.Clear();
             foreach (var item in selection)
             {
-                _selectedGift = item as GiftDataUnit;
-                _selectedGiftIndex = _currentDisplayedGifts.IndexOf(_selectedGift);
-                break;
+                if (item is GiftDataUnit gift)
+                {
+                    _selectedGifts.Add(gift);
+                    _selectedGiftIndices.Add(_currentDisplayedGifts.IndexOf(gift));
+                }
             }
         }
 
@@ -686,8 +688,8 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
                 var list = field.GetValue(_selectedGiftConfig) as List<GiftDataUnit>;
                 _currentDisplayedGifts.Clear();
                 _giftQuantities.Clear();
-                _selectedGift = null;
-                _selectedGiftIndex = -1;
+                _selectedGifts.Clear();
+                _selectedGiftIndices.Clear();
                 if (list != null)
                 {
                     _currentDisplayedGifts.AddRange(list);
@@ -717,57 +719,79 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             }
 
             // Validate gift selection
-            if (_selectedGift == null || _selectedGiftIndex < 0)
+            if (_selectedGifts.Count == 0 || _selectedGiftIndices.Count == 0)
             {
-                LogWarning("请先选择一个礼物！");
-                // EditorUtility.DisplayDialog("提示", "请先选择一个礼物！", "确定");
+                LogWarning("请先选择至少一个礼物！");
+                // EditorUtility.DisplayDialog("提示", "请先选择至少一个礼物！", "确定");
                 return;
             }
 
-            // Get quantity
-            int quantity = 1;
-            if (_giftQuantities.ContainsKey(_selectedGiftIndex))
-            {
-                quantity = _giftQuantities[_selectedGiftIndex];
-            }
-
-            // Validate quantity
-            if (quantity < 1)
-            {
-                LogWarning("礼物数量不能小于 1！");
-                // EditorUtility.DisplayDialog("提示", "礼物数量不能小于 1！", "确定");
-                return;
-            }
-
-            // Build gift data for all selected users
+            // Build gift data for all selected users and gifts (M users x N gifts)
             var giftDataList = new List<UserDataGift>();
+
             foreach (var user in _selectedUsers)
             {
-                var giftData = new UserDataGift
+                for (int i = 0; i < _selectedGifts.Count; i++)
                 {
-                    Uid = user.Uid,
-                    Nickname = user.Nickname,
-                    AvatarUrl = user.AvatarUrl,
-                    Avatar = user.Avatar,
-                    GiftName = _selectedGift.Name,
-                    GiftIndex = _selectedGiftIndex,
-                    GiftCount = quantity
-                };
-                giftDataList.Add(giftData);
+                    var gift = _selectedGifts[i];
+                    int giftIndex = _selectedGiftIndices[i];
 
-                // Log each gift
-                LogGift(
-                    $"赠送 {quantity} 个 {_selectedGift.Name}",
-                    $"礼物索引: {_selectedGiftIndex}\n礼物价值: ¥{_selectedGift.Price * quantity}",
-                    user.Avatar,
-                    user.Nickname,
-                    user.Uid
-                );
+                    // Get quantity for this gift
+                    int quantity = 1;
+                    if (_giftQuantities.ContainsKey(giftIndex))
+                    {
+                        quantity = _giftQuantities[giftIndex];
+                    }
+
+                    // Validate quantity
+                    if (quantity < 1)
+                    {
+                        quantity = 1;
+                    }
+
+                    var giftData = new UserDataGift
+                    {
+                        UserId = user.UserId,
+                        Nickname = user.Nickname,
+                        AvatarUrl = user.AvatarUrl,
+                        Avatar = user.Avatar,
+                        GiftName = gift.Name,
+                        GiftIndex = giftIndex,
+                        GiftCount = quantity
+                    };
+                    giftDataList.Add(giftData);
+
+                    // Log each gift
+                    LogGift(
+                        $"赠送 {quantity} 个 {gift.Name}",
+                        $"礼物索引: {giftIndex}\n礼物价值: ¥{gift.Price * quantity}",
+                        user.Avatar,
+                        user.Nickname,
+                        user.UserId
+                    );
+                }
             }
 
             // Fire event with collection
             OnGiftsSent?.Invoke(giftDataList.AsReadOnly());
-            Log($"已向 {_selectedUsers.Count} 个用户发送礼物");
+
+            // Summary log
+            if (_selectedUsers.Count == 1 && _selectedGifts.Count == 1)
+            {
+                Log($"已发送 1 个礼物");
+            }
+            else if (_selectedUsers.Count == 1)
+            {
+                Log($"已发送 {_selectedGifts.Count} 种礼物");
+            }
+            else if (_selectedGifts.Count == 1)
+            {
+                Log($"已向 {_selectedUsers.Count} 个用户发送礼物");
+            }
+            else
+            {
+                Log($"已向 {_selectedUsers.Count} 个用户发送 {_selectedGifts.Count} 种礼物 (共 {giftDataList.Count} 条记录)");
+            }
         }
 
         private void OnSendCommentClicked()
@@ -795,7 +819,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             {
                 var commentData = new UserDataComment
                 {
-                    Uid = user.Uid,
+                    UserId = user.UserId,
                     Nickname = user.Nickname,
                     AvatarUrl = user.AvatarUrl,
                     Avatar = user.Avatar,
@@ -809,7 +833,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
                     null,
                     user.Avatar,
                     user.Nickname,
-                    user.Uid
+                    user.UserId
                 );
             }
 

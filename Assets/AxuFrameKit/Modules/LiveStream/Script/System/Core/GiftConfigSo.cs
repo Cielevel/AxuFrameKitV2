@@ -11,6 +11,12 @@ namespace AxuFrameKit.Modules.LiveStream
     {
         [SerializeField] private List<GiftDataUnit> _giftDataUnitList;
 
+        private void OnValidate()
+        {
+            int index = 0;
+            _giftDataUnitList?.ForEach(unit => unit.elementName = $"({index++}){unit.Name}|price:{unit.Price}");
+        }
+
 #if UNITY_EDITOR
         [ContextMenu("从选中图片生成礼物列表")]
         private void GenerateGiftsFromSelection()

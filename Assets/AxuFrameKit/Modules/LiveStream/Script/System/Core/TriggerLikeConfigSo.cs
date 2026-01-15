@@ -21,13 +21,19 @@ namespace AxuFrameKit.Modules.LiveStream
             if (TriggerLikeConfigUnitList is { Count: > 0 })
                 TriggerLikeConfigUnitList[0].TriggerContent.Trigger(unit, unit.LikeCount);
         }
+
+        private void OnValidate()
+        {
+            int index = 0;
+            TriggerLikeConfigUnitList?.ForEach(unit => unit.elementName = $"({index++})点赞*{unit.LikeCount}:{unit.TriggerContent?.Remark}");
+        }
     }
 
     [Serializable]
     public class TriggerLikeConfigUnit
     {
         [HideInInspector]
-        public string Id => LikeCount.ToString();
+        public string elementName;
 
         [Header("Like Setting")]
 

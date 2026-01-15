@@ -6,10 +6,13 @@ namespace AxuFrameKit.Modules.LiveStream
     [Serializable]
     public class UserDataUnit
     {
-        [field: SerializeField] public string Uid { get; set; }
-        [field: SerializeField] public string Nickname { get; set; }
-        [field: SerializeField] public string AvatarUrl { get; set; }
+        [HideInInspector]
+        public string elementName;
+
         [field: SerializeField] public Sprite Avatar { get; set; }
+        [field: SerializeField] public string AvatarUrl { get; set; }
+        [field: SerializeField] public string Nickname { get; set; }
+        [field: SerializeField] public string UserId { get; set; }
     }
 
     // 以下是Trigger通信单元

@@ -32,7 +32,7 @@ namespace AxuFrameKit.Modules.LiveStream
         {
             _userDataList = userDataCollection.ToList();
 
-            _userDataDict = _userDataList.ToDictionary(e => e.Uid);
+            _userDataDict = _userDataList.ToDictionary(e => e.UserId);
 
             uiLoopVerticalScrollRect.onUpdateItem += OnUpdateItem;
 
@@ -53,7 +53,7 @@ namespace AxuFrameKit.Modules.LiveStream
         {
             item.GetComponent<UIBindParent>().SetData(new UIDataUnit<string>(_bindUserNickname, _userDataList[index].Nickname), new UIDataUnit<Sprite>(_bindUserAvatar, _userDataList[index].Avatar));
 
-            item.GetComponent<UIUnitUserID>().SetUserID(_userDataList[index].Uid);
+            item.GetComponent<UIUnitUserID>().SetUserID(_userDataList[index].UserId);
         }
     }
 }

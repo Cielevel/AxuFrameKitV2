@@ -21,13 +21,19 @@ namespace AxuFrameKit.Modules.LiveStream
             if (TriggerGiftConfigUnitList is { Count: > 0 })
                 TriggerGiftConfigUnitList[0].TriggerContent.Trigger(unit, unit.GiftCount);
         }
+
+        private void OnValidate()
+        {
+            int index = 0;
+            TriggerGiftConfigUnitList?.ForEach(unit => unit.elementName = $"({index++}){unit.GiftName}*{unit.GiftCount}:{unit.TriggerContent?.Remark}");
+        }
     }
 
     [Serializable]
     public class TriggerGiftConfigUnit
     {
         [HideInInspector]
-        public string Id => $"{GiftName}*{GiftCount}:{TriggerContent?.Remark}";
+        public string elementName;
 
         [Header("Gift Setting")]
 

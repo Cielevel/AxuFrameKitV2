@@ -19,7 +19,8 @@ namespace AxuFrameKit.Modules.LiveStream
 
         [Space]
 
-        [SerializeField] private List<UserDataUnit> _userDataUnitList;
+        [SerializeField]
+        private List<UserDataUnit> _userDataUnitList;
 
         [ContextMenu("生成用户数据")]
         private void GenerateUserData()
@@ -29,10 +30,16 @@ namespace AxuFrameKit.Modules.LiveStream
             {
                 _userDataUnitList.Add(new UserDataUnit
                 {
-                    Uid = RandomId.Get(_userIdLength),
+                    UserId = RandomId.Get(_userIdLength),
                     Nickname = RandomNickname.GetCombine(Random.Range(_userNicknameLength.min, _userNicknameLength.max))
                 });
             }
+        }
+
+        private void OnValidate()
+        {
+            int index = 0;
+            _userDataUnitList?.ForEach(unit => unit.elementName = $"({index++}){unit.Nickname}({unit.UserId})");
         }
 
 #if UNITY_EDITOR

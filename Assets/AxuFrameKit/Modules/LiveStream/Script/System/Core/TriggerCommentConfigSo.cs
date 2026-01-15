@@ -21,13 +21,19 @@ namespace AxuFrameKit.Modules.LiveStream
             if (TriggerCommentConfigUnitList is { Count: > 0 })
                 TriggerCommentConfigUnitList[0].TriggerContent.Trigger(unit, unit.Comment);
         }
+
+        private void OnValidate()
+        {
+            int index = 0;
+            TriggerCommentConfigUnitList?.ForEach(unit => unit.elementName = $"({index++}){unit.Comment}:{unit.TriggerContent?.Remark}");
+        }
     }
 
     [Serializable]
     public class TriggerCommentConfigUnit
     {
         [HideInInspector]
-        public string Id => $"{Comment}:{TriggerContent?.Remark}";
+        public string elementName;
 
         [Header("Comment Setting")]
 
