@@ -1,0 +1,491 @@
+/* ==================================================================
+   Noise Window Styles - UE5 Style Theme
+   ================================================================== */
+
+/* ===== CSS Variables (UE5 Color Palette) ===== */
+:root {
+    /* Primary Background Colors */
+    --ue5-bg-darkest: #1a1a1a;
+    --ue5-bg-dark: #1e1e1e;
+    --ue5-bg-panel: #242424;
+    --ue5-bg-element: #2a2a2a;
+    --ue5-bg-hover: #333333;
+    --ue5-bg-active: #3a3a3a;
+    
+    /* Accent Colors (UE5 Orange) */
+    --ue5-accent-primary: #ff9500;
+    --ue5-accent-secondary: #e68a00;
+    --ue5-accent-glow: rgba(255, 149, 0, 0.15);
+    --ue5-accent-border: rgba(255, 149, 0, 0.4);
+    
+    /* Border Colors */
+    --ue5-border-dark: #0d0d0d;
+    --ue5-border-subtle: #383838;
+    --ue5-border-light: #454545;
+    
+    /* Text Colors */
+    --ue5-text-primary: #e8e8e8;
+    --ue5-text-secondary: #a0a0a0;
+    --ue5-text-disabled: #666666;
+    --ue5-text-highlight: #ffffff;
+    
+    /* Button Colors */
+    --ue5-btn-bg: #3d3d3d;
+    --ue5-btn-hover: #4a4a4a;
+    --ue5-btn-active: #555555;
+    --ue5-btn-primary-bg: #ff9500;
+    --ue5-btn-primary-hover: #ffaa33;
+}
+
+/* ===== Root Container ===== */
+.ue5-root {
+    background-color: #141414;
+    color: var(--ue5-text-primary);
+    font-size: 12px;
+    padding: 4px;
+    flex-grow: 1;
+}
+
+/* ===== Main Split Container ===== */
+.main-split-container {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+/* ===== Left Panel (Settings) ===== */
+.settings-panel {
+    width: 360px;
+    min-width: 300px;
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    margin-right: 4px;
+    overflow: hidden;
+}
+
+.settings-scroll {
+    flex-grow: 1;
+    padding: 8px;
+}
+
+/* ===== Right Panel (Preview) ===== */
+.preview-panel {
+    flex-grow: 1;
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    overflow: hidden;
+    flex-direction: column;
+}
+
+/* ===== Section Header ===== */
+.section-header {
+    background-color: #262626;
+    padding: 8px 12px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ue5-border-dark);
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.section-header-text {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: var(--ue5-accent-primary);
+    letter-spacing: 0.5px;
+}
+
+/* ===== Panel Header ===== */
+.panel-header {
+    background-color: #262626;
+    padding: 8px 12px;
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ue5-border-dark);
+}
+
+.panel-header-text {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--ue5-text-highlight);
+}
+
+/* ===== Field Row ===== */
+.field-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 6px;
+    min-height: 24px;
+}
+
+.field-label {
+    width: 120px;
+    min-width: 120px;
+    font-size: 11px;
+    color: var(--ue5-text-secondary);
+    -unity-text-align: middle-left;
+}
+
+.field-control {
+    flex-grow: 1;
+}
+
+/* ===== Integer/Float Field ===== */
+.ue5-int-field,
+.ue5-float-field {
+    flex-grow: 1;
+}
+
+.ue5-int-field > .unity-base-field__input,
+.ue5-float-field > .unity-base-field__input {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 3px;
+    color: var(--ue5-text-primary);
+    padding: 2px 6px;
+    min-height: 22px;
+}
+
+.ue5-int-field > .unity-base-field__input:hover,
+.ue5-float-field > .unity-base-field__input:hover {
+    border-color: var(--ue5-border-light);
+}
+
+.ue5-int-field > .unity-base-field__input:focus,
+.ue5-float-field > .unity-base-field__input:focus {
+    border-color: var(--ue5-accent-primary);
+}
+
+/* ===== Slider ===== */
+.ue5-slider {
+    flex-grow: 1;
+    min-height: 20px;
+}
+
+.ue5-slider .unity-base-slider__drag-container {
+    min-height: 20px;
+}
+
+.ue5-slider .unity-base-slider__dragger {
+    background-color: var(--ue5-accent-primary);
+    border-radius: 7px;
+    width: 14px;
+    height: 14px;
+    margin-top: -5px;
+}
+
+.ue5-slider .unity-base-slider__dragger:hover {
+    background-color: var(--ue5-accent-secondary);
+}
+
+/* Hide the blue focus circle behind the dragger */
+.ue5-slider .unity-base-slider__dragger-border {
+    display: none;
+}
+
+.ue5-slider .unity-base-slider__tracker {
+    background-color: var(--ue5-bg-element);
+    border-radius: 2px;
+    height: 4px;
+    margin-top: 0;
+}
+
+/* ===== Enum Field (Dropdown) ===== */
+.ue5-enum-field {
+    flex-grow: 1;
+}
+
+.ue5-enum-field > .unity-base-field__input {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 3px;
+    color: var(--ue5-text-primary);
+    padding: 2px 6px;
+    min-height: 22px;
+}
+
+.ue5-enum-field > .unity-base-field__input:hover {
+    border-color: var(--ue5-border-light);
+}
+
+/* ===== Toggle ===== */
+.ue5-toggle {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+.ue5-toggle .unity-toggle__checkmark {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 3px;
+    width: 16px;
+    height: 16px;
+}
+
+.ue5-toggle:checked .unity-toggle__checkmark {
+    background-color: var(--ue5-accent-primary);
+    border-color: var(--ue5-accent-secondary);
+}
+
+/* ===== Button ===== */
+.ue5-button {
+    height: 28px;
+    min-height: 28px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    background-color: var(--ue5-btn-bg);
+    color: var(--ue5-text-primary);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: var(--ue5-border-dark);
+    margin: 4px 0;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.ue5-button:hover {
+    background-color: var(--ue5-btn-hover);
+    color: var(--ue5-text-highlight);
+}
+
+.ue5-button:active {
+    background-color: var(--ue5-btn-active);
+}
+
+/* ===== Primary Button ===== */
+.ue5-button-primary {
+    background-color: var(--ue5-btn-primary-bg);
+    color: #1a1a1a;
+    border-color: var(--ue5-accent-secondary);
+}
+
+.ue5-button-primary:hover {
+    background-color: var(--ue5-btn-primary-hover);
+    color: #1a1a1a;
+}
+
+/* ===== Success Button ===== */
+.ue5-button-success {
+    background-color: #2a5a2a;
+    color: #aaffaa;
+    border-color: #3a7a3a;
+}
+
+.ue5-button-success:hover {
+    background-color: #3a7a3a;
+    color: #ccffcc;
+}
+
+/* ===== Quick Button ===== */
+.quick-btn {
+    width: 45px;
+    min-width: 45px;
+    height: 22px;
+    min-height: 22px;
+    font-size: 10px;
+    background-color: var(--ue5-bg-element);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 3px;
+    color: var(--ue5-text-secondary);
+    margin-left: 4px;
+    padding: 0;
+}
+
+.quick-btn:hover {
+    background-color: var(--ue5-bg-hover);
+    color: var(--ue5-text-primary);
+    border-color: var(--ue5-accent-border);
+}
+
+/* ===== Resolution Row ===== */
+.resolution-row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.resolution-label {
+    width: 20px;
+    font-size: 10px;
+    color: var(--ue5-text-secondary);
+    -unity-text-align: middle-center;
+}
+
+.resolution-field {
+    width: 60px;
+}
+
+/* ===== Preview Container ===== */
+.preview-container {
+    flex-grow: 1;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+}
+
+.preview-image {
+    flex-grow: 1;
+    background-color: #0a0a0a;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+}
+
+/* ===== Preview Info ===== */
+.preview-info {
+    padding: 6px 12px;
+    background-color: #1a1a1a;
+    border-top-width: 1px;
+    border-top-color: var(--ue5-border-dark);
+    flex-direction: row;
+    justify-content: center;
+}
+
+.preview-info-text {
+    font-size: 10px;
+    color: var(--ue5-text-secondary);
+}
+
+/* ===== Help Box ===== */
+.ue5-help-box {
+    background-color: rgba(255, 149, 0, 0.1);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(255, 149, 0, 0.3);
+    padding: 8px;
+    margin: 4px 0;
+}
+
+.ue5-help-box-text {
+    font-size: 10px;
+    color: var(--ue5-text-secondary);
+    white-space: normal;
+}
+
+/* ===== Indented Content ===== */
+.indented-content {
+    margin-left: 16px;
+    padding-left: 8px;
+    border-left-width: 2px;
+    border-left-color: var(--ue5-accent-border);
+}
+
+/* ===== Separator ===== */
+.separator {
+    height: 1px;
+    background-color: var(--ue5-border-dark);
+    margin: 8px 0;
+}
+
+/* ===== Vector2 Field ===== */
+.ue5-vector2-field {
+    flex-grow: 1;
+}
+
+.ue5-vector2-field > .unity-composite-field__field {
+    flex-grow: 1;
+}
+
+.ue5-vector2-field .unity-float-field__input {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 3px;
+    color: var(--ue5-text-primary);
+    min-height: 20px;
+}
+
+/* ===== Slider with Value ===== */
+.slider-with-value {
+    flex-direction: row;
+    align-items: center;
+    flex-grow: 1;
+}
+
+.slider-value-label {
+    width: 50px;
+    min-width: 50px;
+    font-size: 10px;
+    color: var(--ue5-accent-primary);
+    -unity-text-align: middle-right;
+    margin-left: 8px;
+}
+
+/* ===== Scrollbars ===== */
+.unity-scroller {
+    background-color: transparent;
+}
+
+.unity-scroller--vertical {
+    width: 10px;
+}
+
+.unity-base-slider__dragger {
+    background-color: #4a4a4a;
+    border-radius: 2px;
+    border-width: 0;
+    margin: 2px;
+}
+
+.unity-base-slider__dragger:hover {
+    background-color: #5a5a5a;
+}
+
+.unity-base-slider__dragger:active {
+    background-color: var(--ue5-accent-primary);
+}
+
+/* ===== Single Column Layout ===== */
+.single-column-root {
+    background-color: #141414;
+    color: var(--ue5-text-primary);
+    font-size: 12px;
+    padding: 4px;
+    flex-grow: 1;
+}
+
+.single-column-panel {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    overflow: hidden;
+    flex-grow: 1;
+}
+
+.single-column-scroll {
+    flex-grow: 1;
+    padding: 8px;
+}
+
+/* ===== Preview Box (for single column) ===== */
+.preview-box {
+    background-color: #0a0a0a;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    margin: 8px 0;
+    align-self: center;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* ===== Window Title ===== */
+.window-title {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: var(--ue5-text-highlight);
+    padding: 8px 12px;
+    background-color: #262626;
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ue5-border-dark);
+}

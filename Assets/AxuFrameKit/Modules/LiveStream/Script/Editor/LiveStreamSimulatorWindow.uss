@@ -83,15 +83,15 @@
     background-color: var(--ue5-accent-primary);
 }
 
-/* ===== Main Vertical Split View (Draggable Orange Separator) ===== */
+/* ===== Main Vertical Split View (Draggable Separator - Hidden but functional) ===== */
 .main-vertical-split > .unity-two-pane-split-view__dragline-anchor > .unity-two-pane-split-view__dragline {
-    background-color: var(--ue5-accent-primary);
-    height: 4px;
-    min-height: 4px;
+    background-color: transparent;
+    height: 8px;
+    min-height: 8px;
 }
 
 .main-vertical-split > .unity-two-pane-split-view__dragline-anchor > .unity-two-pane-split-view__dragline:hover {
-    background-color: var(--ue5-accent-secondary);
+    background-color: rgba(255, 149, 0, 0.3);
     cursor: ns-resize;
 }
 
@@ -900,3 +900,118 @@
     font-size: 10px;
     white-space: normal;
 }
+
+/* ==================================================================
+   Rounded Panel Styles - Modern Card Design
+   ================================================================== */
+
+/* ===== Base Rounded Panel ===== */
+.rounded-panel {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    margin: 4px;
+    overflow: hidden;
+}
+
+/* ===== Simulator Area Container (with gaps) ===== */
+.simulator-container {
+    background-color: #141414;
+    padding: 4px;
+    padding-bottom: 0;
+}
+
+/* ===== Rounded Left Pane (Config Section) ===== */
+.rounded-left-pane {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    margin: 4px;
+    margin-right: 2px;
+    overflow: hidden;
+}
+
+/* ===== Rounded Middle Pane (User List) ===== */
+.rounded-middle-pane {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    margin: 4px;
+    margin-left: 2px;
+    margin-right: 2px;
+    overflow: hidden;
+}
+
+/* ===== Rounded Right Pane (Gift List) ===== */
+.rounded-right-pane {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    margin: 4px;
+    margin-left: 2px;
+    overflow: hidden;
+}
+
+/* ===== Rounded Debugger Area ===== */
+.rounded-debugger {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    margin: 4px;
+    margin-top: 4px;
+    overflow: hidden;
+}
+
+/* ===== Rounded Debugger Filter Panel ===== */
+.rounded-filter-panel {
+    background-color: #1a1a1a;
+    border-top-right-radius: 7px;
+    border-bottom-right-radius: 7px;
+    border-left-width: 1px;
+    border-left-color: var(--ue5-accent-border);
+}
+
+/* ===== Override header label for rounded panels ===== */
+.rounded-panel .header-label,
+.rounded-left-pane .header-label,
+.rounded-middle-pane .header-label,
+.rounded-right-pane .header-label {
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    border-top-width: 0;
+}
+
+/* ===== Debugger toolbar in rounded panel ===== */
+.rounded-debugger .debugger-toolbar {
+    border-top-left-radius: 7px;
+}
+
+/* ===== Debugger log scroll in rounded panel ===== */
+.rounded-debugger .debugger-log-scroll {
+    border-bottom-left-radius: 7px;
+}
+
+/* ===== Debugger status bar in rounded panel ===== */
+.rounded-debugger .ue5-status-bar {
+    border-bottom-left-radius: 7px;
+}
+
+/* ===== Root background for gaps ===== */
+.ue5-root {
+    background-color: #141414;
+}
+
+/* ===== Hide split view separators for cleaner look ===== */
+.simulator-container .unity-two-pane-split-view__dragline-anchor {
+    background-color: transparent;
+}
+
+.simulator-container .unity-two-pane-split-view__dragline {
+    background-color: transparent;
+}
+

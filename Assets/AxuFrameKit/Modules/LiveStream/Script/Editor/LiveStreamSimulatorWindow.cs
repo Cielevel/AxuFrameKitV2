@@ -158,6 +158,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             var container = new VisualElement();
             container.style.flexGrow = 1;
             container.style.minHeight = 200;
+            container.AddToClassList("simulator-container");
 
             // Horizontal Split for Simulator content
             var mainSplitView = new TwoPaneSplitView(0, 200, TwoPaneSplitViewOrientation.Horizontal);
@@ -188,8 +189,8 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
         {
             var leftPane = new VisualElement();
             leftPane.style.flexGrow = 1;
-            leftPane.style.backgroundColor = new StyleColor(new Color(0.1f, 0.1f, 0.1f));
             leftPane.style.minWidth = 180;
+            leftPane.AddToClassList("rounded-left-pane");
 
             // === User Config Section ===
             var userConfigSection = new VisualElement();
@@ -283,8 +284,8 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
         {
             var pane = new VisualElement();
             pane.style.flexGrow = 1;
-            pane.style.backgroundColor = new StyleColor(new Color(0.12f, 0.12f, 0.12f));
             pane.style.minWidth = 220;
+            pane.AddToClassList("rounded-middle-pane");
 
             var header = new Label("USER LIST");
             header.AddToClassList("header-label");
@@ -414,8 +415,8 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
         {
             var pane = new VisualElement();
             pane.style.flexGrow = 1;
-            pane.style.backgroundColor = new StyleColor(new Color(0.12f, 0.12f, 0.12f));
             pane.style.minWidth = 240;
+            pane.AddToClassList("rounded-right-pane");
 
             var header = new Label("GIFT LIST");
             header.AddToClassList("header-label");
@@ -856,6 +857,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             container.style.flexGrow = 1;
             container.style.minHeight = 150;
             container.style.flexDirection = FlexDirection.Row;
+            container.AddToClassList("rounded-debugger");
 
             // === Left: Log List ===
             var leftPane = new VisualElement();
@@ -883,6 +885,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
 
             // === Right: Filter Panel ===
             var rightPane = CreateDebuggerFilterPanel();
+            rightPane.AddToClassList("rounded-filter-panel");
             container.Add(rightPane);
 
             return container;

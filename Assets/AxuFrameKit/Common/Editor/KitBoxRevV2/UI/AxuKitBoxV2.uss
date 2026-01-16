@@ -1,30 +1,66 @@
+/* ==================================================================
+   AxuKitBox V2 - UE5 Inspired Theme
+   Inspired by Unreal Engine 5 Editor Interface
+   ================================================================== */
+
+/* ===== CSS Variables (UE5 Color Palette) ===== */
 :root {
     --sidebar-width: 220px;
-    --sidebar-bg: #222222;
-    --main-bg: #2a2a2a;
-    --accent-color: #3498db;
-    --accent-hover: #2980b9;
-    --text-color: #e0e0e0;
-    --text-secondary: #aaaaaa;
     --header-height: 44px;
-    --border-color: #111111;
-    --selected-bg: #3d3d3d;
+    
+    /* Primary Background Colors */
+    --ue5-bg-darkest: #141414;
+    --ue5-bg-dark: #1a1a1a;
+    --ue5-bg-panel: #1e1e1e;
+    --ue5-bg-element: #262626;
+    --ue5-bg-hover: #333333;
+    --ue5-bg-active: #3a3a3a;
+    
+    /* Accent Colors (UE5 Orange) */
+    --ue5-accent-primary: #ff9500;
+    --ue5-accent-secondary: #e68a00;
+    --ue5-accent-glow: rgba(255, 149, 0, 0.15);
+    --ue5-accent-border: rgba(255, 149, 0, 0.4);
+    
+    /* Border Colors */
+    --ue5-border-dark: #0d0d0d;
+    --ue5-border-subtle: #383838;
+    --ue5-border-light: #454545;
+    
+    /* Text Colors */
+    --ue5-text-primary: #e8e8e8;
+    --ue5-text-secondary: #a0a0a0;
+    --ue5-text-disabled: #666666;
+    --ue5-text-highlight: #ffffff;
+    
+    /* Selection Colors */
+    --ue5-selected-bg: #ff9500;
+    --ue5-selected-text: #1a1a1a;
+    --ue5-selected-hover: #ffaa33;
+    
+    /* Button Colors */
+    --ue5-btn-bg: #3d3d3d;
+    --ue5-btn-hover: #4a4a4a;
+    --ue5-btn-active: #555555;
+    --ue5-btn-primary-bg: #ff9500;
+    --ue5-btn-primary-hover: #ffaa33;
 }
 
+/* ===== Root Container ===== */
 #root-container {
     flex-direction: row;
     height: 100%;
-    background-color: var(--main-bg);
-    color: var(--text-color);
+    background-color: var(--ue5-bg-darkest);
+    color: var(--ue5-text-primary);
     font-size: 13px;
 }
 
-/* Sidebar Styling */
+/* ===== Sidebar Styling ===== */
 #sidebar {
     width: var(--sidebar-width);
-    background-color: var(--sidebar-bg);
+    background-color: var(--ue5-bg-dark);
     border-right-width: 1px;
-    border-right-color: var(--border-color);
+    border-right-color: var(--ue5-border-dark);
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -32,18 +68,18 @@
 
 #sidebar-header {
     height: var(--header-height);
-    background-color: #1a1a1a;
+    background-color: var(--ue5-bg-darkest);
     justify-content: center;
     padding-left: 15px;
     border-bottom-width: 1px;
-    border-bottom-color: var(--border-color);
+    border-bottom-color: var(--ue5-border-dark);
 }
 
 #sidebar-header-label {
     -unity-font-style: bold;
-    color: var(--accent-color);
+    color: var(--ue5-accent-primary);
     font-size: 14px;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
 }
 
 #nav-scroll-view {
@@ -51,57 +87,65 @@
 }
 
 #nav-container {
-    padding: 10px 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 10px;
+    padding-bottom: 10px;
 }
 
 #sidebar-footer {
     padding: 12px;
-    background-color: #1a1a1a;
+    background-color: var(--ue5-bg-darkest);
     border-top-width: 1px;
-    border-top-color: var(--border-color);
+    border-top-color: var(--ue5-border-dark);
 }
 
 #refresh-button {
     height: 32px;
-    border-radius: 6px;
-    background-color: #333;
-    border-width: 0;
-    color: white;
-    transition-property: background-color, scale;
-    transition-duration: 0.2s;
+    border-radius: 4px;
+    background-color: var(--ue5-btn-bg);
+    border-width: 1px;
+    border-color: var(--ue5-border-dark);
+    border-top-color: var(--ue5-border-light);
+    color: var(--ue5-text-primary);
+    -unity-font-style: bold;
+    transition-duration: 0.15s;
 }
 
 #refresh-button:hover {
-    background-color: #444;
+    background-color: var(--ue5-btn-hover);
+    color: var(--ue5-text-highlight);
 }
 
 #refresh-button:active {
-    background-color: #222;
-    scale: 0.98;
+    background-color: var(--ue5-btn-active);
 }
 
-/* Main Content Styling */
+/* ===== Main Content Styling ===== */
 #main-content {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
+    background-color: var(--ue5-bg-panel);
 }
 
 #content-header {
     height: var(--header-height);
-    background-color: #252525;
+    background-color: var(--ue5-bg-element);
     justify-content: space-between;
     align-items: center;
     flex-direction: row;
-    padding: 0 20px;
+    padding-left: 20px;
+    padding-right: 20px;
     border-bottom-width: 1px;
-    border-bottom-color: var(--border-color);
+    border-bottom-color: var(--ue5-border-dark);
 }
 
 #content-title {
     -unity-font-style: bold;
-    font-size: 18px;
-    color: #ffffff;
+    font-size: 16px;
+    color: var(--ue5-text-highlight);
+    letter-spacing: 0.5px;
 }
 
 #content-body {
@@ -117,231 +161,262 @@
     padding: 0;
 }
 
-/* Group & Page button styles */
+/* ===== Group Foldout Styling ===== */
 .group-foldout {
     margin: 4px 0;
-    color: #eeeeee;
+    color: var(--ue5-text-primary);
 }
 
 .group-foldout > .unity-foldout__toggle {
     margin-left: 0;
-    padding: 5px 0;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
     background-color: transparent;
+    border-radius: 3px;
 }
 
 .group-foldout > .unity-foldout__toggle:hover {
-    background-color: #2a2a2a;
+    background-color: var(--ue5-bg-hover);
 }
 
 .group-foldout > .unity-foldout__toggle .unity-label {
     -unity-font-style: bold;
-    font-size: 13px;
+    font-size: 12px;
+    color: var(--ue5-accent-primary);
 }
 
+/* ===== Navigation Item Styling ===== */
 .nav-item {
-    margin: 2px 4px 2px 20px;
-    padding: 6px 12px;
-    border-radius: 4px;
+    margin: 2px 4px 2px 16px;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border-radius: 3px;
     background-color: transparent;
     border-width: 0;
     -unity-text-align: middle-left;
-    color: var(--text-secondary);
-    transition-property: background-color, color, translate;
-    transition-duration: 0.2s;
+    color: var(--ue5-text-secondary);
+    font-size: 12px;
+    transition-duration: 0.12s;
 }
 
 .nav-item:hover {
-    background-color: #333;
-    color: white;
-    translate: 2px 0;
+    background-color: var(--ue5-bg-hover);
+    color: var(--ue5-text-highlight);
 }
 
 .nav-item--selected {
-    background-color: var(--accent-color);
-    color: white;
+    background-color: var(--ue5-selected-bg);
+    color: var(--ue5-selected-text);
     -unity-font-style: bold;
+    border-left-width: 0;
 }
 
 .nav-item--selected:hover {
-    background-color: var(--accent-hover);
+    background-color: var(--ue5-selected-hover);
+    color: var(--ue5-selected-text);
+}
+
+/* ===== Scrollbars - UE5 Slim Style ===== */
+.unity-scroller {
+    background-color: transparent;
+}
+
+.unity-scroller--vertical {
+    width: 10px;
+}
+
+.unity-scroller--horizontal {
+    height: 10px;
+}
+
+.unity-scroller__slider {
+    background-color: var(--ue5-bg-dark);
+    border-radius: 0;
+    margin: 0;
+}
+
+.unity-base-slider__dragger {
+    background-color: #4a4a4a;
+    border-radius: 2px;
+    border-width: 0;
+    margin: 2px;
+}
+
+.unity-base-slider__dragger:hover {
+    background-color: #5a5a5a;
+}
+
+.unity-base-slider__dragger:active {
+    background-color: var(--ue5-accent-primary);
 }
 
 /* ========================================
    Common Page Styles
    ======================================== */
 
-/* Page Container */
 .page-container {
     padding: 20px;
     flex-grow: 1;
 }
 
-/* Headers */
 .page-header {
-    font-size: 20px;
+    font-size: 18px;
     -unity-font-style: bold;
     margin-bottom: 10px;
-    color: #ffffff;
+    color: var(--ue5-text-highlight);
 }
 
 .page-subheader {
-    font-size: 16px;
+    font-size: 14px;
     -unity-font-style: bold;
     margin-bottom: 8px;
-    color: #e0e0e0;
+    color: var(--ue5-text-primary);
 }
 
 .page-hint {
-    color: #999999;
+    color: var(--ue5-text-secondary);
     margin-bottom: 20px;
     white-space: normal;
-    font-size: 13px;
+    font-size: 12px;
 }
 
-/* Section Headers */
 .section-header {
     margin-top: 30px;
     margin-bottom: 5px;
     -unity-font-style: bold;
-    font-size: 14px;
+    font-size: 13px;
+    color: var(--ue5-accent-primary);
 }
 
 /* ========================================
-   Buttons
+   Buttons - UE5 Style
    ======================================== */
 
-/* Primary Action Button */
 .btn-primary {
-    height: 45px;
-    font-size: 15px;
+    height: 40px;
+    font-size: 14px;
     -unity-font-style: bold;
-    background-color: #3498db;
-    color: white;
-    border-left-width: 0;
-    border-right-width: 0;
-    border-top-width: 0;
-    border-bottom-width: 0;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-    border-bottom-left-radius: 6px;
-    border-bottom-right-radius: 6px;
+    background-color: var(--ue5-btn-primary-bg);
+    color: var(--ue5-selected-text);
+    border-width: 1px;
+    border-color: var(--ue5-accent-secondary);
+    border-top-color: var(--ue5-selected-hover);
+    border-radius: 4px;
+    transition-duration: 0.12s;
 }
 
 .btn-primary:hover {
-    background-color: #2980b9;
+    background-color: var(--ue5-btn-primary-hover);
+}
+
+.btn-primary:active {
+    background-color: var(--ue5-accent-secondary);
 }
 
 .btn-primary:disabled {
-    background-color: #555555;
-    color: #888888;
+    background-color: #2a2a2a;
+    color: var(--ue5-text-disabled);
+    border-color: #1a1a1a;
 }
 
-/* Success Button */
 .btn-success {
-    height: 40px;
-    font-size: 14px;
+    height: 36px;
+    font-size: 13px;
     -unity-font-style: bold;
-    background-color: #2ecc71;
-    color: white;
-    border-left-width: 0;
-    border-right-width: 0;
-    border-top-width: 0;
-    border-bottom-width: 0;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-    border-bottom-left-radius: 6px;
-    border-bottom-right-radius: 6px;
+    background-color: #2a5a2a;
+    color: #aaffaa;
+    border-width: 1px;
+    border-color: #3a7a3a;
+    border-radius: 4px;
+    transition-duration: 0.12s;
 }
 
 .btn-success:hover {
-    background-color: #27ae60;
+    background-color: #3a7a3a;
+    color: #ccffcc;
 }
 
-/* Danger Button */
 .btn-danger {
-    height: 40px;
-    font-size: 14px;
+    height: 36px;
+    font-size: 13px;
     -unity-font-style: bold;
-    background-color: #e74c3c;
-    color: white;
-    border-left-width: 0;
-    border-right-width: 0;
-    border-top-width: 0;
-    border-bottom-width: 0;
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-    border-bottom-left-radius: 4px;
-    border-bottom-right-radius: 4px;
+    background-color: #5a2a2a;
+    color: #ffaaaa;
+    border-width: 1px;
+    border-color: #7a3a3a;
+    border-radius: 4px;
+    transition-duration: 0.12s;
 }
 
 .btn-danger:hover {
-    background-color: #c0392b;
+    background-color: #7a3a3a;
+    color: #ffcccc;
 }
 
-/* Secondary Button */
 .btn-secondary {
-    background-color: transparent;
-    color: #e0e0e0;
-    border-left-width: 0;
-    border-right-width: 0;
-    border-top-width: 0;
-    border-bottom-width: 0;
+    background-color: var(--ue5-btn-bg);
+    color: var(--ue5-text-primary);
+    border-width: 1px;
+    border-color: var(--ue5-border-dark);
+    border-top-color: var(--ue5-border-light);
+    border-radius: 3px;
+    transition-duration: 0.12s;
 }
 
 .btn-secondary:hover {
-    background-color: #333333;
+    background-color: var(--ue5-btn-hover);
+    color: var(--ue5-text-highlight);
 }
 
-/* Small Button */
 .btn-small {
     width: 24px;
     height: 24px;
     background-color: transparent;
-    border-left-width: 0;
-    border-right-width: 0;
-    border-top-width: 0;
-    border-bottom-width: 0;
+    border-width: 0;
+}
+
+.btn-small:hover {
+    background-color: var(--ue5-bg-hover);
 }
 
 /* ========================================
    Containers & Boxes
    ======================================== */
 
-/* Config Box */
 .config-box {
-    background-color: #333333;
+    background-color: var(--ue5-bg-element);
     padding: 15px;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
     margin-bottom: 20px;
 }
 
-/* Card Container */
 .card {
-    background-color: #383838;
+    background-color: var(--ue5-bg-element);
     padding: 12px;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-    border-bottom-left-radius: 6px;
-    border-bottom-right-radius: 6px;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
 }
 
-/* Slot Container (for object fields) */
 .slot-container {
     width: 44%;
-    background-color: #383838;
+    background-color: var(--ue5-bg-element);
     padding: 12px;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-    border-bottom-left-radius: 6px;
-    border-bottom-right-radius: 6px;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
 }
 
 .slot-title {
     -unity-font-style: bold;
     margin-bottom: 8px;
+    color: var(--ue5-accent-primary);
 }
 
 /* ========================================
@@ -350,10 +425,13 @@
 
 .toolbar {
     flex-direction: row;
-    padding: 8px 10px;
-    background-color: #2e2e2e;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    background-color: var(--ue5-bg-element);
     border-bottom-width: 1px;
-    border-bottom-color: #1a1a1a;
+    border-bottom-color: var(--ue5-border-dark);
     align-items: center;
 }
 
@@ -365,42 +443,25 @@
    Lists & Views
    ======================================== */
 
-/* Log View */
 .log-view {
     flex-grow: 1;
     min-height: 150px;
-    background-color: #1e1e1e;
+    background-color: var(--ue5-bg-darkest);
     padding: 8px;
-    border-left-width: 1px;
-    border-right-width: 1px;
-    border-top-width: 1px;
-    border-bottom-width: 1px;
-    border-left-color: #1a1a1a;
-    border-right-color: #1a1a1a;
-    border-top-color: #1a1a1a;
-    border-bottom-color: #1a1a1a;
+    border-width: 1px;
+    border-color: var(--ue5-border-dark);
+    border-radius: 4px;
 }
 
-/* Asset List */
 .asset-list {
     flex-grow: 1;
     min-height: 250px;
-    background-color: #262626;
-    border-left-width: 1px;
-    border-right-width: 1px;
-    border-top-width: 1px;
-    border-bottom-width: 1px;
-    border-left-color: #1a1a1a;
-    border-right-color: #1a1a1a;
-    border-top-color: #1a1a1a;
-    border-bottom-color: #1a1a1a;
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-    border-bottom-left-radius: 4px;
-    border-bottom-right-radius: 4px;
+    background-color: var(--ue5-bg-dark);
+    border-width: 1px;
+    border-color: var(--ue5-border-dark);
+    border-radius: 4px;
 }
 
-/* List Item Row */
 .list-item-row {
     flex-direction: row;
     align-items: center;
@@ -435,11 +496,11 @@
    ======================================== */
 
 .text-secondary {
-    color: #999999;
+    color: var(--ue5-text-secondary);
 }
 
 .text-muted {
-    color: #666666;
+    color: var(--ue5-text-disabled);
     font-size: 11px;
 }
 
@@ -472,18 +533,19 @@
     justify-content: center;
     align-items: center;
     padding: 40px;
+    background-color: var(--ue5-bg-panel);
 }
 
 .welcome-title {
-    font-size: 40px;
+    font-size: 36px;
     -unity-font-style: bold;
-    color: #4fa8db;
+    color: var(--ue5-accent-primary);
     margin-bottom: 10px;
 }
 
 .welcome-subtitle {
-    font-size: 18px;
-    color: #b0b0b0;
+    font-size: 16px;
+    color: var(--ue5-text-secondary);
     margin-bottom: 30px;
 }
 
@@ -492,22 +554,28 @@
     height: 100px;
     margin: 10px;
     padding: 15px;
-    background-color: #2e2e2e;
+    background-color: var(--ue5-bg-element);
     border-left-width: 4px;
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
+    border-left-color: var(--ue5-accent-primary);
+    border-radius: 4px;
+    transition-duration: 0.15s;
+}
+
+.feature-card:hover {
+    background-color: var(--ue5-bg-hover);
+    border-left-color: var(--ue5-selected-hover);
 }
 
 .feature-card-title {
     -unity-font-style: bold;
-    font-size: 15px;
-    color: white;
+    font-size: 14px;
+    color: var(--ue5-text-highlight);
 }
 
 .feature-card-desc {
     margin-top: 5px;
-    font-size: 12px;
-    color: #b0b0b0;
+    font-size: 11px;
+    color: var(--ue5-text-secondary);
     white-space: normal;
 }
 
@@ -522,7 +590,12 @@
     padding-left: 10px;
     padding-right: 10px;
     border-bottom-width: 1px;
-    border-bottom-color: rgba(32, 32, 32, 0.3);
+    border-bottom-color: var(--ue5-border-dark);
+    transition-duration: 0.1s;
+}
+
+.scene-row:hover {
+    background-color: var(--ue5-bg-hover);
 }
 
 /* ========================================
@@ -532,30 +605,34 @@
 .symbol-list-panel {
     width: 220px;
     border-right-width: 1px;
-    border-right-color: #262626;
+    border-right-color: var(--ue5-border-dark);
+    background-color: var(--ue5-bg-dark);
 }
 
 .symbol-list-header {
     padding: 10px;
     -unity-font-style: bold;
-    background-color: #2e2e2e;
+    background-color: var(--ue5-bg-element);
+    color: var(--ue5-accent-primary);
 }
 
 .symbol-detail-area {
     flex-grow: 1;
     padding: 20px;
+    background-color: var(--ue5-bg-panel);
 }
 
 .symbol-detail-title {
-    font-size: 24px;
+    font-size: 22px;
     -unity-font-style: bold;
     margin-bottom: 15px;
+    color: var(--ue5-text-highlight);
 }
 
 .symbol-detail-desc {
     white-space: normal;
-    color: #b0b0b0;
-    font-size: 14px;
+    color: var(--ue5-text-secondary);
+    font-size: 13px;
     margin-bottom: 30px;
 }
 
@@ -572,61 +649,63 @@
 .column-selection-container {
     margin-top: 15px;
     margin-bottom: 15px;
-    background-color: #2b2b2b;
-    padding: 10px;
+    background-color: var(--ue5-bg-element);
+    padding: 12px;
     border-radius: 6px;
     border-width: 1px;
-    border-color: #1a1a1a;
+    border-color: var(--ue5-accent-border);
 }
 
 .column-toggle-btn {
     margin-right: 6px;
     margin-bottom: 6px;
     height: 26px;
-    border-radius: 13px; /* Pill shape */
-    background-color: #383838;
+    border-radius: 13px;
+    background-color: var(--ue5-btn-bg);
     border-width: 1px;
-    border-color: #444;
-    color: #aeaeae;
-    transition-duration: 0.15s;
+    border-color: var(--ue5-border-subtle);
+    color: var(--ue5-text-secondary);
+    transition-duration: 0.12s;
 }
 
 .column-toggle-btn:hover {
-    background-color: #484848;
-    color: white;
+    background-color: var(--ue5-btn-hover);
+    color: var(--ue5-text-highlight);
 }
 
 .column-toggle-btn.active {
-    background-color: #2ecc71;
-    border-color: #27ae60;
-    color: white;
+    background-color: var(--ue5-accent-primary);
+    border-color: var(--ue5-accent-secondary);
+    color: var(--ue5-selected-text);
     -unity-font-style: bold;
 }
 
 .column-toggle-btn.active:hover {
-    background-color: #27ae60;
+    background-color: var(--ue5-selected-hover);
 }
 
 .helper-btn-row {
     flex-direction: row;
     margin-top: 8px;
     border-top-width: 1px;
-    border-top-color: #3e3e3e;
+    border-top-color: var(--ue5-border-subtle);
     padding-top: 8px;
 }
 
 .helper-text-btn {
     background-color: transparent;
     border-width: 0;
-    color: #3498db;
+    color: var(--ue5-accent-primary);
     margin-right: 10px;
-    cursor: link; /* if supported, else just visual */
-    padding: 2px 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 .helper-text-btn:hover {
-    color: #5dade2;
-    background-color: #333;
+    color: var(--ue5-selected-hover);
+    background-color: var(--ue5-bg-hover);
     border-radius: 4px;
 }
 
@@ -647,7 +726,7 @@
 }
 
 .asset-type-label {
-    color: #808080;
+    color: var(--ue5-text-disabled);
     font-size: 11px;
 }
 
@@ -661,7 +740,7 @@
 
 .csv-scroll-view {
     flex-grow: 1;
-    background-color: #262626;
+    background-color: var(--ue5-bg-dark);
 }
 
 .csv-grid-container {
@@ -682,22 +761,19 @@
     background-color: #2d4a2d;
 }
 
-/* Drag and Drop Overlay */
+/* ========================================
+   Drag and Drop Overlay
+   ======================================== */
+
 .drag-overlay {
     position: absolute;
     left: 0;
     top: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(52, 152, 219, 0.3);
-    border-left-width: 3px;
-    border-right-width: 3px;
-    border-top-width: 3px;
-    border-bottom-width: 3px;
-    border-left-color: #4fa8db;
-    border-right-color: #4fa8db;
-    border-top-color: #4fa8db;
-    border-bottom-color: #4fa8db;
+    background-color: rgba(255, 149, 0, 0.2);
+    border-width: 3px;
+    border-color: var(--ue5-accent-primary);
     align-items: center;
     justify-content: center;
     display: none;
@@ -706,7 +782,56 @@
 .drag-hint-text {
     font-size: 24px;
     -unity-font-style: bold;
-    color: white;
+    color: var(--ue5-text-highlight);
     -unity-text-outline-width: 1px;
     -unity-text-outline-color: rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   Input Fields - UE5 Style
+   ======================================== */
+
+.unity-text-field > .unity-base-field__input,
+.unity-integer-field > .unity-base-field__input,
+.unity-float-field > .unity-base-field__input {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 3px;
+    color: var(--ue5-text-primary);
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.unity-text-field > .unity-base-field__input:focus,
+.unity-integer-field > .unity-base-field__input:focus,
+.unity-float-field > .unity-base-field__input:focus {
+    border-color: var(--ue5-accent-primary);
+}
+
+.unity-enum-field > .unity-base-field__input {
+    background-color: var(--ue5-bg-element);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 3px;
+    color: var(--ue5-text-primary);
+}
+
+.unity-enum-field > .unity-base-field__input:hover {
+    border-color: var(--ue5-border-light);
+}
+
+/* Toggle Checkbox - UE5 Style */
+.unity-toggle .unity-toggle__checkmark {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 2px;
+}
+
+.unity-toggle:checked .unity-toggle__checkmark {
+    background-color: var(--ue5-accent-primary);
+    border-color: var(--ue5-accent-secondary);
 }

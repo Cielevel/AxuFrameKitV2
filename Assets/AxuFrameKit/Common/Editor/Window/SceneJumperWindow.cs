@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,20 +9,22 @@ namespace AxuFrameKit.Common.Editor.Window
 {
     public class SceneJumperWindow : EditorWindow
     {
-        private const string FavoriteScenesKey = "SceneJumper_FavoriteScenes"; // 用于EditorPrefs存储收藏夹
-        private const string GroupsKey = "SceneJumper_CustomGroups"; // 用于EditorPrefs存储自定义分组
+        private const string FavoriteScenesKey = "SceneJumper_FavoriteScenes";
+        private const string GroupsKey = "SceneJumper_CustomGroups";
 
         private List<SceneInfo> allScenes = new List<SceneInfo>();
-        private List<string> favoriteSceneGuids = new List<string>(); // 存储收藏场景的GUID
-        private List<SceneGroup> customGroups = new List<SceneGroup>(); // 存储自定义分组
+        private List<string> favoriteSceneGuids = new List<string>();
+        private List<SceneGroup> customGroups = new List<SceneGroup>();
 
-        private Vector2 scrollPosition; // 滚动视图的位置
-        private string newGroupName = ""; // 新分组名称输入
+        // UI Elements
+        private TextField _newGroupNameField;
+        private ScrollView _contentScrollView;
 
         [MenuItem("AxuFrameKit/SceneJumper")]
         public static void ShowWindow()
         {
-            GetWindow<SceneJumperWindow>("Scene Jumper");
+            var window = GetWindow<SceneJumperWindow>("Scene Jumper");
+            window.minSize = new Vector2(400, 500);
         }
 
         private void OnEnable()
@@ -29,34 +32,78 @@ namespace AxuFrameKit.Common.Editor.Window
             LoadFavoriteScenes();
             LoadGroups();
             CollectScenes();
-            // 订阅项目发生变化事件，以便在场景文件增删改时刷新列表
-            EditorApplication.projectChanged += CollectScenes;
+            EditorApplication.projectChanged += OnProjectChanged;
         }
 
         private void OnDisable()
         {
-            // 取消订阅，避免内存泄露
-            EditorApplication.projectChanged -= CollectScenes;
+            EditorApplication.projectChanged -= OnProjectChanged;
             SaveGroups();
         }
 
         private void OnFocus()
         {
-            // 窗口获得焦点时重新收集，以防在关闭期间项目发生变化
             CollectScenes();
+            RefreshContent();
         }
 
-        // 收集所有场景文件并分类
+        private void OnProjectChanged()
+        {
+            CollectScenes();
+            RefreshContent();
+        }
+
+        private void CreateGUI()
+        {
+            // Load and add USS
+            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/AxuFrameKit/Common/Editor/Window/CommonWindowStyles.uss");
+            if (styleSheet != null)
+            {
+                rootVisualElement.styleSheets.Add(styleSheet);
+            }
+
+            rootVisualElement.AddToClassList("ue5-root");
+
+            // Window Title
+            var titleLabel = new Label("Scene Jumper");
+            titleLabel.AddToClassList("window-title");
+            rootVisualElement.Add(titleLabel);
+
+            // Toolbar Panel
+            var toolbarPanel = new VisualElement();
+            toolbarPanel.AddToClassList("toolbar-panel");
+            rootVisualElement.Add(toolbarPanel);
+
+            var createLabel = new Label("Create Group:");
+            createLabel.AddToClassList("toolbar-label");
+            toolbarPanel.Add(createLabel);
+
+            _newGroupNameField = new TextField();
+            _newGroupNameField.AddToClassList("ue5-text-field");
+            toolbarPanel.Add(_newGroupNameField);
+
+            var createBtn = new Button(OnCreateGroupClicked) { text = "Create" };
+            createBtn.AddToClassList("primary-btn");
+            toolbarPanel.Add(createBtn);
+
+            // Content ScrollView
+            _contentScrollView = new ScrollView(ScrollViewMode.Vertical);
+            _contentScrollView.AddToClassList("content-scroll");
+            rootVisualElement.Add(_contentScrollView);
+
+            // Initial refresh
+            RefreshContent();
+        }
+
         private void CollectScenes()
         {
             allScenes.Clear();
-            string[] sceneGuids = AssetDatabase.FindAssets("t:Scene"); // 查找所有场景资产的GUID
+            string[] sceneGuids = AssetDatabase.FindAssets("t:Scene");
 
-            // 获取Build Settings中的场景路径
             HashSet<string> inBuildScenePaths = new HashSet<string>();
             foreach (EditorBuildSettingsScene buildScene in EditorBuildSettings.scenes)
             {
-                if (buildScene.enabled) // 只考虑启用的场景
+                if (buildScene.enabled)
                 {
                     inBuildScenePaths.Add(buildScene.path);
                 }
@@ -68,166 +115,229 @@ namespace AxuFrameKit.Common.Editor.Window
                 if (!string.IsNullOrEmpty(path) && path.StartsWith("Assets/"))
                 {
                     bool isInBuild = inBuildScenePaths.Contains(path);
-                    bool isFavorite = favoriteSceneGuids.Contains(guid); // 检查是否已收藏
+                    bool isFavorite = favoriteSceneGuids.Contains(guid);
                     allScenes.Add(new SceneInfo(guid, path, isInBuild, isFavorite));
                 }
             }
 
-            // 排序，收藏的优先，然后按名称排序
             allScenes = allScenes.OrderByDescending(s => s.IsFavorite)
-                                 .ThenByDescending(s => s.IsInBuild) // InBuild的场景也优先
+                                 .ThenByDescending(s => s.IsInBuild)
                                  .ThenBy(s => s.Name)
                                  .ToList();
         }
 
-        private void OnGUI()
+        private void RefreshContent()
         {
-            EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("Scene Jumper", EditorStyles.boldLabel);
-            EditorGUILayout.Space(5);
-
-            // Group Creation Header
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Create Group:", GUILayout.Width(90));
-            newGroupName = EditorGUILayout.TextField(newGroupName);
-            if (GUILayout.Button("Create", GUILayout.Width(70)))
-            {
-                if (!string.IsNullOrEmpty(newGroupName) && !customGroups.Any(g => g.Name == newGroupName))
-                {
-                    customGroups.Add(new SceneGroup { Name = newGroupName });
-                    newGroupName = "";
-                    SaveGroups();
-                }
-            }
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.EndVertical();
-
-            EditorGUILayout.Space(10);
-            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+            if (_contentScrollView == null) return;
+            _contentScrollView.Clear();
 
             // 1. Custom Groups
             foreach (var group in customGroups.ToList())
             {
                 var scenesInGroup = allScenes.Where(s => group.SceneGuids.Contains(s.Guid)).ToList();
-                DrawSceneCategory($"📂 分组: {group.Name}", scenesInGroup, new Color(0.4f, 0.4f, 0.6f), group);
-                EditorGUILayout.Space(10);
+                var groupContainer = CreateSceneCategory($"📂 分组: {group.Name}", scenesInGroup, group);
+                _contentScrollView.Add(groupContainer);
             }
 
             // 2. In Build Scenes
-            DrawSceneCategory("🏗 构建场景", allScenes.Where(s => s.IsInBuild).ToList(), new Color(0.3f, 0.6f, 0.4f));
-            EditorGUILayout.Space(15);
+            var buildScenes = allScenes.Where(s => s.IsInBuild).ToList();
+            var buildContainer = CreateSceneCategory("🏗 构建场景", buildScenes, null, true);
+            _contentScrollView.Add(buildContainer);
 
             // 3. Other Scenes
-            DrawSceneCategory("📁 其他场景资源", allScenes.Where(s => !s.IsInBuild).ToList(), new Color(0.3f, 0.5f, 0.7f));
-
-            EditorGUILayout.EndScrollView();
+            var otherScenes = allScenes.Where(s => !s.IsInBuild).ToList();
+            var otherContainer = CreateSceneCategory("📁 其他场景资源", otherScenes, null);
+            _contentScrollView.Add(otherContainer);
         }
 
-        // 绘制单个场景分类
-        private void DrawSceneCategory(string categoryName, List<SceneInfo> scenesToDraw, Color headerColor, SceneGroup group = null)
+        private VisualElement CreateSceneCategory(string categoryName, List<SceneInfo> scenesToDraw, SceneGroup group, bool isBuildCategory = false)
         {
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            var container = new VisualElement();
+            container.AddToClassList("group-container");
 
-            // 标题背景色装饰
-            Color originalBg = GUI.backgroundColor;
-            GUI.backgroundColor = headerColor;
-            EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-            GUI.backgroundColor = originalBg;
+            // Header
+            var header = new VisualElement();
+            header.AddToClassList("group-header");
+            container.Add(header);
 
-            GUIStyle titleStyle = new GUIStyle(EditorStyles.boldLabel)
+            var title = new Label(categoryName);
+            title.AddToClassList("group-title");
+            header.Add(title);
+
+            if (isBuildCategory)
             {
-                fontSize = 13,
-                normal = { textColor = Color.white }
-            };
-            EditorGUILayout.LabelField(categoryName, titleStyle, GUILayout.Height(22));
+                var badge = new Label($"{scenesToDraw.Count}");
+                badge.AddToClassList("badge");
+                badge.AddToClassList("badge-build");
+                header.Add(badge);
+            }
 
             if (group != null)
             {
-                if (GUILayout.Button("×", EditorStyles.miniButton, GUILayout.Width(20)))
-                {
-                    if (EditorUtility.DisplayDialog("Delete Group", $"Delete group '{categoryName}'?", "Yes", "No"))
-                    {
-                        customGroups.Remove(group);
-                        SaveGroups();
-                        GUIUtility.ExitGUI();
-                    }
-                }
+                var deleteBtn = new Button(() => OnDeleteGroupClicked(group)) { text = "×" };
+                deleteBtn.AddToClassList("delete-group-btn");
+                header.Add(deleteBtn);
             }
 
-            EditorGUILayout.EndHorizontal();
-
-            GUILayout.Space(5);
+            // Content
+            var content = new VisualElement();
+            content.AddToClassList("group-content");
+            container.Add(content);
 
             if (scenesToDraw.Count == 0)
             {
-                if (group != null)
-                    EditorGUILayout.LabelField("Group is empty. Click [Group] on a scene to add.", EditorStyles.miniLabel);
-                else
-                    EditorGUILayout.HelpBox($"No {categoryName} found.", MessageType.Info);
+                var emptyState = new VisualElement();
+                emptyState.AddToClassList("empty-state");
+                var emptyText = new Label(group != null ? "Group is empty. Click [Group] on a scene to add." : "No scenes found.");
+                emptyText.AddToClassList("empty-state-text");
+                emptyState.Add(emptyText);
+                content.Add(emptyState);
             }
             else
             {
-                foreach (SceneInfo scene in scenesToDraw)
+                foreach (var scene in scenesToDraw)
                 {
-                    DrawSceneButton(scene);
+                    var itemRow = CreateSceneRow(scene);
+                    content.Add(itemRow);
                 }
             }
-            EditorGUILayout.EndVertical();
+
+            return container;
         }
 
-        // 绘制单个场景的按钮和收藏星标
-        private void DrawSceneButton(SceneInfo scene)
+        private VisualElement CreateSceneRow(SceneInfo scene)
         {
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.BeginHorizontal();
+            string currentScenePath = UnityEngine.SceneManagement.SceneManager.GetActiveScene().path;
+            bool isCurrent = currentScenePath == scene.Path;
 
-            // 1. 收藏星标
-            Color originalColor = GUI.backgroundColor;
-            GUI.backgroundColor = scene.IsFavorite ? Color.yellow : originalColor;
-            if (GUILayout.Button(scene.IsFavorite ? "★" : "☆", GUILayout.Width(28), GUILayout.Height(24)))
+            var row = new VisualElement();
+            row.AddToClassList("item-row");
+            if (isCurrent) row.AddToClassList("item-row-current");
+            row.tooltip = scene.Path;
+
+            // Star button
+            var starBtn = new Button(() => OnToggleFavorite(scene)) { text = scene.IsFavorite ? "★" : "☆" };
+            starBtn.AddToClassList("star-btn");
+            if (scene.IsFavorite) starBtn.AddToClassList("star-btn-active");
+            row.Add(starBtn);
+
+            // Scene icon
+            var iconElement = new VisualElement();
+            iconElement.AddToClassList("item-icon");
+            var sceneIcon = EditorGUIUtility.IconContent("SceneAsset Icon").image as Texture2D;
+            if (sceneIcon != null)
             {
-                ToggleFavorite(scene);
+                iconElement.style.backgroundImage = new StyleBackground(sceneIcon);
             }
-            GUI.backgroundColor = originalColor;
+            row.Add(iconElement);
 
-            // 2. 场景跳转按钮
-            bool isCurrent = UnityEngine.SceneManagement.SceneManager.GetActiveScene().path == scene.Path;
-            if (isCurrent) GUI.backgroundColor = new Color(0.4f, 0.8f, 0.4f);
-            else if (scene.IsFavorite) GUI.backgroundColor = new Color(0.6f, 0.9f, 0.6f, 0.5f);
-
-            GUIStyle btnStyle = new GUIStyle(GUI.skin.button)
+            // Scene name button
+            var nameBtn = new Button(() => OnOpenScene(scene.Path)) { text = scene.Name };
+            nameBtn.AddToClassList("item-name");
+            if (scene.IsFavorite) nameBtn.AddToClassList("item-name-starred");
+            nameBtn.style.unityTextAlign = TextAnchor.MiddleLeft;
+            nameBtn.style.backgroundColor = Color.clear;
+            nameBtn.style.borderLeftWidth = 0;
+            nameBtn.style.borderRightWidth = 0;
+            nameBtn.style.borderTopWidth = 0;
+            nameBtn.style.borderBottomWidth = 0;
+            if (isCurrent)
             {
-                alignment = TextAnchor.MiddleLeft,
-                padding = new RectOffset(5, 5, 2, 2),
-                fontStyle = isCurrent ? FontStyle.Bold : FontStyle.Normal
-            };
-
-            if (GUILayout.Button(new GUIContent(scene.Name, scene.Path), btnStyle, GUILayout.Height(24)))
-            {
-                OpenScene(scene.Path);
+                nameBtn.style.unityFontStyleAndWeight = FontStyle.Bold;
             }
-            GUI.backgroundColor = originalColor;
+            row.Add(nameBtn);
 
-            // 3. Group Button
-            if (GUILayout.Button("Group", GUILayout.Width(55), GUILayout.Height(24)))
+            // Current badge
+            if (isCurrent)
             {
-                ShowGroupMenu(scene);
+                var currentBadge = new Label("CURRENT");
+                currentBadge.AddToClassList("badge");
+                currentBadge.AddToClassList("badge-current");
+                row.Add(currentBadge);
             }
 
-            // 4. 定位按钮
-            if (GUILayout.Button("📍", GUILayout.Width(28), GUILayout.Height(24)))
+            // In Build badge
+            if (scene.IsInBuild && !isCurrent)
             {
-                UnityEngine.Object sceneAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(scene.Path);
-                if (sceneAsset != null)
+                var buildBadge = new Label("BUILD");
+                buildBadge.AddToClassList("badge");
+                buildBadge.AddToClassList("badge-build");
+                row.Add(buildBadge);
+            }
+
+            // Group button
+            var groupBtn = new Button(() => ShowGroupMenu(scene)) { text = "Group" };
+            groupBtn.AddToClassList("action-btn");
+            row.Add(groupBtn);
+
+            // Locate button
+            var locateBtn = new Button(() => OnLocateScene(scene)) { text = "📍" };
+            locateBtn.AddToClassList("action-btn");
+            row.Add(locateBtn);
+
+            return row;
+        }
+
+        #region Event Handlers
+
+        private void OnCreateGroupClicked()
+        {
+            string newName = _newGroupNameField?.value?.Trim();
+            if (!string.IsNullOrEmpty(newName) && !customGroups.Any(g => g.Name == newName))
+            {
+                customGroups.Add(new SceneGroup { Name = newName });
+                _newGroupNameField.value = "";
+                SaveGroups();
+                RefreshContent();
+            }
+        }
+
+        private void OnDeleteGroupClicked(SceneGroup group)
+        {
+            if (EditorUtility.DisplayDialog("Delete Group", $"Delete group '{group.Name}'?", "Yes", "No"))
+            {
+                customGroups.Remove(group);
+                SaveGroups();
+                RefreshContent();
+            }
+        }
+
+        private void OnToggleFavorite(SceneInfo scene)
+        {
+            scene.IsFavorite = !scene.IsFavorite;
+            if (scene.IsFavorite)
+            {
+                if (!favoriteSceneGuids.Contains(scene.Guid))
                 {
-                    EditorGUIUtility.PingObject(sceneAsset);
-                    Selection.activeObject = sceneAsset;
+                    favoriteSceneGuids.Add(scene.Guid);
                 }
             }
+            else
+            {
+                favoriteSceneGuids.Remove(scene.Guid);
+            }
+            SaveFavoriteScenes();
+            CollectScenes();
+            RefreshContent();
+        }
 
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.EndVertical();
+        private void OnOpenScene(string path)
+        {
+            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                EditorSceneManager.OpenScene(path);
+                RefreshContent();
+            }
+        }
+
+        private void OnLocateScene(SceneInfo scene)
+        {
+            var sceneAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(scene.Path);
+            if (sceneAsset != null)
+            {
+                EditorGUIUtility.PingObject(sceneAsset);
+                Selection.activeObject = sceneAsset;
+            }
         }
 
         private void ShowGroupMenu(SceneInfo scene)
@@ -242,7 +352,8 @@ namespace AxuFrameKit.Common.Editor.Window
                 foreach (var group in customGroups)
                 {
                     bool isInGroup = group.SceneGuids.Contains(scene.Guid);
-                    menu.AddItem(new GUIContent(group.Name), isInGroup, () => ToggleGroupMembership(scene, group));
+                    var targetGroup = group;
+                    menu.AddItem(new GUIContent(group.Name), isInGroup, () => ToggleGroupMembership(scene, targetGroup));
                 }
             }
             menu.ShowAsContext();
@@ -255,37 +366,13 @@ namespace AxuFrameKit.Common.Editor.Window
             else
                 group.SceneGuids.Add(scene.Guid);
             SaveGroups();
+            RefreshContent();
         }
 
-        // 切换收藏状态
-        private void ToggleFavorite(SceneInfo scene)
-        {
-            scene.IsFavorite = !scene.IsFavorite;
-            if (scene.IsFavorite)
-            {
-                if (!favoriteSceneGuids.Contains(scene.Guid))
-                {
-                    favoriteSceneGuids.Add(scene.Guid);
-                }
-            }
-            else
-            {
-                favoriteSceneGuids.Remove(scene.Guid);
-            }
-            SaveFavoriteScenes(); // 保存到EditorPrefs
-            CollectScenes(); // 重新收集并排序
-        }
+        #endregion
 
-        // 打开场景
-        private void OpenScene(string path)
-        {
-            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-            {
-                EditorSceneManager.OpenScene(path);
-            }
-        }
+        #region Data Persistence
 
-        // 加载收藏的场景GUID
         private void LoadFavoriteScenes()
         {
             string favoritesJson = EditorPrefs.GetString(FavoriteScenesKey, "");
@@ -299,7 +386,6 @@ namespace AxuFrameKit.Common.Editor.Window
             }
         }
 
-        // 保存收藏的场景GUID
         private void SaveFavoriteScenes()
         {
             StringListWrapper wrapper = new StringListWrapper { list = favoriteSceneGuids };
@@ -327,7 +413,10 @@ namespace AxuFrameKit.Common.Editor.Window
             EditorPrefs.SetString(GroupsKey, groupsJson);
         }
 
-        // 场景信息辅助类
+        #endregion
+
+        #region Data Classes
+
         private class SceneInfo
         {
             public string Guid;
@@ -353,7 +442,6 @@ namespace AxuFrameKit.Common.Editor.Window
             public List<string> SceneGuids = new List<string>();
         }
 
-        // 用于JsonUtility序列化List<string>的辅助类
         [System.Serializable]
         private class StringListWrapper
         {
@@ -365,5 +453,7 @@ namespace AxuFrameKit.Common.Editor.Window
         {
             public List<SceneGroup> groups;
         }
+
+        #endregion
     }
 }
