@@ -674,6 +674,10 @@
     padding-bottom: 4px;
     border-bottom-width: 1px;
     border-bottom-color: #141414;
+    /* Prevent shrinking when log list grows */
+    height: 32px;
+    min-height: 32px;
+    flex-shrink: 0;
 }
 
 /* ===== Debugger Log ScrollView ===== */
