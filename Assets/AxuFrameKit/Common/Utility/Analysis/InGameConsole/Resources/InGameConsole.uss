@@ -1,0 +1,472 @@
+/* ==================================================================
+   InGame Console - UE5 Style Theme
+   High-Performance Runtime Console with UIToolkit
+   ================================================================== */
+
+/* ===== CSS Variables ===== */
+:root {
+    /* Primary Background Colors */
+    --igc-bg-darkest: #141414;
+    --igc-bg-dark: #1a1a1a;
+    --igc-bg-panel: #1e1e1e;
+    --igc-bg-element: #242424;
+    --igc-bg-hover: #2e2e2e;
+    --igc-bg-active: #383838;
+    
+    /* Accent Colors (Orange Theme) */
+    --igc-accent-primary: #ff9500;
+    --igc-accent-secondary: #e68a00;
+    --igc-accent-glow: rgba(255, 149, 0, 0.15);
+    --igc-accent-border: rgba(255, 149, 0, 0.5);
+    
+    /* Log Colors */
+    --igc-log-info: #e8e8e8;
+    --igc-log-warning: #ffd93d;
+    --igc-log-error: #ff6b6b;
+    --igc-log-exception: #ff4757;
+    
+    /* Border Colors */
+    --igc-border-dark: #0d0d0d;
+    --igc-border-subtle: #333333;
+    --igc-border-light: #454545;
+    
+    /* Text Colors */
+    --igc-text-primary: #e8e8e8;
+    --igc-text-secondary: #a0a0a0;
+    --igc-text-disabled: #666666;
+    --igc-text-highlight: #ffffff;
+}
+
+/* ===== Root Container ===== */
+.igc-root {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+/* ===== Main Console Panel ===== */
+.igc-panel {
+    background-color: rgba(20, 20, 20, 0.97);
+    border-top-width: 3px;
+    border-top-color: var(--igc-accent-primary);
+    flex-direction: column;
+}
+
+/* ===== Drag Bar ===== */
+.igc-drag-bar {
+    height: 8px;
+    min-height: 8px;
+    background-color: var(--igc-bg-dark);
+    cursor: ns-resize;
+    flex-shrink: 0;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--igc-border-dark);
+}
+
+.igc-drag-bar:hover {
+    background-color: rgba(255, 149, 0, 0.2);
+}
+
+/* ===== Separator ===== */
+.igc-separator {
+    height: 2px;
+    min-height: 2px;
+    background-color: var(--igc-accent-primary);
+    flex-shrink: 0;
+}
+
+/* ===== Toolbar ===== */
+.igc-toolbar {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #1e1e1e;
+    padding: 6px 10px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--igc-border-dark);
+    height: 40px;
+    min-height: 40px;
+    flex-shrink: 0;
+}
+
+.igc-toolbar-group {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* ===== Button Base ===== */
+.igc-btn {
+    height: 26px;
+    min-height: 26px;
+    min-width: 60px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    background-color: #3a3a3a;
+    color: var(--igc-text-primary);
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: var(--igc-border-subtle);
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-right: 6px;
+    transition-duration: 0.1s;
+}
+
+.igc-btn:hover {
+    background-color: #4a4a4a;
+    border-color: var(--igc-border-light);
+}
+
+.igc-btn:active {
+    background-color: #505050;
+}
+
+.igc-btn-active {
+    background-color: var(--igc-accent-primary);
+    color: #1a1a1a;
+    border-color: var(--igc-accent-secondary);
+}
+
+.igc-btn-active:hover {
+    background-color: #ffaa33;
+}
+
+/* ===== Danger Button (Clear) ===== */
+.igc-btn-danger {
+    background-color: #4a2a2a;
+    border-color: #6a3a3a;
+    color: #ff9999;
+}
+
+.igc-btn-danger:hover {
+    background-color: #5a3a3a;
+    border-color: #8a4a4a;
+    color: #ffaaaa;
+}
+
+/* ===== Close Button ===== */
+.igc-btn-close {
+    min-width: 26px;
+    width: 26px;
+    padding: 0;
+    margin-right: 0;
+    margin-left: 10px;
+    font-size: 14px;
+    background-color: transparent;
+    border-color: transparent;
+    color: #888888;
+}
+
+.igc-btn-close:hover {
+    background-color: #cc3333;
+    color: white;
+    border-color: #aa2222;
+}
+
+/* ===== Search Field ===== */
+.igc-search-field {
+    flex-grow: 1;
+    max-width: 300px;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.igc-search-field > .unity-text-field__input {
+    background-color: var(--igc-bg-darkest);
+    border-width: 1px;
+    border-color: var(--igc-border-subtle);
+    border-radius: 3px;
+    color: var(--igc-text-primary);
+    padding: 4px 10px;
+    font-size: 11px;
+    min-height: 24px;
+}
+
+.igc-search-field > .unity-text-field__input:hover {
+    border-color: var(--igc-border-light);
+}
+
+.igc-search-field > .unity-text-field__input:focus {
+    border-color: var(--igc-accent-primary);
+}
+
+.igc-search-placeholder {
+    position: absolute;
+    left: 10px;
+    top: 4px;
+    color: var(--igc-text-disabled);
+    font-size: 11px;
+}
+
+/* ===== Filter Buttons ===== */
+.igc-filter-group {
+    margin-left: auto;
+}
+
+.igc-filter-container {
+    flex-direction: row;
+    align-items: center;
+    margin-left: 4px;
+}
+
+.igc-filter-btn {
+    width: 28px;
+    height: 26px;
+    min-width: 28px;
+    min-height: 26px;
+    font-size: 12px;
+    background-color: #3a3a3a;
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: var(--igc-border-subtle);
+    padding: 0;
+    -unity-text-align: middle-center;
+}
+
+.igc-filter-btn:hover {
+    background-color: #4a4a4a;
+}
+
+/* Filter button types */
+.igc-filter-log {
+    color: #6eb5ff;
+}
+
+.igc-filter-warn {
+    color: #ffd93d;
+}
+
+.igc-filter-error {
+    color: #ff6b6b;
+}
+
+/* Active state */
+.igc-filter-active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--igc-border-light);
+}
+
+.igc-filter-active.igc-filter-log {
+    background-color: rgba(110, 181, 255, 0.2);
+    border-color: rgba(110, 181, 255, 0.5);
+}
+
+.igc-filter-active.igc-filter-warn {
+    background-color: rgba(255, 217, 61, 0.2);
+    border-color: rgba(255, 217, 61, 0.5);
+}
+
+.igc-filter-active.igc-filter-error {
+    background-color: rgba(255, 107, 107, 0.2);
+    border-color: rgba(255, 107, 107, 0.5);
+}
+
+/* Inactive state - use separate class instead of :not() which is not supported */
+.igc-filter-inactive {
+    opacity: 0.4;
+}
+
+/* Filter count badge */
+.igc-filter-count {
+    font-size: 10px;
+    color: var(--igc-text-secondary);
+    margin-left: 2px;
+    min-width: 20px;
+    -unity-text-align: middle-left;
+}
+
+/* ===== Main Content Area ===== */
+.igc-main-content {
+    flex-grow: 1;
+}
+
+/* ===== Log List Container ===== */
+.igc-log-list-container {
+    flex-grow: 1;
+    background-color: var(--igc-bg-darkest);
+}
+
+.igc-log-list {
+    flex-grow: 1;
+    background-color: transparent;
+}
+
+/* ===== Log Item ===== */
+.igc-log-item {
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 10px;
+    border-bottom-width: 1px;
+    border-bottom-color: #1e1e1e;
+    min-height: 32px;
+}
+
+.igc-log-item:hover {
+    background-color: var(--igc-bg-hover);
+}
+
+/* Selected item */
+.unity-list-view__item--selected .igc-log-item,
+.unity-collection-view__item--selected .igc-log-item {
+    background-color: rgba(255, 149, 0, 0.2);
+    border-bottom-color: rgba(255, 149, 0, 0.3);
+}
+
+/* Log type backgrounds */
+.igc-log-error {
+    background-color: rgba(255, 80, 80, 0.08);
+}
+
+.igc-log-error:hover {
+    background-color: rgba(255, 80, 80, 0.15);
+}
+
+.igc-log-warning {
+    background-color: rgba(255, 200, 50, 0.05);
+}
+
+.igc-log-warning:hover {
+    background-color: rgba(255, 200, 50, 0.1);
+}
+
+/* ===== Log Icon ===== */
+.igc-log-icon {
+    width: 20px;
+    min-width: 20px;
+    font-size: 14px;
+    -unity-text-align: middle-center;
+    margin-right: 8px;
+}
+
+/* ===== Log Content ===== */
+.igc-log-content {
+    flex-grow: 1;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.igc-log-message {
+    font-size: 11px;
+    color: var(--igc-text-primary);
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.igc-log-timestamp {
+    font-size: 9px;
+    color: var(--igc-text-disabled);
+    margin-top: 2px;
+}
+
+/* ===== Collapse Count Badge ===== */
+.igc-collapse-count {
+    min-width: 24px;
+    height: 18px;
+    background-color: var(--igc-accent-primary);
+    color: #1a1a1a;
+    font-size: 10px;
+    -unity-font-style: bold;
+    border-radius: 9px;
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-left: 8px;
+    -unity-text-align: middle-center;
+}
+
+/* ===== Detail Panel ===== */
+.igc-detail-panel {
+    background-color: var(--igc-bg-panel);
+    border-top-width: 1px;
+    border-top-color: var(--igc-border-dark);
+    min-height: 100px;
+}
+
+.igc-detail-header {
+    height: 26px;
+    background-color: var(--igc-bg-dark);
+    color: var(--igc-text-secondary);
+    font-size: 11px;
+    -unity-font-style: bold;
+    padding-left: 10px;
+    -unity-text-align: middle-left;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--igc-border-dark);
+}
+
+.igc-detail-scroll {
+    flex-grow: 1;
+    padding: 10px;
+}
+
+.igc-detail-message {
+    font-size: 12px;
+    color: var(--igc-text-primary);
+    white-space: normal;
+    margin-bottom: 10px;
+}
+
+.igc-stack-header {
+    font-size: 10px;
+    color: var(--igc-accent-primary);
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+}
+
+.igc-detail-stack {
+    font-size: 10px;
+    color: var(--igc-text-secondary);
+    white-space: normal;
+    -unity-font-style: normal;
+}
+
+/* ===== Scrollbars ===== */
+.unity-scroller {
+    background-color: transparent;
+}
+
+.unity-scroller--vertical {
+    width: 8px;
+}
+
+.unity-base-slider__dragger {
+    background-color: #4a4a4a;
+    border-radius: 4px;
+    border-width: 0;
+    margin: 1px;
+}
+
+.unity-base-slider__dragger:hover {
+    background-color: #5a5a5a;
+}
+
+.unity-base-slider__dragger:active {
+    background-color: var(--igc-accent-primary);
+}
+
+/* Hide scroll buttons */
+.unity-scroller__low-button,
+.unity-scroller__high-button {
+    display: none;
+}
+
+/* ===== Split View Handle ===== */
+.unity-two-pane-split-view__dragline-anchor {
+    background-color: var(--igc-border-dark);
+}
+
+.unity-two-pane-split-view__dragline {
+    background-color: var(--igc-border-subtle);
+}
+
+.unity-two-pane-split-view__dragline:hover {
+    background-color: var(--igc-accent-primary);
+}
+
+/* ===== Alternating Row Background ===== */
+.unity-list-view__item--alternative-background {
+    background-color: rgba(255, 255, 255, 0.02);
+}

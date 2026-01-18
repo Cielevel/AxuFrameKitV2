@@ -602,24 +602,129 @@
    Symbol Page Specific
    ======================================== */
 
-.symbol-list-panel {
-    width: 220px;
-    border-right-width: 1px;
-    border-right-color: var(--ue5-border-dark);
-    background-color: var(--ue5-bg-dark);
+/* Symbol Page Root Container */
+.symbol-page-root {
+    flex-direction: row;
+    flex-grow: 1;
+    padding: 12px;
+    background-color: var(--ue5-bg-darkest);
 }
 
-.symbol-list-header {
-    padding: 10px;
-    -unity-font-style: bold;
+/* Left Panel - Rounded Card Style */
+.symbol-list-panel {
+    width: 240px;
+    min-width: 240px;
     background-color: var(--ue5-bg-element);
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    margin-right: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* List Header - Group Title */
+.symbol-list-header {
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    -unity-font-style: bold;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    background-color: var(--ue5-bg-dark);
+    color: var(--ue5-accent-primary);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ue5-border-dark);
+}
+
+/* Symbol List Container */
+.symbol-list-container {
+    flex-grow: 1;
+    padding: 8px;
+}
+
+/* Symbol Row - Rounded Selectable Item */
+.symbol-row {
+    flex-direction: row;
+    align-items: center;
+    height: 34px;
+    padding-left: 12px;
+    padding-right: 12px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    background-color: transparent;
+    border-width: 1px;
+    border-color: transparent;
+    transition-duration: 0.12s;
+}
+
+.symbol-row:hover {
+    background-color: var(--ue5-bg-hover);
+    border-color: var(--ue5-border-subtle);
+}
+
+/* Symbol Row - Selected State (Orange) */
+.symbol-row--selected {
+    background-color: var(--ue5-selected-bg);
+    border-color: var(--ue5-accent-secondary);
+}
+
+.symbol-row--selected:hover {
+    background-color: var(--ue5-selected-hover);
+}
+
+.symbol-row--selected .symbol-row-label {
+    color: var(--ue5-selected-text);
+    -unity-font-style: bold;
+}
+
+.symbol-row--selected .symbol-row-icon {
+    color: var(--ue5-selected-text);
+}
+
+/* Symbol Row Icon (Status Dot) */
+.symbol-row-icon {
+    font-size: 10px;
+    margin-right: 10px;
+    color: var(--ue5-text-secondary);
+}
+
+.symbol-row-icon--active {
     color: var(--ue5-accent-primary);
 }
 
+/* Symbol Row Label */
+.symbol-row-label {
+    flex-grow: 1;
+    font-size: 12px;
+    color: var(--ue5-text-primary);
+}
+
+/* Empty State Label */
+.symbol-empty-label {
+    padding-left: 12px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-size: 11px;
+    color: var(--ue5-text-disabled);
+    font-style: italic;
+}
+
+/* Bottom Button Area */
+.symbol-list-footer {
+    padding: 10px;
+    background-color: var(--ue5-bg-dark);
+    border-top-width: 1px;
+    border-top-color: var(--ue5-border-dark);
+}
+
+/* Right Panel - Detail Area */
 .symbol-detail-area {
     flex-grow: 1;
-    padding: 20px;
-    background-color: var(--ue5-bg-panel);
+    padding: 0;
+    background-color: transparent;
 }
 
 .symbol-detail-title {
@@ -834,4 +939,297 @@
 .unity-toggle:checked .unity-toggle__checkmark {
     background-color: var(--ue5-accent-primary);
     border-color: var(--ue5-accent-secondary);
+}
+
+/* ========================================
+   Section Panels - Content Grouping
+   Inspired by LiveStreamSimulatorWindow
+   ======================================== */
+
+/* Base Section Panel - Rounded Card Style */
+.section-panel {
+    background-color: var(--ue5-bg-element);
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+/* Section Panel Variants */
+.section-panel--subtle {
+    border-color: var(--ue5-border-subtle);
+}
+
+.section-panel--no-border {
+    border-width: 0;
+}
+
+/* Section Header - Title Bar */
+.section-header {
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--ue5-bg-dark);
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ue5-border-dark);
+    border-left-width: 3px;
+    border-left-color: var(--ue5-accent-primary);
+}
+
+/* Section Header Title */
+.section-title {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: var(--ue5-text-highlight);
+    letter-spacing: 0.5px;
+    flex-grow: 1;
+}
+
+/* Section Header with Icon */
+.section-header-icon {
+    font-size: 14px;
+    margin-right: 8px;
+    color: var(--ue5-accent-primary);
+}
+
+/* Section Content Area */
+.section-content {
+    padding: 16px;
+    background-color: var(--ue5-bg-element);
+}
+
+/* Section Content - Compact Variant */
+.section-content--compact {
+    padding: 12px;
+}
+
+/* Section Content - No Padding */
+.section-content--flush {
+    padding: 0;
+}
+
+/* Section Footer */
+.section-footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background-color: var(--ue5-bg-dark);
+    border-top-width: 1px;
+    border-top-color: var(--ue5-border-dark);
+}
+
+/* ===== Sub-Section (Nested Group) ===== */
+.sub-section {
+    background-color: var(--ue5-bg-dark);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.sub-section:last-child {
+    margin-bottom: 0;
+}
+
+.sub-section-title {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--ue5-accent-primary);
+    margin-bottom: 10px;
+    letter-spacing: 0.3px;
+}
+
+/* ===== Info Box / Hint Box ===== */
+.info-box {
+    flex-direction: row;
+    align-items: flex-start;
+    background-color: rgba(255, 149, 0, 0.08);
+    border-radius: 4px;
+    border-width: 1px;
+    border-left-width: 3px;
+    border-color: var(--ue5-accent-border);
+    border-left-color: var(--ue5-accent-primary);
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.info-box-icon {
+    font-size: 14px;
+    color: var(--ue5-accent-primary);
+    margin-right: 10px;
+    margin-top: 1px;
+}
+
+.info-box-text {
+    flex-grow: 1;
+    font-size: 12px;
+    color: var(--ue5-text-secondary);
+    white-space: normal;
+}
+
+/* Info Box Variants */
+.info-box--success {
+    background-color: rgba(42, 90, 42, 0.2);
+    border-color: #3a7a3a;
+    border-left-color: #5cb85c;
+}
+
+.info-box--success .info-box-icon {
+    color: #5cb85c;
+}
+
+.info-box--warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.3);
+    border-left-color: #ffc107;
+}
+
+.info-box--warning .info-box-icon {
+    color: #ffc107;
+}
+
+.info-box--error {
+    background-color: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.3);
+    border-left-color: #dc3545;
+}
+
+.info-box--error .info-box-icon {
+    color: #dc3545;
+}
+
+/* ===== Form Row ===== */
+.form-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.form-row:last-child {
+    margin-bottom: 0;
+}
+
+.form-label {
+    width: 120px;
+    min-width: 120px;
+    font-size: 12px;
+    color: var(--ue5-text-secondary);
+    -unity-text-align: middle-left;
+}
+
+.form-value {
+    flex-grow: 1;
+}
+
+/* ===== Separator Line ===== */
+.separator {
+    height: 1px;
+    background-color: var(--ue5-border-dark);
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+.separator--accent {
+    height: 2px;
+    background-color: var(--ue5-accent-primary);
+}
+
+/* ===== Button Row (for section footers) ===== */
+.button-row {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+.button-row > Button {
+    margin-left: 8px;
+}
+
+.button-row > Button:first-child {
+    margin-left: 0;
+}
+
+/* ===== Stats/Metric Card ===== */
+.stat-card {
+    background-color: var(--ue5-bg-dark);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    padding: 16px;
+    min-width: 120px;
+    align-items: center;
+}
+
+.stat-value {
+    font-size: 24px;
+    -unity-font-style: bold;
+    color: var(--ue5-accent-primary);
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: var(--ue5-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ===== Page Section Container ===== */
+.page-sections {
+    padding: 16px;
+}
+
+/* ===== Collapsible Section (Foldout Style) ===== */
+.collapsible-section {
+    background-color: var(--ue5-bg-element);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.collapsible-header {
+    flex-direction: row;
+    align-items: center;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background-color: var(--ue5-bg-dark);
+    cursor: link;
+}
+
+.collapsible-header:hover {
+    background-color: var(--ue5-bg-hover);
+}
+
+.collapsible-arrow {
+    font-size: 10px;
+    color: var(--ue5-text-secondary);
+    margin-right: 8px;
+    width: 12px;
+    -unity-text-align: middle-center;
+}
+
+.collapsible-title {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--ue5-text-primary);
+    flex-grow: 1;
+}
+
+.collapsible-content {
+    padding: 12px;
+    border-top-width: 1px;
+    border-top-color: var(--ue5-border-dark);
 }

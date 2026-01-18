@@ -63,134 +63,182 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
         public VisualElement CreateContent()
         {
             _root = new VisualElement();
-            _root.AddToClassList("row");
-            _root.AddToClassList("flex-grow");
+            _root.AddToClassList("symbol-page-root");
 
-            // ================== Left Panel ==================
+            // ================== Left Panel - Rounded Card ==================
             var leftPanel = new VisualElement();
             leftPanel.AddToClassList("symbol-list-panel");
-            leftPanel.style.minWidth = 200;
-            leftPanel.style.width = 200;
-            leftPanel.style.borderRightWidth = 1;
-            leftPanel.style.borderRightColor = new Color(0.15f, 0.15f, 0.15f);
-            leftPanel.style.display = DisplayStyle.Flex;
-            leftPanel.style.flexDirection = FlexDirection.Column;
 
-            // Scroll View replacement for ListView to handle Grouping better
+            // ScrollView with container for list items
             _leftScrollView = new ScrollView();
+            _leftScrollView.AddToClassList("symbol-list-container");
             _leftScrollView.style.flexGrow = 1;
             leftPanel.Add(_leftScrollView);
 
             RefreshSymbolListUI(); // Initialize data and UI
 
-            // Custom Mode Button at the bottom of Left Panel
-            _modeSwitchBtn = new Button(SwitchToCustomMode);
-            _modeSwitchBtn.text = "+ 自定义符号";
-            _modeSwitchBtn.style.height = 36;
-            _modeSwitchBtn.style.marginTop = 5;
-            _modeSwitchBtn.style.marginBottom = 5;
-            _modeSwitchBtn.style.marginLeft = 5;
-            _modeSwitchBtn.style.marginRight = 5;
-            leftPanel.Add(_modeSwitchBtn);
+            // Footer with Custom Mode Button
+            var footer = new VisualElement();
+            footer.AddToClassList("symbol-list-footer");
 
+            _modeSwitchBtn = new Button(SwitchToCustomMode);
+            _modeSwitchBtn.text = "＋ 自定义符号";
+            _modeSwitchBtn.AddToClassList("btn-secondary");
+            _modeSwitchBtn.style.height = 34;
+            footer.Add(_modeSwitchBtn);
+
+            leftPanel.Add(footer);
             _root.Add(leftPanel);
 
             // ================== Right Panel ==================
             var rightPanel = new VisualElement();
-            rightPanel.style.flexGrow = 1;
-            rightPanel.style.paddingLeft = 15;
-            rightPanel.style.paddingRight = 15;
-            rightPanel.style.paddingTop = 10;
+            rightPanel.AddToClassList("symbol-detail-area");
 
-            // 1. Normal Detail Root
+            // 1. Normal Detail Root - Using Section Panel
             _normalDetailRoot = new VisualElement();
             _normalDetailRoot.style.display = DisplayStyle.None;
 
+            // Main Section Panel
+            var normalPanel = new VisualElement();
+            normalPanel.AddToClassList("section-panel");
+
+            // Section Header
+            var normalHeader = new VisualElement();
+            normalHeader.AddToClassList("section-header");
+            var headerIcon = new Label("⚙");
+            headerIcon.AddToClassList("section-header-icon");
+            normalHeader.Add(headerIcon);
             _detailTitle = new Label("Symbols");
-            _detailTitle.style.fontSize = 20;
-            _detailTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
-            _detailTitle.style.marginBottom = 10;
-            _detailTitle.style.color = new Color(0.3f, 0.7f, 0.9f);
-            _normalDetailRoot.Add(_detailTitle);
+            _detailTitle.AddToClassList("section-title");
+            normalHeader.Add(_detailTitle);
+            normalPanel.Add(normalHeader);
+
+            // Section Content
+            var normalContent = new VisualElement();
+            normalContent.AddToClassList("section-content");
 
             _detailDesc = new Label();
-            _detailDesc.style.whiteSpace = WhiteSpace.Normal;
-            _detailDesc.style.marginBottom = 15;
-            _detailDesc.style.color = new Color(0.7f, 0.7f, 0.7f);
-            _normalDetailRoot.Add(_detailDesc);
+            _detailDesc.AddToClassList("symbol-detail-desc");
+            _detailDesc.style.marginBottom = 16;
+            normalContent.Add(_detailDesc);
+
+            // Status Sub-Section
+            var statusSection = new VisualElement();
+            statusSection.AddToClassList("sub-section");
+
+            var statusTitle = new Label("状态信息");
+            statusTitle.AddToClassList("sub-section-title");
+            statusSection.Add(statusTitle);
 
             var statusRow = new VisualElement();
-            statusRow.style.flexDirection = FlexDirection.Row;
-            statusRow.style.marginBottom = 20;
-            statusRow.Add(new Label("当前状态: "));
+            statusRow.AddToClassList("form-row");
+            var statusLabel = new Label("当前状态:");
+            statusLabel.AddToClassList("form-label");
+            statusRow.Add(statusLabel);
             _detailStatus = new Label("-");
-            _detailStatus.style.unityFontStyleAndWeight = FontStyle.Bold;
-            _detailStatus.style.marginLeft = 5;
+            _detailStatus.AddToClassList("text-bold");
+            _detailStatus.AddToClassList("form-value");
             statusRow.Add(_detailStatus);
-            _normalDetailRoot.Add(statusRow);
+            statusSection.Add(statusRow);
 
+            normalContent.Add(statusSection);
+
+            // Action Button Row
+            var buttonRow = new VisualElement();
+            buttonRow.AddToClassList("button-row");
             _actionButton = new Button();
-            _actionButton.style.height = 30;
+            _actionButton.style.height = 36;
+            _actionButton.style.minWidth = 140;
             _actionButton.clicked += OnActionClicked;
-            _normalDetailRoot.Add(_actionButton);
+            buttonRow.Add(_actionButton);
+            normalContent.Add(buttonRow);
 
+            normalPanel.Add(normalContent);
+            _normalDetailRoot.Add(normalPanel);
             rightPanel.Add(_normalDetailRoot);
 
-            // 2. Custom Detail Root
+            // 2. Custom Detail Root - Using Section Panel
             _customDetailRoot = new VisualElement();
             _customDetailRoot.style.display = DisplayStyle.None;
 
-            var customHeader = new Label("自定义宏管理");
-            customHeader.style.fontSize = 18;
-            customHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
-            customHeader.style.marginBottom = 10;
-            _customDetailRoot.Add(customHeader);
+            // Main Section Panel
+            var customPanel = new VisualElement();
+            customPanel.AddToClassList("section-panel");
 
-            var customDesc = new Label("在此处输入任意预编译宏符号名称，可查询当前状态并进行添加或移除操作。\n(例如: MY_CUSTOM_DEFINE)");
-            customDesc.style.fontSize = 12;
-            customDesc.style.color = new Color(0.7f, 0.7f, 0.7f);
-            customDesc.style.marginBottom = 20;
-            customDesc.style.whiteSpace = WhiteSpace.Normal;
-            _customDetailRoot.Add(customDesc);
+            // Section Header
+            var customHeader = new VisualElement();
+            customHeader.AddToClassList("section-header");
+            var customIcon = new Label("✏");
+            customIcon.AddToClassList("section-header-icon");
+            customHeader.Add(customIcon);
+            var customTitle = new Label("自定义宏管理");
+            customTitle.AddToClassList("section-title");
+            customHeader.Add(customTitle);
+            customPanel.Add(customHeader);
 
-            // Input Area
+            // Section Content
+            var customContent = new VisualElement();
+            customContent.AddToClassList("section-content");
+
+            // Info Box
+            var infoBox = new VisualElement();
+            infoBox.AddToClassList("info-box");
+            var infoIcon = new Label("💡");
+            infoIcon.AddToClassList("info-box-icon");
+            infoBox.Add(infoIcon);
+            var infoText = new Label("在此处输入任意预编译宏符号名称，可查询当前状态并进行添加或移除操作。\n例如: MY_CUSTOM_DEFINE");
+            infoText.AddToClassList("info-box-text");
+            infoBox.Add(infoText);
+            customContent.Add(infoBox);
+
+            // Input Sub-Section
+            var inputSection = new VisualElement();
+            inputSection.AddToClassList("sub-section");
+
+            var inputTitle = new Label("符号输入");
+            inputTitle.AddToClassList("sub-section-title");
+            inputSection.Add(inputTitle);
+
             var inputRow = new VisualElement();
-            inputRow.style.flexDirection = FlexDirection.Row;
-            inputRow.style.alignItems = Align.Center;
-            inputRow.style.marginBottom = 15;
-
+            inputRow.AddToClassList("form-row");
             var labelInfo = new Label("Symbol Name:");
-            labelInfo.style.width = 90;
+            labelInfo.AddToClassList("form-label");
             inputRow.Add(labelInfo);
-
             _customSymbolInput = new TextField();
-            _customSymbolInput.style.flexGrow = 1;
+            _customSymbolInput.AddToClassList("form-value");
             _customSymbolInput.RegisterValueChangedCallback(evt => CheckCustomSymbol(evt.newValue));
             inputRow.Add(_customSymbolInput);
+            inputSection.Add(inputRow);
 
-            _customDetailRoot.Add(inputRow);
-
-            // Status Area
+            // Status Row
             var customStatusRow = new VisualElement();
-            customStatusRow.style.flexDirection = FlexDirection.Row;
-            customStatusRow.style.alignItems = Align.Center;
-            customStatusRow.style.marginBottom = 20;
-
-            customStatusRow.Add(new Label("Status: "));
+            customStatusRow.AddToClassList("form-row");
+            customStatusRow.style.marginTop = 8;
+            var customStatusPrefix = new Label("Status:");
+            customStatusPrefix.AddToClassList("form-label");
+            customStatusRow.Add(customStatusPrefix);
             _customStatusLabel = new Label("等待输入...");
-            _customStatusLabel.style.marginLeft = 5;
-            _customStatusLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+            _customStatusLabel.AddToClassList("text-bold");
+            _customStatusLabel.AddToClassList("form-value");
             customStatusRow.Add(_customStatusLabel);
-            _customDetailRoot.Add(customStatusRow);
+            inputSection.Add(customStatusRow);
 
-            // Action Button
+            customContent.Add(inputSection);
+
+            // Action Button Row
+            var customButtonRow = new VisualElement();
+            customButtonRow.AddToClassList("button-row");
             _customActionButton = new Button();
             _customActionButton.text = "添加/移除";
-            _customActionButton.style.height = 35;
+            _customActionButton.style.height = 36;
+            _customActionButton.style.minWidth = 140;
             _customActionButton.clicked += OnCustomActionClicked;
             _customActionButton.SetEnabled(false);
-            _customDetailRoot.Add(_customActionButton);
+            customButtonRow.Add(_customActionButton);
+            customContent.Add(customButtonRow);
 
+            customPanel.Add(customContent);
+            _customDetailRoot.Add(customPanel);
             rightPanel.Add(_customDetailRoot);
 
             _root.Add(rightPanel);
@@ -204,12 +252,8 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             _currentSelectedRow = null;
 
             // 1. Tool Recommended (Inner)
-            var group1Header = new Label("工具Symbol");
-            group1Header.style.unityFontStyleAndWeight = FontStyle.Bold;
-            group1Header.style.paddingLeft = 5;
-            group1Header.style.paddingTop = 8;
-            group1Header.style.paddingBottom = 4;
-            group1Header.style.backgroundColor = new Color(0.25f, 0.25f, 0.25f);
+            var group1Header = new Label("工具 Symbol");
+            group1Header.AddToClassList("symbol-list-header");
             _leftScrollView.Add(group1Header);
 
             foreach (var symbol in InnerSymbols.AllSymbols)
@@ -221,20 +265,14 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             var defined = GetProjectDefinedSymbols();
             var projectSymbols = defined.Where(s => !InnerSymbols.AllSymbols.Contains(s)).ToList();
 
-            var group2Header = new Label("工程Symbol");
-            group2Header.style.unityFontStyleAndWeight = FontStyle.Bold;
-            group2Header.style.paddingLeft = 5;
-            group2Header.style.paddingTop = 8;
-            group2Header.style.paddingBottom = 4;
-            group2Header.style.backgroundColor = new Color(0.25f, 0.25f, 0.25f);
+            var group2Header = new Label("工程 Symbol");
+            group2Header.AddToClassList("symbol-list-header");
             _leftScrollView.Add(group2Header);
 
             if (projectSymbols.Count == 0)
             {
                 var emptyLabel = new Label("(无其他自定义宏)");
-                emptyLabel.style.color = new Color(0.6f, 0.6f, 0.6f);
-                emptyLabel.style.paddingLeft = 10;
-                emptyLabel.style.paddingTop = 5;
+                emptyLabel.AddToClassList("symbol-empty-label");
                 _leftScrollView.Add(emptyLabel);
             }
             else
@@ -259,39 +297,28 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
                 .ToList();
         }
 
+        // UE5 Theme Colors (for inline style when USS class is not enough)
+        private static readonly Color Ue5AccentPrimary = new Color(1f, 0.584f, 0f);     // #ff9500
+        private static readonly Color Ue5TextSecondary = new Color(0.627f, 0.627f, 0.627f); // #a0a0a0
+        private static readonly Color Ue5StatusDisabled = new Color(0.5f, 0.25f, 0.25f); // Muted red
+
         private VisualElement CreateSymbolRow(string symbol, bool isInner)
         {
             var row = new VisualElement();
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.alignItems = Align.Center;
-            row.style.height = 28;
-            row.style.paddingLeft = 10;
-            // row.style.borderBottomWidth = 1;
-            // row.style.borderBottomColor = new Color(0.2f, 0.2f, 0.2f); // Optional separator?
+            row.AddToClassList("symbol-row");
 
             row.RegisterCallback<ClickEvent>(evt => SelectRow(row, symbol));
 
-            // Hover effect
-            row.RegisterCallback<MouseEnterEvent>(evt =>
-            {
-                if (row != _currentSelectedRow) row.style.backgroundColor = new Color(0.3f, 0.3f, 0.3f);
-            });
-            row.RegisterCallback<MouseLeaveEvent>(evt =>
-            {
-                if (row != _currentSelectedRow) row.style.backgroundColor = Color.clear;
-            });
-
-            // Status Icon
+            // Status Icon (UE5 orange when enabled)
             bool isAdded = ScriptDefineSymbolSetter.IsSymbolAdded(symbol);
             var icon = new Label("●");
-            icon.style.marginRight = 6;
-            icon.style.fontSize = 10;
-            icon.style.color = isAdded ? Color.green : new Color(0.4f, 0.4f, 0.4f);
+            icon.AddToClassList("symbol-row-icon");
+            if (isAdded) icon.AddToClassList("symbol-row-icon--active");
             row.Add(icon);
 
             // Name
             var label = new Label(symbol);
-            label.style.flexGrow = 1;
+            label.AddToClassList("symbol-row-label");
             row.Add(label);
 
             return row;
@@ -299,16 +326,21 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
 
         private void SelectRow(VisualElement row, string symbol)
         {
+            // Reset previous selection (remove selected class)
             if (_currentSelectedRow != null)
             {
-                _currentSelectedRow.style.backgroundColor = Color.clear;
+                _currentSelectedRow.RemoveFromClassList("symbol-row--selected");
             }
 
             _currentSelectedRow = row;
-            _currentSelectedRow.style.backgroundColor = new Color(0.24f, 0.37f, 0.58f); // Classic selection blue
+            // Add selected class for UE5 Orange selection
+            _currentSelectedRow.AddToClassList("symbol-row--selected");
 
             _selectedSymbol = symbol;
-            _modeSwitchBtn.style.backgroundColor = new Color(0.35f, 0.35f, 0.35f); // reset custom btn visual if any
+
+            // Reset custom mode button style
+            _modeSwitchBtn.RemoveFromClassList("btn-primary");
+            _modeSwitchBtn.AddToClassList("btn-secondary");
 
             // Switch to normal mode
             _isCustomMode = false;
@@ -320,12 +352,15 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             // Clear list selection
             if (_currentSelectedRow != null)
             {
-                _currentSelectedRow.style.backgroundColor = Color.clear;
+                _currentSelectedRow.RemoveFromClassList("symbol-row--selected");
                 _currentSelectedRow = null;
                 _selectedSymbol = null;
             }
 
-            _modeSwitchBtn.style.backgroundColor = new Color(0.24f, 0.37f, 0.58f); // Highlight button
+            // Highlight custom mode button with UE5 primary style
+            _modeSwitchBtn.RemoveFromClassList("btn-secondary");
+            _modeSwitchBtn.AddToClassList("btn-primary");
+
             _isCustomMode = true;
             UpdateViewVisibility();
         }
@@ -374,17 +409,21 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
 
             bool isAdded = ScriptDefineSymbolSetter.IsSymbolAdded(_selectedSymbol);
             _detailStatus.text = isAdded ? "✓ 已启用" : "○ 未启用";
-            _detailStatus.style.color = isAdded ? Color.green : new Color(0.8f, 0.4f, 0.4f);
+            _detailStatus.style.color = isAdded ? Ue5AccentPrimary : Ue5StatusDisabled;
+
+            // Clear previous button classes
+            _actionButton.RemoveFromClassList("btn-success");
+            _actionButton.RemoveFromClassList("btn-danger");
 
             if (isAdded)
             {
                 _actionButton.text = "➖ 移除符号宏";
-                _actionButton.style.backgroundColor = new Color(0.7f, 0.2f, 0.2f);
+                _actionButton.AddToClassList("btn-danger");
             }
             else
             {
                 _actionButton.text = "➕ 添加符号宏";
-                _actionButton.style.backgroundColor = new Color(0.2f, 0.6f, 0.3f);
+                _actionButton.AddToClassList("btn-success");
             }
         }
 
@@ -429,30 +468,35 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
 
         private void CheckCustomSymbol(string symbol)
         {
+            // Clear previous button classes
+            _customActionButton.RemoveFromClassList("btn-success");
+            _customActionButton.RemoveFromClassList("btn-danger");
+            _customActionButton.RemoveFromClassList("btn-secondary");
+
             if (string.IsNullOrEmpty(symbol))
             {
                 _customStatusLabel.text = "等待输入";
-                _customStatusLabel.style.color = new Color(0.6f, 0.6f, 0.6f);
+                _customStatusLabel.style.color = Ue5TextSecondary;
                 _customActionButton.text = "添加/移除";
                 _customActionButton.SetEnabled(false);
-                _customActionButton.style.backgroundColor = new Color(0.3f, 0.3f, 0.3f);
+                _customActionButton.AddToClassList("btn-secondary");
                 return;
             }
 
             bool isAdded = ScriptDefineSymbolSetter.IsSymbolAdded(symbol);
             _customStatusLabel.text = isAdded ? "✓ 已存在" : "○ 未定义";
-            _customStatusLabel.style.color = isAdded ? Color.green : new Color(0.8f, 0.4f, 0.4f);
+            _customStatusLabel.style.color = isAdded ? Ue5AccentPrimary : Ue5StatusDisabled;
 
             _customActionButton.SetEnabled(true);
             if (isAdded)
             {
                 _customActionButton.text = "➖ 移除自定义宏";
-                _customActionButton.style.backgroundColor = new Color(0.7f, 0.2f, 0.2f);
+                _customActionButton.AddToClassList("btn-danger");
             }
             else
             {
                 _customActionButton.text = "➕ 添加自定义宏";
-                _customActionButton.style.backgroundColor = new Color(0.2f, 0.6f, 0.3f);
+                _customActionButton.AddToClassList("btn-success");
             }
         }
 

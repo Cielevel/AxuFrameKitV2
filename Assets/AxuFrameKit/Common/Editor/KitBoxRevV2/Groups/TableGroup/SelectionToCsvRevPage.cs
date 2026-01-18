@@ -23,6 +23,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
         private ListView _assetListView;
         private Label _countLabel;
         private Button _exportButton;
+        private Button _exportToSelectedFolderBtn;
 
         // Header Options
         private Toggle _includeEnglishKeysToggle;
@@ -81,18 +82,29 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             configBox.AddToClassList("config-box");
             root.Add(configBox);
 
-            var pathRow = new VisualElement();
-            pathRow.AddToClassList("row");
-            pathRow.AddToClassList("mb-10");
-            configBox.Add(pathRow);
-
+            // Path input row
             _pathField = new TextField("保存路径") { value = Application.dataPath };
-            _pathField.AddToClassList("flex-grow");
-            pathRow.Add(_pathField);
+            _pathField.AddToClassList("mb-10");
+            configBox.Add(_pathField);
+
+            // Buttons row - right aligned below path field
+            var buttonRow = new VisualElement();
+            buttonRow.style.flexDirection = FlexDirection.Row;
+            buttonRow.style.justifyContent = Justify.FlexEnd;
+            buttonRow.AddToClassList("mb-10");
+            configBox.Add(buttonRow);
 
             var browseBtn = new Button(BrowseFolder) { text = "浏览..." };
             browseBtn.AddToClassList("browse-button");
-            pathRow.Add(browseBtn);
+            buttonRow.Add(browseBtn);
+
+            _exportToSelectedFolderBtn = new Button(SelectCurrentFolder) { text = "选择当前文件夹" };
+            _exportToSelectedFolderBtn.AddToClassList("browse-button");
+            _exportToSelectedFolderBtn.style.width = 140; // 2x width of browse button (70px)
+            _exportToSelectedFolderBtn.style.marginLeft = 8;
+            _exportToSelectedFolderBtn.SetEnabled(false); // Default disabled
+            _exportToSelectedFolderBtn.tooltip = "在 Project 窗口中选中一个文件夹后可用";
+            buttonRow.Add(_exportToSelectedFolderBtn);
 
             _nameField = new TextField("文件名") { value = "CsvAsset.csv" };
             configBox.Add(_nameField);
@@ -282,6 +294,9 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             _assetListView.RefreshItems();
             _exportButton.SetEnabled(_currentGuids.Count > 0);
 
+            // Check if exactly one folder is selected for "Export to Selected Folder" button
+            UpdateExportToSelectedFolderButton();
+
             // Re-check export button class for disabled state (handled by built-in Unity usually, but we have custom class)
             if (_currentGuids.Count > 0)
             {
@@ -293,6 +308,68 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             }
         }
 
+        /// <summary>
+        /// Check if exactly one folder is selected in Editor, and enable/disable the button accordingly
+        /// </summary>
+        private void UpdateExportToSelectedFolderButton()
+        {
+            bool canSelect = false;
+            string selectedFolderPath = null;
+
+            // Check all selected objects in Project window
+            var selectedObjects = Selection.objects;
+
+            if (selectedObjects != null && selectedObjects.Length == 1)
+            {
+                var obj = selectedObjects[0];
+                if (obj != null)
+                {
+                    string assetPath = AssetDatabase.GetAssetPath(obj);
+                    if (!string.IsNullOrEmpty(assetPath) && AssetDatabase.IsValidFolder(assetPath))
+                    {
+                        canSelect = true;
+                        selectedFolderPath = assetPath;
+                    }
+                }
+            }
+
+            _exportToSelectedFolderBtn.SetEnabled(canSelect);
+
+            if (canSelect)
+            {
+                _exportToSelectedFolderBtn.tooltip = $"设置保存路径为: {selectedFolderPath}";
+                _exportToSelectedFolderBtn.text = "📂 选择当前文件夹";
+            }
+            else
+            {
+                _exportToSelectedFolderBtn.tooltip = "在 Project 窗口中选中一个文件夹后可用";
+                _exportToSelectedFolderBtn.text = "选择当前文件夹";
+            }
+        }
+
+        /// <summary>
+        /// Get the currently selected folder path (only if exactly one folder is selected)
+        /// </summary>
+        private string GetSelectedFolderPath()
+        {
+            var selectedObjects = Selection.objects;
+
+            if (selectedObjects != null && selectedObjects.Length == 1)
+            {
+                var obj = selectedObjects[0];
+                if (obj != null)
+                {
+                    string assetPath = AssetDatabase.GetAssetPath(obj);
+                    if (!string.IsNullOrEmpty(assetPath) && AssetDatabase.IsValidFolder(assetPath))
+                    {
+                        // Convert Assets/... path to full system path
+                        return Path.GetFullPath(assetPath);
+                    }
+                }
+            }
+            return null;
+        }
+
         private void BrowseFolder()
         {
             string selected = EditorUtility.OpenFolderPanel("选择保存路径", _pathField.value, "");
@@ -300,6 +377,22 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             {
                 _pathField.value = selected;
             }
+        }
+
+        /// <summary>
+        /// Select the currently selected folder as export path (does not trigger export)
+        /// </summary>
+        private void SelectCurrentFolder()
+        {
+            string folderPath = GetSelectedFolderPath();
+            if (string.IsNullOrEmpty(folderPath))
+            {
+                EditorUtility.DisplayDialog("提示", "请在 Project 窗口中选中一个文件夹！", "确定");
+                return;
+            }
+
+            // Only set the path field, do NOT trigger export
+            _pathField.value = folderPath;
         }
 
         private void ExportSelectedAssets()
