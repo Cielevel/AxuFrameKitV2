@@ -3807,7 +3807,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &758217863
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5066,23 +5066,28 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   testGiftDataList:
-  - <Name>k__BackingField: "\u4ED9\u5973\u68D2"
+  - elementName: 
+    <Name>k__BackingField: "\u4ED9\u5973\u68D2"
     <ImgUrl>k__BackingField: 
     <Img>k__BackingField: {fileID: 0}
     <Price>k__BackingField: 0
-  - <Name>k__BackingField: "\u68D2\u68D2\u7CD6"
+  - elementName: 
+    <Name>k__BackingField: "\u68D2\u68D2\u7CD6"
     <ImgUrl>k__BackingField: 
     <Img>k__BackingField: {fileID: 0}
     <Price>k__BackingField: 0
-  - <Name>k__BackingField: "\u5927\u4E30\u6536"
+  - elementName: 
+    <Name>k__BackingField: "\u5927\u4E30\u6536"
     <ImgUrl>k__BackingField: 
     <Img>k__BackingField: {fileID: 0}
     <Price>k__BackingField: 0
-  - <Name>k__BackingField: "\u5C0F\u706B\u7BAD"
+  - elementName: 
+    <Name>k__BackingField: "\u5C0F\u706B\u7BAD"
     <ImgUrl>k__BackingField: 
     <Img>k__BackingField: {fileID: 0}
     <Price>k__BackingField: 0
-  - <Name>k__BackingField: "\u9E21\u67B6"
+  - elementName: 
+    <Name>k__BackingField: "\u9E21\u67B6"
     <ImgUrl>k__BackingField: 
     <Img>k__BackingField: {fileID: 0}
     <Price>k__BackingField: 0
@@ -8902,26 +8907,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   testUserDataList:
-  - <ID>k__BackingField: sat35ZGsew53
+  - elementName: 
+    <Avatar>k__BackingField: {fileID: 0}
+    <AvatarUrl>k__BackingField: 
     <Nickname>k__BackingField: "\u73A9\u5BB6\u4E00\u53F7"
-    <AvatarUrl>k__BackingField: 
+    <UserId>k__BackingField: 
+  - elementName: 
     <Avatar>k__BackingField: {fileID: 0}
-  - <ID>k__BackingField: s5325Sg4542
+    <AvatarUrl>k__BackingField: 
     <Nickname>k__BackingField: "\u4E8C\u53F7\u73A9\u5BB6"
-    <AvatarUrl>k__BackingField: 
+    <UserId>k__BackingField: 
+  - elementName: 
     <Avatar>k__BackingField: {fileID: 0}
-  - <ID>k__BackingField: ssdf32Sdf43421
+    <AvatarUrl>k__BackingField: 
     <Nickname>k__BackingField: "\u4E09\u53F7\u6446\u70C2\u73A9\u5BB6"
-    <AvatarUrl>k__BackingField: 
+    <UserId>k__BackingField: 
+  - elementName: 
     <Avatar>k__BackingField: {fileID: 0}
-  - <ID>k__BackingField: 355fdfsgss4453434
+    <AvatarUrl>k__BackingField: 
     <Nickname>k__BackingField: "\u56DB\u53F7\u79EF\u6781\u73A9\u5BB6"
-    <AvatarUrl>k__BackingField: 
+    <UserId>k__BackingField: 
+  - elementName: 
     <Avatar>k__BackingField: {fileID: 0}
-  - <ID>k__BackingField: fdfdfd2355353
+    <AvatarUrl>k__BackingField: 
     <Nickname>k__BackingField: "\u4E94\u53F7\u5316\u5408\u7269\u73A9\u5BB6"
-    <AvatarUrl>k__BackingField: 
-    <Avatar>k__BackingField: {fileID: 0}
+    <UserId>k__BackingField: 
   panel: {fileID: 1433250980}
 --- !u!114 &1433250980
 MonoBehaviour:
@@ -10016,26 +10026,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   testUserDataList:
-  - <ID>k__BackingField: sat35ZGsew53
+  - elementName: 
+    <Avatar>k__BackingField: {fileID: 0}
+    <AvatarUrl>k__BackingField: 
     <Nickname>k__BackingField: "\u73A9\u5BB6\u4E00\u53F7"
-    <AvatarUrl>k__BackingField: 
+    <UserId>k__BackingField: 
+  - elementName: 
     <Avatar>k__BackingField: {fileID: 0}
-  - <ID>k__BackingField: s5325Sg4542
+    <AvatarUrl>k__BackingField: 
     <Nickname>k__BackingField: "\u4E8C\u53F7\u73A9\u5BB6"
-    <AvatarUrl>k__BackingField: 
+    <UserId>k__BackingField: 
+  - elementName: 
     <Avatar>k__BackingField: {fileID: 0}
-  - <ID>k__BackingField: ssdf32Sdf43421
+    <AvatarUrl>k__BackingField: 
     <Nickname>k__BackingField: "\u4E09\u53F7\u6446\u70C2\u73A9\u5BB6"
-    <AvatarUrl>k__BackingField: 
+    <UserId>k__BackingField: 
+  - elementName: 
     <Avatar>k__BackingField: {fileID: 0}
-  - <ID>k__BackingField: 355fdfsgss4453434
+    <AvatarUrl>k__BackingField: 
     <Nickname>k__BackingField: "\u56DB\u53F7\u79EF\u6781\u73A9\u5BB6"
-    <AvatarUrl>k__BackingField: 
+    <UserId>k__BackingField: 
+  - elementName: 
     <Avatar>k__BackingField: {fileID: 0}
-  - <ID>k__BackingField: fdfdfd2355353
+    <AvatarUrl>k__BackingField: 
     <Nickname>k__BackingField: "\u4E94\u53F7\u5316\u5408\u7269\u73A9\u5BB6"
-    <AvatarUrl>k__BackingField: 
-    <Avatar>k__BackingField: {fileID: 0}
+    <UserId>k__BackingField: 
   panel: {fileID: 1692828125}
 --- !u!1 &1696847068
 GameObject:

@@ -647,6 +647,46 @@
     text-transform: uppercase;
 }
 
+/* ===== Like Button (Pink) ===== */
+.ue5-button-like {
+    background-color: #cc4477;
+    color: #ffffff;
+    border-color: #aa3366;
+    border-top-color: #dd6699;
+    -unity-font-style: bold;
+}
+
+.ue5-button-like:hover {
+    background-color: #dd5588;
+    color: #ffffff;
+}
+
+.ue5-button-like:active {
+    background-color: #aa3366;
+}
+
+/* ===== Like Quantity Field ===== */
+.like-quantity-field {
+    width: 50px;
+    min-width: 50px;
+    height: 28px;
+}
+
+.like-quantity-field > .unity-text-field__input {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: #aa3366;
+    border-radius: 2px;
+    color: var(--ue5-text-primary);
+    padding: 2px 6px;
+    -unity-text-align: middle-center;
+    font-size: 11px;
+}
+
+.like-quantity-field > .unity-text-field__input:focus {
+    border-color: #ff6699;
+}
+
 /* ==================================================================
    Debugger Window Styles
    ================================================================== */
@@ -869,6 +909,7 @@
 .log-message-error { color: #ff6666; }
 .log-message-gift { color: #ff9933; }
 .log-message-comment { color: #99ff99; }
+.log-message-like { color: #ff6699; }
 
 /* ===== Log Details Section (Expanded) ===== */
 .log-details {

@@ -6,13 +6,13 @@ using UnityEngine;
 namespace AxuFrameKit.Common.UI.Kit.DataBind
 {
     using Component;
-    
+
     public class UIBindParent : MonoBehaviour
     {
         private enum BindType { ID, Index }
-        
+
         [SerializeField] private BindType _bindType;
-        
+
         [SerializeField] private List<UIBindComponent> _uiBindComponentList;
 
         private Dictionary<int, UIBindComponent> _indexDict;
@@ -43,17 +43,17 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind
                 switch (_bindType)
                 {
                     case BindType.ID:
-                    {
-                        if (_idDict.TryGetValue(unit.TargetId, out var component))
-                            unit.TryApply(component);
-                        break;
-                    }
+                        {
+                            if (_idDict.TryGetValue(unit.TargetId, out var component))
+                                unit.TryApply(component);
+                            break;
+                        }
                     case BindType.Index:
-                    {
-                        if (_indexDict.TryGetValue(unit.TargetIndex, out var component))
-                            unit.TryApply(component);
-                        break;
-                    }
+                        {
+                            if (_indexDict.TryGetValue(unit.TargetIndex, out var component))
+                                unit.TryApply(component);
+                            break;
+                        }
                     default:
                         throw new ArgumentOutOfRangeException();
                 }

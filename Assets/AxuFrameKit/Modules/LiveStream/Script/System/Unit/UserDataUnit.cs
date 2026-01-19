@@ -6,8 +6,7 @@ namespace AxuFrameKit.Modules.LiveStream
     [Serializable]
     public class UserDataUnit
     {
-        [HideInInspector]
-        public string elementName;
+        [HideInInspector] public string elementName;
 
         [field: SerializeField] public Sprite Avatar { get; set; }
         [field: SerializeField] public string AvatarUrl { get; set; }

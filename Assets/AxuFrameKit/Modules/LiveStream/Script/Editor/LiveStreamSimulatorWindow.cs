@@ -20,6 +20,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
         // === Events (Collection mode for multi-selection) ===
         public static event Action<IReadOnlyList<UserDataGift>> OnGiftsSent;
         public static event Action<IReadOnlyList<UserDataComment>> OnCommentsSent;
+        public static event Action<IReadOnlyList<UserDataLike>> OnLikesSent;
 
         #region Simulator Fields
         // Config Lists
@@ -36,6 +37,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
 
         // Action Elements
         private TextField _commentField;
+        private TextField _likeQuantityField;
         private Button _sendCommentBtn;
         private Button _sendGiftBtn;
 
@@ -58,7 +60,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
 
         #region Debugger Fields
         // Log entry structure
-        public enum LogType { Info, Warning, Error, Gift, Comment }
+        public enum LogType { Info, Warning, Error, Gift, Comment, Like }
 
         public struct LogEntry
         {
@@ -86,6 +88,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
         private bool _showError = true;
         private bool _showGift = true;
         private bool _showComment = true;
+        private bool _showLike = true;
         private bool _autoScroll = true;
 
         // Static instance for logging
@@ -302,28 +305,76 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             _userListView.fixedItemHeight = 36;
             pane.Add(_userListView);
 
-            // === Comment Section ===
-            var commentSection = new VisualElement();
-            commentSection.style.flexDirection = FlexDirection.Column;
-            commentSection.style.paddingLeft = 8;
-            commentSection.style.paddingRight = 8;
-            commentSection.style.paddingTop = 8;
-            commentSection.style.paddingBottom = 8;
-            commentSection.style.borderTopWidth = 1;
-            commentSection.style.borderTopColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f));
-            pane.Add(commentSection);
+            // === Action Section (Like + Comment) ===
+            var actionSection = new VisualElement();
+            actionSection.style.flexDirection = FlexDirection.Column;
+            actionSection.style.paddingLeft = 8;
+            actionSection.style.paddingRight = 8;
+            actionSection.style.paddingTop = 8;
+            actionSection.style.paddingBottom = 8;
+            actionSection.style.borderTopWidth = 1;
+            actionSection.style.borderTopColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f));
+            pane.Add(actionSection);
 
+            // === Like Section ===
+            var likeRow = new VisualElement();
+            likeRow.style.flexDirection = FlexDirection.Row;
+            likeRow.style.alignItems = Align.Center;
+            likeRow.style.marginBottom = 8;
+            actionSection.Add(likeRow);
+
+            var likeBtn = new Button(OnSendLikeClicked) { text = "❤ 点赞" };
+            likeBtn.AddToClassList("ue5-button");
+            likeBtn.AddToClassList("ue5-button-like");
+            likeBtn.style.flexGrow = 1;
+            likeRow.Add(likeBtn);
+
+            _likeQuantityField = new TextField();
+            _likeQuantityField.value = "1";
+            _likeQuantityField.AddToClassList("like-quantity-field");
+            _likeQuantityField.style.width = 50;
+            _likeQuantityField.style.marginLeft = 6;
+            _likeQuantityField.RegisterValueChangedCallback(evt =>
+            {
+                // Filter to allow only digits
+                string filtered = "";
+                foreach (char c in evt.newValue)
+                {
+                    if (char.IsDigit(c))
+                        filtered += c;
+                }
+
+                // Ensure at least "1" if empty
+                if (string.IsNullOrEmpty(filtered))
+                    filtered = "1";
+
+                // Parse and validate
+                if (int.TryParse(filtered, out int qty))
+                {
+                    if (qty < 1) qty = 1;
+                    filtered = qty.ToString();
+                }
+
+                // Update field if changed
+                if (evt.newValue != filtered)
+                {
+                    _likeQuantityField.SetValueWithoutNotify(filtered);
+                }
+            });
+            likeRow.Add(_likeQuantityField);
+
+            // === Comment Section ===
             var commentLabel = new Label("评论发送");
             commentLabel.AddToClassList("section-title");
             commentLabel.style.marginBottom = 6;
             commentLabel.style.color = new StyleColor(new Color(0.7f, 0.7f, 0.7f));
             commentLabel.style.fontSize = 11;
-            commentSection.Add(commentLabel);
+            actionSection.Add(commentLabel);
 
             var commentRow = new VisualElement();
             commentRow.style.flexDirection = FlexDirection.Row;
             commentRow.style.alignItems = Align.Center;
-            commentSection.Add(commentRow);
+            actionSection.Add(commentRow);
 
             _commentField = new TextField();
             _commentField.style.flexGrow = 1;
@@ -801,7 +852,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             if (_selectedUsers.Count == 0)
             {
                 LogWarning("请先选择至少一个用户！");
-                EditorUtility.DisplayDialog("提示", "请先选择至少一个用户！", "确定");
+                // EditorUtility.DisplayDialog("提示", "请先选择至少一个用户！", "确定");
                 return;
             }
 
@@ -810,7 +861,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             if (string.IsNullOrEmpty(comment))
             {
                 LogWarning("评论不能为空！");
-                EditorUtility.DisplayDialog("提示", "评论不能为空！", "确定");
+                // EditorUtility.DisplayDialog("提示", "评论不能为空！", "确定");
                 return;
             }
 
@@ -846,6 +897,58 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             if (_commentField != null)
             {
                 _commentField.value = "";
+            }
+        }
+
+        private void OnSendLikeClicked()
+        {
+            // Validate user selection
+            if (_selectedUsers.Count == 0)
+            {
+                LogWarning("请先选择至少一个用户！");
+                // EditorUtility.DisplayDialog("提示", "请先选择至少一个用户！", "确定");
+                return;
+            }
+
+            // Get like quantity
+            int likeCount = 1;
+            if (_likeQuantityField != null && int.TryParse(_likeQuantityField.value, out int qty))
+            {
+                likeCount = qty < 1 ? 1 : qty;
+            }
+
+            // Build like data for all selected users
+            var likeDataList = new List<UserDataLike>();
+            foreach (var user in _selectedUsers)
+            {
+                var likeData = new UserDataLike
+                {
+                    UserId = user.UserId,
+                    Nickname = user.Nickname,
+                    AvatarUrl = user.AvatarUrl,
+                    Avatar = user.Avatar,
+                    LikeCount = likeCount
+                };
+                likeDataList.Add(likeData);
+
+                // Log each like
+                string likeMsg = likeCount > 1 ? $"点赞 x{likeCount}" : "点赞";
+                LogLike(
+                    likeMsg,
+                    likeCount > 1 ? $"点赞数量: {likeCount}" : null,
+                    user.Avatar,
+                    user.Nickname,
+                    user.UserId
+                );
+            }
+
+            // Fire event with collection
+            OnLikesSent?.Invoke(likeDataList.AsReadOnly());
+
+            // Summary log
+            if (_selectedUsers.Count > 1)
+            {
+                Log($"已为 {_selectedUsers.Count} 个用户点赞");
             }
         }
         #endregion
@@ -1014,6 +1117,11 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             AddLogEntry(LogType.Comment, message, details, avatar, playerName, playerId);
         }
 
+        public static void LogLike(string message, string details = null, Sprite avatar = null, string playerName = null, string playerId = null)
+        {
+            AddLogEntry(LogType.Like, message, details, avatar, playerName, playerId);
+        }
+
         private static void AddLogEntry(LogType type, string message, string details, Sprite avatar, string playerName, string playerId)
         {
             if (_instance == null) return;
@@ -1091,6 +1199,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
                 LogType.Error => _showError,
                 LogType.Gift => _showGift,
                 LogType.Comment => _showComment,
+                LogType.Like => _showLike,
                 _ => true
             };
         }
@@ -1233,6 +1342,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             LogType.Error => "log-message-error",
             LogType.Gift => "log-message-gift",
             LogType.Comment => "log-message-comment",
+            LogType.Like => "log-message-like",
             _ => "log-message-info"
         };
 
@@ -1243,6 +1353,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             LogType.Error => "✖",
             LogType.Gift => "🎁",
             LogType.Comment => "💬",
+            LogType.Like => "❤",
             _ => "●"
         };
         #endregion
