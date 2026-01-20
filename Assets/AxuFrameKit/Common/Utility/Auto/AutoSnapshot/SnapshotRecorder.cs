@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
+namespace AxuFrameKit.Common.Utility.Auto.AutoSnapshot
 {
     // ==========================================
     // 1. 枚举定义 (Enumerations)
@@ -45,11 +45,11 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
     // ==========================================
 
     /// <summary>
-    /// 时间线数据序列化接口
+    /// 快照数据序列化接口
     /// 外部可实现此接口注入 JsonUtility, Newtonsoft, Odin 等不同序列化方案
     /// 注意：此接口只负责序列化用户数据类型 T，元数据由框架内部自动处理
     /// </summary>
-    public interface ITimelineDataSerializer
+    public interface ISnapshotDataSerializer
     {
         /// <summary>
         /// 将单个数据项序列化为字符串
@@ -63,10 +63,10 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
     }
 
     /// <summary>
-    /// 时间线回放输出回调接口
+    /// 快照回放输出回调接口
     /// </summary>
     /// <typeparam name="T">数据类型</typeparam>
-    public interface ITimelinePlaybackHandler<T>
+    public interface ISnapshotPlaybackHandler<T>
     {
         /// <summary>
         /// 当一个快照数据被输出时调用
@@ -111,10 +111,10 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
     }
 
     /// <summary>
-    /// 时间线元数据 - 非泛型，可直接序列化
+    /// 快照元数据 - 非泛型，可直接序列化
     /// </summary>
     [Serializable]
-    public class TimelineMetadata
+    public class SnapshotMetadata
     {
         /// <summary>
         /// 时间缩放模式
@@ -168,33 +168,33 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
     }
 
     /// <summary>
-    /// 时间线序列化数据 - 最终序列化格式，非泛型
+    /// 快照序列化数据 - 最终序列化格式，非泛型
     /// </summary>
     [Serializable]
-    public class TimelineSerializedData
+    public class SnapshotSerializedData
     {
         /// <summary>
         /// 元数据
         /// </summary>
-        public TimelineMetadata Metadata;
+        public SnapshotMetadata Metadata;
 
         /// <summary>
         /// 所有已序列化的快照
         /// </summary>
         public List<SerializedSnapshot> Snapshots;
 
-        public TimelineSerializedData()
+        public SnapshotSerializedData()
         {
-            Metadata = new TimelineMetadata();
+            Metadata = new SnapshotMetadata();
             Snapshots = new List<SerializedSnapshot>();
         }
     }
 
     /// <summary>
-    /// 时间线记录数据容器 - 用于内存中操作
+    /// 快照记录数据容器 - 用于内存中操作
     /// </summary>
     [Serializable]
-    public class TimelineData<T>
+    public class SnapshotData<T>
     {
         /// <summary>
         /// 时间缩放模式
@@ -221,7 +221,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
         /// </summary>
         public float InitTime;
 
-        public TimelineData()
+        public SnapshotData()
         {
             Snapshots = new List<TimestampedSnapshot<T>>();
             CreatedAtUtc = DateTime.UtcNow.ToString("O");
@@ -229,14 +229,14 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
     }
 
     // ==========================================
-    // 4. 时间线记录器 (Timeline Recorder)
+    // 4. 快照记录器 (Snapshot Recorder)
     // ==========================================
 
     /// <summary>
-    /// 时间线记录器 - 用于记录带时间戳的快照数据
+    /// 快照记录器 - 用于记录带时间戳的快照数据
     /// </summary>
     /// <typeparam name="T">要记录的数据类型</typeparam>
-    public class TimelineRecorder<T>
+    public class SnapshotRecorder<T>
     {
         private readonly TimeScaleMode _scaleMode;
         private readonly TimeRecordMode _recordMode;
@@ -270,12 +270,12 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
         public float InitTime => _initTime;
 
         /// <summary>
-        /// 创建时间线记录器
+        /// 创建快照记录器
         /// </summary>
         /// <param name="scaleMode">时间缩放模式</param>
         /// <param name="recordMode">时间记录模式</param>
         /// <param name="initialCapacity">初始容量</param>
-        public TimelineRecorder(
+        public SnapshotRecorder(
             TimeScaleMode scaleMode = TimeScaleMode.Scaled,
             TimeRecordMode recordMode = TimeRecordMode.RecordFromInit,
             int initialCapacity = 16)
@@ -315,7 +315,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
         {
             if (!_isRecording)
             {
-                Debug.LogWarning("[TimelineRecorder] Recording is stopped. Call StartRecording() to resume.");
+                Debug.LogWarning("[SnapshotRecorder] Recording is stopped. Call StartRecording() to resume.");
                 return;
             }
 
@@ -332,7 +332,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
         {
             if (!_isRecording)
             {
-                Debug.LogWarning("[TimelineRecorder] Recording is stopped. Call StartRecording() to resume.");
+                Debug.LogWarning("[SnapshotRecorder] Recording is stopped. Call StartRecording() to resume.");
                 return;
             }
 
@@ -393,9 +393,9 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
         /// <summary>
         /// 导出为可序列化的数据结构
         /// </summary>
-        public TimelineData<T> ExportData()
+        public SnapshotData<T> ExportData()
         {
-            return new TimelineData<T>
+            return new SnapshotData<T>
             {
                 ScaleMode = _scaleMode,
                 RecordMode = _recordMode,
@@ -410,7 +410,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
         /// 元数据由框架内部自动处理，序列化器只负责序列化用户数据类型 T
         /// </summary>
         /// <param name="dataSerializer">用户数据序列化器 (只需处理 T 类型)</param>
-        public string Serialize(ITimelineDataSerializer dataSerializer)
+        public string Serialize(ISnapshotDataSerializer dataSerializer)
         {
             if (dataSerializer == null)
             {
@@ -418,9 +418,9 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
             }
 
             // 创建序列化数据结构
-            var serializedData = new TimelineSerializedData
+            var serializedData = new SnapshotSerializedData
             {
-                Metadata = new TimelineMetadata
+                Metadata = new SnapshotMetadata
                 {
                     ScaleMode = (int)_scaleMode,
                     RecordMode = (int)_recordMode,

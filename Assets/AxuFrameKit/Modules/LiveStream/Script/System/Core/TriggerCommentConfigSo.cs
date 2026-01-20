@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Text.RegularExpressions;
 
 namespace AxuFrameKit.Modules.LiveStream
 {
@@ -10,16 +11,32 @@ namespace AxuFrameKit.Modules.LiveStream
         [field: SerializeField]
         public List<TriggerCommentConfigUnit> TriggerCommentConfigUnitList { get; private set; } = new();
 
-        public bool IsDefault { get; private set; } = false;
-        public bool IsSelected { get; private set; } = false;
-
-        public void Select() => IsSelected = true;
-        public void UnSelect() => IsSelected = false;
-
-        public void PushComment(UserDataComment unit) // TODO 点赞目前只会处理第一个指令
+        public void PushComment(UserDataComment unit)
         {
-            if (TriggerCommentConfigUnitList is { Count: > 0 })
-                TriggerCommentConfigUnitList[0].TriggerContent.Trigger(unit, unit.Comment);
+            if (TriggerCommentConfigUnitList == null) return;
+
+            foreach (var configUnit in TriggerCommentConfigUnitList)
+            {
+                if (configUnit.UseRegex)
+                {
+                    var match = Regex.Match(unit.Comment, configUnit.Comment);
+                    if (match.Success)
+                    {
+                        configUnit.TriggerContent?.Trigger(unit, match);
+                    }
+                }
+                else if (unit.Comment == configUnit.Comment)
+                {
+                    if (configUnit.DeliverMessage)
+                    {
+                        configUnit.TriggerContent?.Trigger(unit, unit.Comment);
+                    }
+                    else
+                    {
+                        configUnit.TriggerContent?.Trigger(unit);
+                    }
+                }
+            }
         }
 
         private void OnValidate()
@@ -45,6 +62,10 @@ namespace AxuFrameKit.Modules.LiveStream
         [SerializeField]
         private bool _useRegex;
         public bool UseRegex => _useRegex;
+
+        [SerializeField]
+        private bool _deliverMessage;
+        public bool DeliverMessage => _deliverMessage;
 
         [SerializeField]
         private string _regexComment;

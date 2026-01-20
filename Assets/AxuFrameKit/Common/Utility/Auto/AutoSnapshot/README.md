@@ -1,8 +1,8 @@
-# AutoTimeline - 时间线快照系统
+# AutoSnapshot - 快照回放系统
 
 ## 概述
 
-AutoTimeline 是一个基于时间的泛型快照记录与回放系统。它允许你记录任意类型的数据及其时间戳，并可以按照时间顺序回放这些数据。
+AutoSnapshot 是一个基于时间的泛型快照记录与回放系统。它允许你记录任意类型的数据及其时间戳，并可以按照时间顺序回放这些数据。
 
 ## 核心特性
 
@@ -14,7 +14,7 @@ AutoTimeline 是一个基于时间的泛型快照记录与回放系统。它允�
   - `RecordFromGameStart`：使用游戏启动后的绝对时间
   - `RecordFromInit`：使用记录器初始化后的相对时间
 - **元数据自动处理**：框架内部自动序列化/反序列化时间模式等元数据
-- **可插拔序列化**：通过 `ITimelineDataSerializer` 接口支持任意序列化方案，只需处理数据类型 T
+- **可插拔序列化**：通过 `ISnapshotDataSerializer` 接口支持任意序列化方案，只需处理数据类型 T
 - **完整的回放控制**：播放、暂停、恢复、停止、重置
 
 ## 快速开始
@@ -22,17 +22,17 @@ AutoTimeline 是一个基于时间的泛型快照记录与回放系统。它允�
 ### 1. 记录数据
 
 ```csharp
-using AxuFrameKit.Common.Utility.Auto.AutoTimeline;
+using AxuFrameKit.Common.Utility.Auto.AutoSnapshot;
 
 // 使用 Builder 模式创建记录器
-var recorder = TimelineFactory.CreateRecorder<PlayerPosition>()
+var recorder = SnapshotFactory.CreateRecorder<PlayerPosition>()
     .UseScaledTime()
     .RecordFromInit()
     .WithCapacity(100)
     .Build();
 
 // 或使用快捷方法
-var recorder = TimelineFactory.CreateDefaultRecorder<PlayerPosition>();
+var recorder = SnapshotFactory.CreateDefaultRecorder<PlayerPosition>();
 
 // 记录数据
 recorder.Record(new PlayerPosition { x = 0, y = 0 });
@@ -47,7 +47,7 @@ var serializer = new UnityJsonDataSerializer();
 string json = recorder.Serialize(serializer);
 
 // 或使用自定义序列化器（只需实现数据项的序列化）
-public class NewtonsoftDataSerializer : ITimelineDataSerializer
+public class NewtonsoftDataSerializer : ISnapshotDataSerializer
 {
     public string SerializeItem<T>(T item) => JsonConvert.SerializeObject(item);
     public T DeserializeItem<T>(string data) => JsonConvert.DeserializeObject<T>(data);
@@ -61,7 +61,7 @@ string json = recorder.Serialize(serializer);
 
 ```csharp
 // 从 JSON 创建播放器（元数据由框架自动处理）
-var player = TimelinePlayer<PlayerPosition>.FromJson(json, serializer);
+var player = SnapshotPlayer<PlayerPosition>.FromJson(json, serializer);
 
 // 设置回调
 player
@@ -81,7 +81,7 @@ player.Play(this);
 ### 4. 使用接口处理器
 
 ```csharp
-public class MyPlaybackHandler : ITimelinePlaybackHandler<PlayerPosition>
+public class MyPlaybackHandler : ISnapshotPlaybackHandler<PlayerPosition>
 {
     public void OnSnapshotOutput(PlayerPosition data, float timestamp)
     {
@@ -135,19 +135,19 @@ player.Play(this);
 
 ## API 参考
 
-### ITimelineDataSerializer
+### ISnapshotDataSerializer
 
 用户只需实现此接口来处理数据类型 T 的序列化：
 
 ```csharp
-public interface ITimelineDataSerializer
+public interface ISnapshotDataSerializer
 {
     string SerializeItem<T>(T item);      // 序列化单个数据项
     T DeserializeItem<T>(string data);    // 反序列化单个数据项
 }
 ```
 
-### TimelineRecorder<T>
+### SnapshotRecorder<T>
 
 | 方法 | 说明 |
 |------|------|
@@ -157,14 +157,14 @@ public interface ITimelineDataSerializer
 | `Clear()` | 清空所有快照 |
 | `GetSnapshots()` | 获取所有快照 (只读) |
 | `GetSnapshotsInRange(float start, float end)` | 获取时间范围内的快照 |
-| `ExportData()` | 导出为 TimelineData |
-| `Serialize(ITimelineDataSerializer)` | 序列化为 JSON |
+| `ExportData()` | 导出为 SnapshotData |
+| `Serialize(ISnapshotDataSerializer)` | 序列化为 JSON |
 
-### TimelinePlayer<T>
+### SnapshotPlayer<T>
 
 | 方法 | 说明 |
 |------|------|
-| `FromJson(string json, ITimelineDataSerializer)` | 从 JSON 创建播放器 |
+| `FromJson(string json, ISnapshotDataSerializer)` | 从 JSON 创建播放器 |
 | `Play(MonoBehaviour host)` | 开始回放 |
 | `Pause()` | 暂停回放 |
 | `Resume(MonoBehaviour host)` | 恢复回放 |
@@ -185,10 +185,10 @@ public interface ITimelineDataSerializer
 ## 文件结构
 
 ```
-AutoTimeline/
-├── TimelineRecorder.cs      # 核心记录器、枚举、接口、数据结构
-├── TimelinePlayer.cs        # 回放器实现
-├── TimelineRecorderBuilder.cs # Builder 模式和工厂类
+AutoSnapshot/
+├── SnapshotRecorder.cs      # 核心记录器、枚举、接口、数据结构
+├── SnapshotPlayer.cs        # 回放器实现
+├── SnapshotRecorderBuilder.cs # Builder 模式和工厂类
 ├── DefaultSerializers.cs    # 默认序列化器实现
 └── README.md               # 本文档
 ```

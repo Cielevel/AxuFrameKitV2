@@ -12,9 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a861d080c3e8466fba72171a6853efa, type: 3}
   m_Name: TriggerGiftConfigSo
   m_EditorClassIdentifier: 
+  <UseGiftIndex>k__BackingField: 0
+  <TriggerGiftConfigUnitWithCountList>k__BackingField: []
   <TriggerGiftConfigUnitList>k__BackingField:
-  - triggerRemark: "\u68D2\u68D2\u7CD6*3:\u53EC\u5524\u6D41\u661F\u96E8"
-    _giftName: "\u68D2\u68D2\u7CD6"
+  - elementName: "(0)\u4ED9\u5973\u68D2*1:\u53EC\u5524\u6D41\u661F\u96E8"
+    _giftName: "\u4ED9\u5973\u68D2"
     _giftIndex: 0
-    _giftCount: 3
+    _giftCount: 1
+    _trigger: {fileID: 11400000, guid: d5adda4d446ae4955b4e1d96248f0740, type: 2}
+  - elementName: "(1)\u4ED9\u5973\u68D2*5:\u53EC\u5524\u6D41\u661F\u96E8"
+    _giftName: "\u4ED9\u5973\u68D2"
+    _giftIndex: 0
+    _giftCount: 5
     _trigger: {fileID: 11400000, guid: d5adda4d446ae4955b4e1d96248f0740, type: 2}

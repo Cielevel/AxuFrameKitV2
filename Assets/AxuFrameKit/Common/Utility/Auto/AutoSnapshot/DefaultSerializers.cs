@@ -1,12 +1,12 @@
 using UnityEngine;
 
-namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
+namespace AxuFrameKit.Common.Utility.Auto.AutoSnapshot
 {
     /// <summary>
     /// 使用 Unity JsonUtility 的默认数据序列化器
     /// 注意：JsonUtility 对复杂类型支持有限，建议需要时使用 Newtonsoft.Json 等
     /// </summary>
-    public class UnityJsonDataSerializer : ITimelineDataSerializer
+    public class UnityJsonDataSerializer : ISnapshotDataSerializer
     {
         public string SerializeItem<T>(T item)
         {

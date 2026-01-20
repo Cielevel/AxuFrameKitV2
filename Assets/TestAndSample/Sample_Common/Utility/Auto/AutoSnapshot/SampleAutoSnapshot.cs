@@ -1,14 +1,14 @@
 using System;
 using UnityEngine;
-using AxuFrameKit.Common.Utility.Auto.AutoTimeline;
+using AxuFrameKit.Common.Utility.Auto.AutoSnapshot;
 
-namespace TestAndSample.Sample_Common.Utility.Auto.AutoTimeline
+namespace TestAndSample.Sample_Common.Utility.Auto.AutoSnapshot
 {
     /// <summary>
     /// AutoTimeline 示例
     /// 演示时间线记录器和播放器的基本用法
     /// </summary>
-    public class SampleAutoTimeline : MonoBehaviour
+    public class SampleAutoSnapshot : MonoBehaviour
     {
         [Header("记录设置")]
         [SerializeField] private TimeScaleMode _scaleMode = TimeScaleMode.Scaled;
@@ -25,9 +25,9 @@ namespace TestAndSample.Sample_Common.Utility.Auto.AutoTimeline
         [SerializeField] private float _playbackProgress;
 
         // 内部状态
-        private TimelineRecorder<PositionData> _recorder;
-        private TimelinePlayer<PositionData> _player;
-        private ITimelineDataSerializer _serializer;  // 只需实现数据项的序列化
+        private SnapshotRecorder<PositionData> _recorder;
+        private SnapshotPlayer<PositionData> _player;
+        private ISnapshotDataSerializer _serializer;  // 只需实现数据项的序列化
         private float _lastRecordTime;
         private string _savedJson;
 
@@ -60,7 +60,7 @@ namespace TestAndSample.Sample_Common.Utility.Auto.AutoTimeline
 
         private void CreateRecorder()
         {
-            _recorder = TimelineFactory.CreateRecorder<PositionData>()
+            _recorder = SnapshotFactory.CreateRecorder<PositionData>()
                 .WithScaleMode(_scaleMode)
                 .WithRecordMode(_recordMode)
                 .WithCapacity(100)
@@ -199,7 +199,7 @@ namespace TestAndSample.Sample_Common.Utility.Auto.AutoTimeline
 
             // 从 JSON 创建播放器：框架自动处理元数据反序列化
             // 用户序列化器只需处理 PositionData 类型的反序列化
-            _player = TimelinePlayer<PositionData>.FromJson(_savedJson, _serializer);
+            _player = SnapshotPlayer<PositionData>.FromJson(_savedJson, _serializer);
 
             // 设置回调
             _player

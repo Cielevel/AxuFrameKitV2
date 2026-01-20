@@ -3,15 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
+namespace AxuFrameKit.Common.Utility.Auto.AutoSnapshot
 {
     /// <summary>
-    /// 时间线回放器 - 用于按时间顺序输出快照数据
+    /// 快照回放器 - 用于按时间顺序输出快照数据
     /// </summary>
     /// <typeparam name="T">数据类型</typeparam>
-    public class TimelinePlayer<T>
+    public class SnapshotPlayer<T>
     {
-        private readonly TimelineData<T> _data;
+        private readonly SnapshotData<T> _data;
         private readonly TimeScaleMode _scaleMode;
         private readonly TimeRecordMode _recordMode;
         private readonly List<TimestampedSnapshot<T>> _remainingSnapshots;
@@ -48,10 +48,10 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
             : 1f;
 
         /// <summary>
-        /// 从 TimelineData 创建播放器
+        /// 从 SnapshotData 创建播放器
         /// </summary>
-        /// <param name="data">时间线数据</param>
-        public TimelinePlayer(TimelineData<T> data)
+        /// <param name="data">快照数据</param>
+        public SnapshotPlayer(SnapshotData<T> data)
         {
             _data = data ?? throw new ArgumentNullException(nameof(data));
             _scaleMode = data.ScaleMode;
@@ -70,7 +70,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
         /// </summary>
         /// <param name="json">JSON 字符串</param>
         /// <param name="dataSerializer">用户数据反序列化器 (只需处理 T 类型)</param>
-        public static TimelinePlayer<T> FromJson(string json, ITimelineDataSerializer dataSerializer)
+        public static SnapshotPlayer<T> FromJson(string json, ISnapshotDataSerializer dataSerializer)
         {
             if (dataSerializer == null)
             {
@@ -78,10 +78,10 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
             }
 
             // 使用 Unity JsonUtility 反序列化整个结构 (非泛型)
-            var serializedData = JsonUtility.FromJson<TimelineSerializedData>(json);
+            var serializedData = JsonUtility.FromJson<SnapshotSerializedData>(json);
 
-            // 转换为 TimelineData<T>
-            var data = new TimelineData<T>
+            // 转换为 SnapshotData<T>
+            var data = new SnapshotData<T>
             {
                 ScaleMode = (TimeScaleMode)serializedData.Metadata.ScaleMode,
                 RecordMode = (TimeRecordMode)serializedData.Metadata.RecordMode,
@@ -97,14 +97,14 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
                 data.Snapshots.Add(new TimestampedSnapshot<T>(item, serializedSnapshot.Timestamp));
             }
 
-            return new TimelinePlayer<T>(data);
+            return new SnapshotPlayer<T>(data);
         }
 
         /// <summary>
         /// 设置快照输出回调
         /// </summary>
         /// <param name="callback">回调函数 (数据, 时间戳)</param>
-        public TimelinePlayer<T> OnSnapshotOutput(Action<T, float> callback)
+        public SnapshotPlayer<T> OnSnapshotOutput(Action<T, float> callback)
         {
             _onSnapshotOutput = callback;
             return this;
@@ -114,7 +114,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
         /// 设置回放完成回调
         /// </summary>
         /// <param name="callback">回调函数</param>
-        public TimelinePlayer<T> OnPlaybackComplete(Action callback)
+        public SnapshotPlayer<T> OnPlaybackComplete(Action callback)
         {
             _onPlaybackComplete = callback;
             return this;
@@ -124,7 +124,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
         /// 使用接口处理器设置回调
         /// </summary>
         /// <param name="handler">回放处理器</param>
-        public TimelinePlayer<T> UseHandler(ITimelinePlaybackHandler<T> handler)
+        public SnapshotPlayer<T> UseHandler(ISnapshotPlaybackHandler<T> handler)
         {
             if (handler == null)
             {
@@ -165,13 +165,13 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
 
             if (_isPlaying)
             {
-                Debug.LogWarning("[TimelinePlayer] Already playing.");
+                Debug.LogWarning("[SnapshotPlayer] Already playing.");
                 return;
             }
 
             if (_remainingSnapshots.Count == 0)
             {
-                Debug.LogWarning("[TimelinePlayer] No snapshots to play.");
+                Debug.LogWarning("[SnapshotPlayer] No snapshots to play.");
                 _onPlaybackComplete?.Invoke();
                 return;
             }
@@ -205,13 +205,13 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
                     break;
                 }
 
-                Debug.Log($"[TimelinePlayer] Skipping expired snapshot at time {snapshot.Timestamp} (current: {currentGameTime})");
+                Debug.Log($"[SnapshotPlayer] Skipping expired snapshot at time {snapshot.Timestamp} (current: {currentGameTime})");
                 _currentIndex++;
             }
 
             if (_currentIndex > 0)
             {
-                Debug.Log($"[TimelinePlayer] Skipped {_currentIndex} expired snapshots.");
+                Debug.Log($"[SnapshotPlayer] Skipped {_currentIndex} expired snapshots.");
             }
         }
 
@@ -297,7 +297,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoTimeline
 
             if (_currentIndex >= _remainingSnapshots.Count)
             {
-                Debug.LogWarning("[TimelinePlayer] Playback already completed.");
+                Debug.LogWarning("[SnapshotPlayer] Playback already completed.");
                 return;
             }
 

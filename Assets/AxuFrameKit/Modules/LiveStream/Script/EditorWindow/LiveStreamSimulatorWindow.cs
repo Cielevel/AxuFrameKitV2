@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -5,7 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace AxuFrameKit.Modules.LiveStream.Editor
+namespace AxuFrameKit.Modules.LiveStream
 {
     public class LiveStreamSimulatorWindow : EditorWindow
     {
@@ -93,6 +94,14 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
 
         // Static instance for logging
         private static LiveStreamSimulatorWindow _instance;
+
+        public static void ClearActions()
+        {
+            OnGiftsSent = null;
+            OnCommentsSent = null;
+            OnLikesSent = null;
+        }
+
         #endregion
 
         private void OnEnable()
@@ -111,7 +120,7 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
             _instance = this;
 
             // Load and add USS
-            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/AxuFrameKit/Modules/LiveStream/Script/Editor/LiveStreamSimulatorWindow.uss");
+            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/AxuFrameKit/Modules/LiveStream/Script/EditorWindow/LiveStreamSimulatorWindow.uss");
             if (styleSheet != null)
             {
                 rootVisualElement.styleSheets.Add(styleSheet);
@@ -1359,3 +1368,5 @@ namespace AxuFrameKit.Modules.LiveStream.Editor
         #endregion
     }
 }
+
+#endif

@@ -2,12 +2,12 @@ using UnityEngine;
 
 namespace AxuFrameKit.Modules.LiveStream
 {
-    [CreateAssetMenu(fileName = "LiveTriggerLike", menuName = "AxuFrameKit/LiveStream/LiveTriggerLike")]
+    [CreateAssetMenu(fileName = "LiveTriggerLike", menuName = "AxuFrameKit/LiveStream/Sample/LiveTriggerLike")]
     public class LiveTriggerLike : LiveTriggerLikeBase
     {
-        public override void Trigger(UserDataUnit unit, int count)
+        public override void Trigger(UserDataLike unit, int count)
         {
-
+            Debug.Log($"LiveTriggerLike");
         }
     }
 }

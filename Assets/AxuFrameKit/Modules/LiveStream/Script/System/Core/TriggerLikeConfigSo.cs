@@ -10,15 +10,9 @@ namespace AxuFrameKit.Modules.LiveStream
         [field: SerializeField]
         public List<TriggerLikeConfigUnit> TriggerLikeConfigUnitList { get; private set; } = new();
 
-        public bool IsDefault { get; private set; } = false;
-        public bool IsSelected { get; private set; } = false;
-
-        public void Select() => IsSelected = true;
-        public void UnSelect() => IsSelected = false;
-
-        public void PushLike(UserDataLike unit) // TODO 点赞目前只会处理第一个指令
+        public void PushLike(UserDataLike unit)
         {
-            if (TriggerLikeConfigUnitList is { Count: > 0 })
+            if (TriggerLikeConfigUnitList is { Count: > 0 }) // 默认只取第一个
                 TriggerLikeConfigUnitList[0].TriggerContent.Trigger(unit, unit.LikeCount);
         }
 

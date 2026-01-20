@@ -1,0 +1,43 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace AxuFrameKit.Modules.LiveStream
+{
+    [CreateAssetMenu(fileName = "TirggerCollection", menuName = "AxuFrameKit/LiveStream/TirggerCollection")]
+    public class TirggerCollectionSo : ScriptableObject
+    {
+        [Header("PreTrigger")] // 预先触发（关于弹窗或动画）
+        [SerializeField] private TriggerCommentConfigSo _preTriggerCommentConfigSo;
+        [SerializeField] private TriggerGiftConfigSo _preTriggerGiftConfigSo;
+        [SerializeField] private TriggerLikeConfigSo _preTriggerLikeConfigSo;
+
+        [Header("MainTrigger")] // 主要触发（关于逻辑）
+        [SerializeField] private TriggerCommentConfigSo _mainTriggerCommentConfigSo;
+        [SerializeField] private TriggerGiftConfigSo _mainTriggerGiftConfigSo;
+        [SerializeField] private TriggerLikeConfigSo _mainTriggerLikeConfigSo;
+        [SerializeField] private GiftConfigSo _giftConfigSo;
+
+        [Header("TEST")]
+
+        [SerializeField] private UserConfigSo _userConfigSo;
+
+        public void Trigger(UserDataUnit userDataUnit)
+        {
+            if (userDataUnit is UserDataComment userDataComment)
+            {
+                _preTriggerCommentConfigSo?.PushComment(userDataComment);
+                _mainTriggerCommentConfigSo?.PushComment(userDataComment);
+            }
+            else if (userDataUnit is UserDataGift userDataGift)
+            {
+                _preTriggerGiftConfigSo?.PushGift(userDataGift);
+                _mainTriggerGiftConfigSo?.PushGift(userDataGift);
+            }
+            else if (userDataUnit is UserDataLike userDataLike)
+            {
+                _preTriggerLikeConfigSo?.PushLike(userDataLike);
+                _mainTriggerLikeConfigSo?.PushLike(userDataLike);
+            }
+        }
+    }
+}
