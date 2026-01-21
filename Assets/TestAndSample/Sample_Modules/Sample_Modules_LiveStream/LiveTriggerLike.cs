@@ -1,6 +1,7 @@
+using AxuFrameKit.Modules.LiveStream;
 using UnityEngine;
 
-namespace AxuFrameKit.Modules.LiveStream
+namespace TestAndSample.Sample_Modules.Sample_Modules_LiveStream
 {
     [CreateAssetMenu(fileName = "LiveTriggerLike", menuName = "AxuFrameKit/LiveStream/Sample/LiveTriggerLike")]
     public class LiveTriggerLike : LiveTriggerLikeBase

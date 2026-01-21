@@ -1,0 +1,709 @@
+/* ==================================================================
+   BehaviorTree Editor - ShaderGraph Style Theme
+   Inspired by Unity's ShaderGraph and UE5 Editor Interface
+   ================================================================== */
+
+/* ===== CSS Variables (UE5 Color Palette + ShaderGraph Accents) ===== */
+:root {
+    /* Primary Background Colors */
+    --bt-bg-darkest: #141414;
+    --bt-bg-dark: #1a1a1a;
+    --bt-bg-panel: #1e1e1e;
+    --bt-bg-element: #252525;
+    --bt-bg-hover: #2d2d2d;
+    --bt-bg-active: #363636;
+    
+    /* Accent Colors */
+    --bt-accent-blue: #44c0ff;
+    --bt-accent-blue-dim: rgba(68, 192, 255, 0.4);
+    --bt-accent-blue-glow: rgba(68, 192, 255, 0.15);
+    --bt-accent-orange: #ff9500;
+    
+    /* Node Type Colors - ShaderGraph Inspired */
+    --bt-node-action: #c94a4a;
+    --bt-node-action-dark: #8c3333;
+    --bt-node-composite: #c9a34a;
+    --bt-node-composite-dark: #8c7033;
+    --bt-node-decorator: #5a5ac9;
+    --bt-node-decorator-dark: #3d3d8c;
+    --bt-node-root: #4ac970;
+    --bt-node-root-dark: #338c4d;
+    
+    /* State Colors */
+    --bt-state-running: #ffd500;
+    --bt-state-success: #4caf50;
+    --bt-state-failure: #f44336;
+    
+    /* Border Colors */
+    --bt-border-dark: #0a0a0a;
+    --bt-border-subtle: #333333;
+    --bt-border-light: #444444;
+    
+    /* Text Colors */
+    --bt-text-primary: #e8e8e8;
+    --bt-text-secondary: #a0a0a0;
+    --bt-text-dim: #707070;
+    
+    /* Port Colors */
+    --bt-port-default: #b8b8b8;
+    --bt-port-hover: #44c0ff;
+    --bt-port-connected: #7dc8e8;
+}
+
+/* ===== Grid Background ===== */
+GridBackground {
+    --grid-background-color: var(--bt-bg-darkest);
+    --line-color: rgba(255, 255, 255, 0.03);
+    --thick-line-color: rgba(255, 255, 255, 0.06);
+    --spacing: 20;
+}
+
+#tree-view {
+    flex-grow: 1;
+    background-color: var(--bt-bg-darkest);
+}
+
+/* -----------------------------------------------------------
+   Main Node Body - ShaderGraph Style
+   ----------------------------------------------------------- */
+.node {
+    margin: 8px;
+    min-width: 160px;
+    max-width: 280px;
+    background-color: transparent;
+}
+
+/* The actual visual box - Modern rounded design */
+#node-border {
+    background-color: var(--bt-bg-element);
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: var(--bt-border-subtle);
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    /* Subtle shadow effect via border */
+    border-bottom-color: var(--bt-border-dark);
+    border-bottom-width: 2px;
+}
+
+/* Selection Halo - Glowing border effect */
+#selection-border {
+    border-radius: 12px;
+    border-width: 0px;
+    margin: -3px;
+    padding: 0;
+    background-color: transparent;
+}
+
+:selected > #selection-border {
+    border-width: 2px;
+    border-color: var(--bt-accent-blue);
+    /* Glow effect background */
+    background-color: var(--bt-accent-blue-glow);
+}
+
+:hover > #selection-border {
+    border-width: 1px;
+    border-color: var(--bt-accent-blue-dim);
+}
+
+/* -----------------------------------------------------------
+   Title Bar - ShaderGraph Gradient Style
+   ----------------------------------------------------------- */
+#title {
+    height: 34px;
+    min-height: 34px;
+    justify-content: center;
+    align-items: center;
+    padding-left: 14px;
+    padding-right: 14px;
+    /* Default gradient look */
+    background-color: #404040;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(0, 0, 0, 0.4);
+}
+
+#title-label {
+    color: #ffffff;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 0.3px;
+    margin: 0;
+    padding: 0;
+    -unity-text-align: middle-left;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    /* Text shadow effect */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* -----------------------------------------------------------
+   Remark Area - Under Title
+   ----------------------------------------------------------- */
+#remark-container {
+    background-color: rgba(0, 0, 0, 0.25);
+    padding: 6px 10px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(0, 0, 0, 0.3);
+}
+
+#remark-label {
+    font-size: 10px;
+    color: var(--bt-text-secondary);
+    white-space: normal;
+    -unity-text-align: upper-left;
+}
+
+/* Title Button Row (if any expand buttons exist) */
+#title-button-container {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* Collapse button - modern minimal style */
+#collapse-button {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    background-color: transparent;
+    border-width: 0;
+    border-radius: 4px;
+    margin-left: 4px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 10px;
+    -unity-text-align: middle-center;
+}
+
+#collapse-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* -----------------------------------------------------------
+   Content Area (Split Left/Right for Ports)
+   ----------------------------------------------------------- */
+#contents {
+    background-color: var(--bt-bg-element);
+    flex-direction: column;
+    min-height: 32px;
+}
+
+/* Top container holds input and output side by side */
+#contents > #top {
+    flex-direction: row;
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+#divider {
+    width: 0;
+    display: none;
+}
+
+/* -----------------------------------------------------------
+   Ports - Modern Circular Design
+   ----------------------------------------------------------- */
+   
+/* Input container - LEFT side */
+#input {
+    flex-grow: 1;
+    align-items: flex-start;
+    justify-content: center;
+    background-color: transparent;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 0;
+    padding-right: 8px;
+}
+
+/* Output container - RIGHT side */
+#output {
+    flex-grow: 1;
+    align-items: flex-end;
+    justify-content: center;
+    background-color: transparent;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-right: 0;
+    padding-left: 8px;
+}
+
+/* The Port Object Itself */
+.port {
+    height: 24px;
+    margin: 3px 0;
+    padding: 0;
+    align-items: center;
+    --port-color: var(--bt-port-default);
+}
+
+/* Input port - connector on the LEFT side */
+#input .port {
+    flex-direction: row;
+}
+
+/* Output port - connector on the RIGHT side */
+#output .port {
+    flex-direction: row-reverse;
+}
+
+/* Port Label - Hidden for cleaner look */
+.port > Label {
+    display: none;
+}
+
+.port > #type {
+    display: none;
+    visibility: hidden;
+    width: 0;
+    height: 0;
+}
+
+/* The actual clickable circle/connector - ShaderGraph style */
+.port #connector {
+    width: 12px;
+    height: 12px;
+    border-width: 2px;
+    border-radius: 6px;
+    border-color: var(--bt-port-default);
+    background-color: var(--bt-bg-element);
+    align-self: center;
+    transition-duration: 0.1s;
+}
+
+/* Input connector - on the LEFT edge of node */
+#input .port #connector {
+    margin-left: 0;
+    margin-right: 6px;
+}
+
+/* Output connector - on the RIGHT edge of node */
+#output .port #connector {
+    margin-right: 0;
+    margin-left: 6px;
+}
+
+.port:hover #connector {
+    border-color: var(--bt-port-hover);
+    background-color: var(--bt-port-hover);
+}
+
+/* Connected port styling */
+.port.connected #connector {
+    background-color: var(--bt-port-connected);
+    border-color: var(--bt-port-connected);
+}
+
+/* Hide the inner cap element */
+.port #connector > #cap {
+    display: none;
+}
+
+/* -----------------------------------------------------------
+   Edge/Connection Lines - Modern Style
+   ----------------------------------------------------------- */
+.edge {
+    --edge-width: 3;
+    --edge-color: var(--bt-port-default);
+    --ghost-edge-color: rgba(255, 255, 255, 0.3);
+    --selected-edge-color: var(--bt-accent-blue);
+}
+
+.edge:hover {
+    --edge-color: var(--bt-accent-blue);
+}
+
+.edge:selected {
+    --edge-color: var(--bt-accent-blue);
+}
+
+/* -----------------------------------------------------------
+   Node Type Colors - ShaderGraph Style Headers
+   ----------------------------------------------------------- */
+
+/* ===== Action Node - Warm Red ===== */
+.action #title {
+    background-color: var(--bt-node-action);
+}
+
+.action #node-border {
+    border-top-width: 0;
+}
+
+.action:hover #node-border {
+    border-color: var(--bt-node-action);
+}
+
+/* ===== Composite Node - Golden Ochre ===== */
+.composite #title {
+    background-color: var(--bt-node-composite);
+}
+
+.composite #node-border {
+    border-top-width: 0;
+}
+
+.composite:hover #node-border {
+    border-color: var(--bt-node-composite);
+}
+
+/* ===== Decorator Node - Royal Purple ===== */
+.decorator #title {
+    background-color: var(--bt-node-decorator);
+}
+
+.decorator #node-border {
+    border-top-width: 0;
+}
+
+.decorator:hover #node-border {
+    border-color: var(--bt-node-decorator);
+}
+
+/* ===== Root Node - Forest Green ===== */
+.root #title {
+    background-color: var(--bt-node-root);
+}
+
+.root #node-border {
+    border-top-width: 0;
+}
+
+.root:hover #node-border {
+    border-color: var(--bt-node-root);
+}
+
+.root .port #connector {
+    background-color: var(--bt-node-root);
+    border-color: var(--bt-node-root);
+}
+
+/* -----------------------------------------------------------
+   Runtime State Visualization - Glowing Borders
+   ----------------------------------------------------------- */
+.running #node-border {
+    border-width: 2px;
+    border-color: var(--bt-state-running);
+    /* Golden glow effect */
+    background-color: rgba(255, 213, 0, 0.05);
+}
+
+.running #selection-border {
+    background-color: rgba(255, 213, 0, 0.1);
+}
+
+.success #node-border {
+    border-width: 2px;
+    border-color: var(--bt-state-success);
+    background-color: rgba(76, 175, 80, 0.05);
+}
+
+.success #selection-border {
+    background-color: rgba(76, 175, 80, 0.1);
+}
+
+.failure #node-border {
+    border-width: 2px;
+    border-color: var(--bt-state-failure);
+    background-color: rgba(244, 67, 54, 0.05);
+}
+
+.failure #selection-border {
+    background-color: rgba(244, 67, 54, 0.1);
+}
+
+/* -----------------------------------------------------------
+   Description Field (if node has description)
+   ----------------------------------------------------------- */
+#description {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 8px 12px;
+    border-top-width: 1px;
+    border-top-color: rgba(0, 0, 0, 0.3);
+}
+
+#description Label {
+    font-size: 10px;
+    color: var(--bt-text-secondary);
+    white-space: normal;
+    -unity-text-align: upper-left;
+}
+
+/* -----------------------------------------------------------
+   Node Selection Highlight
+   ----------------------------------------------------------- */
+.node:selected #node-border {
+    border-color: var(--bt-accent-blue);
+}
+
+.node:selected #title-label {
+    color: #ffffff;
+}
+
+/* -----------------------------------------------------------
+   MiniMap Styling (if used)
+   ----------------------------------------------------------- */
+MiniMap {
+    background-color: var(--bt-bg-panel);
+    border-width: 1px;
+    border-color: var(--bt-border-subtle);
+    border-radius: 6px;
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    width: 180px;
+    height: 120px;
+}
+
+MiniMap > Label {
+    color: var(--bt-text-secondary);
+    font-size: 10px;
+    -unity-font-style: bold;
+}
+
+/* -----------------------------------------------------------
+   Blackboard/Inspector Panel (Left Side)
+   ----------------------------------------------------------- */
+#inspector-container {
+    background-color: var(--bt-bg-panel);
+    border-right-width: 1px;
+    border-right-color: var(--bt-border-dark);
+    min-width: 200px;
+}
+
+/* Inspector Header */
+.unity-inspector-element {
+    background-color: var(--bt-bg-panel);
+}
+
+.unity-inspector-element > .unity-foldout {
+    background-color: transparent;
+}
+
+.unity-inspector-element > .unity-foldout > .unity-foldout__toggle {
+    background-color: var(--bt-bg-dark);
+    padding: 6px 10px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--bt-border-dark);
+}
+
+.unity-inspector-element > .unity-foldout > .unity-foldout__toggle:hover {
+    background-color: var(--bt-bg-hover);
+}
+
+.unity-inspector-element > .unity-foldout > .unity-foldout__content {
+    background-color: var(--bt-bg-panel);
+    padding: 8px;
+}
+
+/* Property Fields in Inspector */
+.unity-property-field {
+    margin-bottom: 4px;
+}
+
+.unity-property-field > .unity-property-field__label {
+    color: var(--bt-text-secondary);
+    font-size: 11px;
+    min-width: 100px;
+}
+
+.unity-property-field > .unity-property-field__input {
+    background-color: var(--bt-bg-darkest);
+    border-width: 1px;
+    border-color: var(--bt-border-subtle);
+    border-radius: 3px;
+}
+
+.unity-property-field > .unity-property-field__input:focus {
+    border-color: var(--bt-accent-blue);
+}
+
+/* -----------------------------------------------------------
+   Graph Container
+   ----------------------------------------------------------- */
+#graph-container {
+    background-color: var(--bt-bg-darkest);
+    flex-grow: 1;
+}
+
+/* -----------------------------------------------------------
+   Context Menu Styling
+   ----------------------------------------------------------- */
+.unity-base-dropdown__container-outer {
+    background-color: var(--bt-bg-panel);
+    border-width: 1px;
+    border-color: var(--bt-border-dark);
+    border-radius: 4px;
+    padding: 4px 0;
+}
+
+.unity-base-dropdown__item {
+    padding: 6px 14px;
+    background-color: transparent;
+    color: var(--bt-text-primary);
+    font-size: 11px;
+}
+
+.unity-base-dropdown__item:hover {
+    background-color: var(--bt-bg-hover);
+}
+
+.unity-base-dropdown__item--selected {
+    background-color: var(--bt-accent-blue);
+    color: var(--bt-bg-darkest);
+}
+
+/* Category headers in context menu - Note: first-child not supported in Unity USS */
+
+/* -----------------------------------------------------------
+   Scrollbar Styling - Slim Modern Style
+   ----------------------------------------------------------- */
+.unity-scroller {
+    background-color: transparent;
+}
+
+.unity-scroller--vertical {
+    width: 10px;
+}
+
+.unity-scroller--horizontal {
+    height: 10px;
+}
+
+.unity-scroller__slider {
+    background-color: transparent;
+    border-radius: 0;
+    margin: 0;
+}
+
+.unity-base-slider__dragger {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    border-width: 0;
+    margin: 2px;
+}
+
+.unity-base-slider__dragger:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+.unity-base-slider__dragger:active {
+    background-color: var(--bt-accent-blue);
+}
+
+.unity-scroller__low-button,
+.unity-scroller__high-button {
+    display: none;
+}
+
+/* -----------------------------------------------------------
+   Split View Handle
+   ----------------------------------------------------------- */
+.unity-two-pane-split-view__dragline-anchor {
+    background-color: var(--bt-border-dark);
+}
+
+.unity-two-pane-split-view__dragline {
+    background-color: var(--bt-border-dark);
+    width: 2px;
+}
+
+.unity-two-pane-split-view__dragline:hover {
+    background-color: var(--bt-accent-blue);
+}
+
+/* -----------------------------------------------------------
+   Toolbar Styling (if added)
+   ----------------------------------------------------------- */
+.bt-toolbar {
+    height: 28px;
+    min-height: 28px;
+    background-color: var(--bt-bg-dark);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--bt-border-dark);
+    flex-direction: row;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.bt-toolbar-button {
+    height: 22px;
+    min-height: 22px;
+    font-size: 11px;
+    background-color: var(--bt-bg-element);
+    border-width: 1px;
+    border-color: var(--bt-border-subtle);
+    border-radius: 3px;
+    color: var(--bt-text-primary);
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-right: 4px;
+}
+
+.bt-toolbar-button:hover {
+    background-color: var(--bt-bg-hover);
+    border-color: var(--bt-border-light);
+}
+
+.bt-toolbar-button:active {
+    background-color: var(--bt-bg-active);
+}
+
+/* -----------------------------------------------------------
+   Status Badge (Node Corner Indicator)
+   ----------------------------------------------------------- */
+.node-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    font-size: 9px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: #ffffff;
+}
+
+.node-badge-running {
+    background-color: var(--bt-state-running);
+    color: var(--bt-bg-darkest);
+}
+
+.node-badge-success {
+    background-color: var(--bt-state-success);
+}
+
+.node-badge-failure {
+    background-color: var(--bt-state-failure);
+}
+
+/* -----------------------------------------------------------
+   Empty State / Placeholder
+   ----------------------------------------------------------- */
+.bt-empty-state {
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+}
+
+.bt-empty-state-label {
+    color: var(--bt-text-dim);
+    font-size: 14px;
+    -unity-font-style: italic;
+}
+
+/* -----------------------------------------------------------
+   Tooltip Styling
+   ----------------------------------------------------------- */
+.unity-text-element--tooltip {
+    background-color: var(--bt-bg-panel);
+    border-width: 1px;
+    border-color: var(--bt-border-subtle);
+    border-radius: 4px;
+    padding: 6px 10px;
+    color: var(--bt-text-primary);
+    font-size: 11px;
+}

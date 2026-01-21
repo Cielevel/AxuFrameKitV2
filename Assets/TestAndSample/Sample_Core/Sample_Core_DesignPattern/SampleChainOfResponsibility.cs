@@ -1,7 +1,7 @@
-using UnityEngine;
 using AxuFrameKit._Core.DesignPattern;
+using UnityEngine;
 
-namespace TestAndSample.Sample_Core_DesignPattern
+namespace TestAndSample.Sample_Core.Sample_Core_DesignPattern
 {
     public class SampleChainOfResponsibility : MonoBehaviour
     {

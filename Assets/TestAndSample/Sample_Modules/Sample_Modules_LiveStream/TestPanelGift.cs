@@ -1,7 +1,8 @@
 using System.Collections.Generic;
+using AxuFrameKit.Modules.LiveStream;
 using UnityEngine;
 
-namespace AxuFrameKit.Modules.LiveStream
+namespace TestAndSample.Sample_Modules.Sample_Modules_LiveStream
 {
     public class TestPanelGift : MonoBehaviour
     {

@@ -2,7 +2,7 @@ using System;
 using AxuFrameKit._Core.Structure;
 using UnityEngine;
 
-namespace TestAndSample.Sample_Core_Structure
+namespace TestAndSample.Sample_Core.Sample_Core_Structure
 {
     public class SampleIntBound : MonoBehaviour
     {

@@ -1,6 +1,7 @@
+using AxuFrameKit.Modules.LiveStream;
 using UnityEngine;
 
-namespace AxuFrameKit.Modules.LiveStream
+namespace TestAndSample.Sample_Modules.Sample_Modules_LiveStream
 {
     [CreateAssetMenu(fileName = "LiveTriggerComment", menuName = "AxuFrameKit/LiveStream/LiveTriggerComment")]
     public class LiveTriggerComment : LiveTriggerCommentBase
