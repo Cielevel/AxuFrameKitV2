@@ -290,6 +290,9 @@ namespace AxuFrameKit.Modules.LiveStream
             // === 状态显示 ===
             var statusSection = new VisualElement();
             statusSection.style.flexGrow = 1;
+            statusSection.style.paddingLeft = 8;
+            statusSection.style.paddingRight = 8;
+            statusSection.style.paddingTop = 4;
             pane.Add(statusSection);
 
             var statusHeader = new Label("STATUS");
@@ -365,6 +368,9 @@ namespace AxuFrameKit.Modules.LiveStream
             // === 控制按钮 ===
             var controlSection = new VisualElement();
             controlSection.style.marginTop = 8;
+            controlSection.style.paddingLeft = 8;
+            controlSection.style.paddingRight = 8;
+            controlSection.style.paddingBottom = 8;
             pane.Add(controlSection);
 
             // 录制控制按钮行
@@ -377,6 +383,7 @@ namespace AxuFrameKit.Modules.LiveStream
             _startRecordBtn.AddToClassList("ue5-button");
             _startRecordBtn.AddToClassList("ue5-button-accent");
             _startRecordBtn.style.flexGrow = 1;
+            _startRecordBtn.style.flexBasis = 0;
             _startRecordBtn.style.marginRight = 4;
             _startRecordBtn.style.height = 36;
             recordRow.Add(_startRecordBtn);
@@ -384,6 +391,8 @@ namespace AxuFrameKit.Modules.LiveStream
             _stopRecordBtn = new Button(OnStopRecordClicked) { text = "■ 停止录制" };
             _stopRecordBtn.AddToClassList("ue5-button");
             _stopRecordBtn.style.flexGrow = 1;
+            _stopRecordBtn.style.flexBasis = 0;
+            _stopRecordBtn.style.marginLeft = 4;
             _stopRecordBtn.style.height = 36;
             recordRow.Add(_stopRecordBtn);
 
@@ -395,6 +404,7 @@ namespace AxuFrameKit.Modules.LiveStream
             _saveBtn = new Button(OnSaveButtonClicked) { text = "💾 保存到文件" };
             _saveBtn.AddToClassList("ue5-button");
             _saveBtn.style.flexGrow = 1;
+            _saveBtn.style.flexBasis = 0;
             _saveBtn.style.marginRight = 4;
             _saveBtn.style.height = 36;
             actionRow.Add(_saveBtn);
@@ -402,6 +412,8 @@ namespace AxuFrameKit.Modules.LiveStream
             _clearBtn = new Button(OnClearButtonClicked) { text = "🗑 清空" };
             _clearBtn.AddToClassList("ue5-button");
             _clearBtn.style.flexGrow = 1;
+            _clearBtn.style.flexBasis = 0;
+            _clearBtn.style.marginLeft = 4;
             _clearBtn.style.height = 36;
             actionRow.Add(_clearBtn);
 

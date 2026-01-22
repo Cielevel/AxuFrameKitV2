@@ -12,7 +12,8 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
     // 简易的序列操作
 
     /// <summary>
-    /// 简易的时序操作
+    /// 简易的时序操作；适用于静态构建，动态运行。
+    /// 目前也支持动态构建，动态运行，但不推荐。
     /// 支持运行时动态添加操作，新增操作会在当前操作完成后依次执行
     /// </summary>
     public class SimpleSequence : IUseMonoBehaviourSeparate

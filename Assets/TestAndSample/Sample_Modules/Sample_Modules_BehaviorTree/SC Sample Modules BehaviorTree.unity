@@ -332,6 +332,89 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1777805047
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1777805049}
+  - component: {fileID: 1777805048}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1777805048
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1777805047}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb6ad65b0aba04745be99f91ad8de141, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  itemList:
+  - rid: 4667138189797359709
+  - rid: 4667138189797359710
+  - rid: 4667138189797359711
+  - rid: 4667138189797359712
+  - rid: 4667138189797359713
+  - rid: 4667138189797359714
+  _currentIndex: 0
+  _autoPlay: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 4667138189797359709
+      type: {class: SequencePlayer/Comment, ns: AxuFrameKit.Common.Utility.Auto.AutoSequence, asm: Assembly-CSharp}
+      data:
+        comment: 
+    - rid: 4667138189797359710
+      type: {class: SequencePlayer/DebugMessage, ns: AxuFrameKit.Common.Utility.Auto.AutoSequence, asm: Assembly-CSharp}
+      data:
+        msg: 
+    - rid: 4667138189797359711
+      type: {class: SequencePlayer/WaitTime, ns: AxuFrameKit.Common.Utility.Auto.AutoSequence, asm: Assembly-CSharp}
+      data:
+        time: 1
+    - rid: 4667138189797359712
+      type: {class: SequencePlayer/TriggerEvent, ns: AxuFrameKit.Common.Utility.Auto.AutoSequence, asm: Assembly-CSharp}
+      data:
+        unityEvent:
+          m_PersistentCalls:
+            m_Calls: []
+    - rid: 4667138189797359713
+      type: {class: SequencePlayer/WaitUntil, ns: AxuFrameKit.Common.Utility.Auto.AutoSequence, asm: Assembly-CSharp}
+      data:
+        conditionDescription: "\u63CF\u8FF0\u7B49\u5F85\u7684\u6761\u4EF6"
+    - rid: 4667138189797359714
+      type: {class: SequencePlayer/SetActive, ns: AxuFrameKit.Common.Utility.Auto.AutoSequence, asm: Assembly-CSharp}
+      data:
+        targetObject: {fileID: 0}
+        active: 1
+--- !u!4 &1777805049
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1777805047}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5.8157997, y: 15.641096, z: -0.72714525}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1900814221
 GameObject:
   m_ObjectHideFlags: 0
@@ -386,3 +469,4 @@ SceneRoots:
   - {fileID: 950471392}
   - {fileID: 808653162}
   - {fileID: 1900814222}
+  - {fileID: 1777805049}
