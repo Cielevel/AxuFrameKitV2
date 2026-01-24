@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Scripting.APIUpdating;
+using AxuFrameKit.Common.Utility.Event;
 
 namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
 {
@@ -12,7 +12,6 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
     /// 可视化时序工具，通过配置事件顺序，实现自动化。
     /// 继承Item即可添加新的时序。
     /// </summary>
-    [MovedFrom(true, null, "AxuFrameKit.Common.Utility.Auto.AutoSequence", "SequenceNonOdin")]
     public class SequencePlayer : MonoBehaviour
     {
         [SerializeReference]
@@ -20,11 +19,28 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
 
         [SerializeField] private int _currentIndex;
 
-        [SerializeField] private bool _autoPlay;
+        [SerializeField] private PlayMode _playMode;
+
+        [SerializeField] private EventChannelCore _eventChannel;
+
+        private enum PlayMode { Manual, Auto, ByChannel }
+
+        private void Awake()
+        {
+            if (_playMode == PlayMode.ByChannel)
+                _eventChannel.TryRegister(Play);
+        }
 
         private void Start()
         {
-            Play();
+            if (_playMode == PlayMode.Auto)
+                Play();
+        }
+
+        private void OnDestroy()
+        {
+            if (_playMode == PlayMode.ByChannel)
+                _eventChannel.Unregister(Play);
         }
 
         /// <summary>
@@ -192,6 +208,42 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
                 {
                     targetObject.SetActive(active);
                 }
+                yield return null;
+            }
+        }
+
+        /// <summary>
+        /// 触发事件 Item - 触发事件频道
+        /// </summary>
+        [Serializable]
+        public class RaiseEvent : Item
+        {
+            public override string Name => $"RAISE EVENT: {eventChannel?.name ?? "Null"}";
+            public override Color Color => new Color(0.1f, 0.3f, 0.5f);
+
+            public EventChannelCore eventChannel;
+
+            public override IEnumerator Run()
+            {
+                eventChannel.RaiseEvent();
+                yield return null;
+            }
+        }
+
+        /// <summary>
+        /// 触发事件 Item - 触发事件频道的默认值
+        /// </summary>
+        [Serializable]
+        public class RaiseEventDefaultValue : Item
+        {
+            public override string Name => $"RAISE EVENT DEFAULT VALUE: {eventChannel?.name ?? "Null"}";
+            public override Color Color => new Color(0.1f, 0.3f, 0.5f);
+
+            public EventChannelCore eventChannel;
+
+            public override IEnumerator Run()
+            {
+                eventChannel.RaiseEventDefaultValue();
                 yield return null;
             }
         }

@@ -242,9 +242,52 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence.Editor
             // EditorGUILayout.LabelField("Sequence (Non-Odin)", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "可视化时序工具，通过配置事件顺序，实现自动化。\n" +
-                "点击 + 按钮添加不同类型的 Item，可以拖拽排序。",
+                "点击 + 按钮添加不同类型的 Item，可以拖拽排序。\n" +
+                "注意⚠️：事件模式下，SequencePlayer如果添加了相同的事件，可能会循环触发，请确保顺序正确。",
                 MessageType.Info
             );
+
+            EditorGUILayout.Space(5);
+
+            // 播放模式设置
+            var playModeProp = serializedObject.FindProperty("_playMode");
+            if (playModeProp != null)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("Play Mode", GUILayout.Width(EditorGUIUtility.labelWidth));
+
+                int currentIndex = playModeProp.enumValueIndex;
+                // Manual=0, Auto=1, ByChannel=2
+                string[] options = new string[] { "手动", "自动", "事件" };
+
+                int newIndex = GUILayout.Toolbar(currentIndex, options);
+
+                if (newIndex != currentIndex)
+                {
+                    playModeProp.enumValueIndex = newIndex;
+
+                    // 如果切换至非事件模式，将 _eventChannel 置空
+                    if (newIndex != 2)
+                    {
+                        var eventChannelProp = serializedObject.FindProperty("_eventChannel");
+                        if (eventChannelProp != null)
+                        {
+                            eventChannelProp.objectReferenceValue = null;
+                        }
+                    }
+                }
+                EditorGUILayout.EndHorizontal();
+
+                // 如果选择了 "事件" (ByChannel)，显示 EventChannel 字段
+                if (newIndex == 2)
+                {
+                    var eventChannelProp = serializedObject.FindProperty("_eventChannel");
+                    if (eventChannelProp != null)
+                    {
+                        EditorGUILayout.PropertyField(eventChannelProp);
+                    }
+                }
+            }
 
             EditorGUILayout.Space(5);
 

@@ -1,0 +1,40 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="AIDialogueWindow.uss" />
+    <ui:VisualElement class="ue5-root chat-root">
+        <ui:Label text="AI CHAT ASSISTANT" class="header-label" />
+        
+        <ui:ScrollView class="chat-history" name="ChatHistory">
+            <!-- Example AI Message -->
+            <ui:VisualElement class="chat-message-row chat-message-row-ai">
+                <ui:VisualElement class="chat-bubble chat-bubble-ai">
+                    <ui:Label text="Hello! I am your AI Assistant. How can I help you develop your game today?" class="chat-bubble-text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            
+            <!-- Example User Message -->
+            <ui:VisualElement class="chat-message-row chat-message-row-user">
+                <ui:VisualElement class="chat-bubble chat-bubble-user">
+                    <ui:Label text="I need help with a Unity Editor Window." class="chat-bubble-text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+             <!-- Example AI Message -->
+            <ui:VisualElement class="chat-message-row chat-message-row-ai">
+                <ui:VisualElement class="chat-bubble chat-bubble-ai">
+                    <ui:Label text="I can certainly help with that. We can use UI Toolkit to create a modern, dockable window. Please check the AxuFrameKit documentation for more styles." class="chat-bubble-text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            
+        </ui:ScrollView>
+
+        <ui:VisualElement class="config-toolbar">
+             <ui:Button text="Select AI Config..." name="ConfigButton" class="ue5-button ue5-button-small config-select-btn" />
+             <ui:Label name="CurrentConfigLabel" text="No Config Selected" class="config-label" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="chat-input-area">
+            <ui:TextField name="InputField" class="chat-input-field" multiline="true" />
+            <ui:Button text="SEND" name="SendButton" class="ue5-button ue5-button-primary" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

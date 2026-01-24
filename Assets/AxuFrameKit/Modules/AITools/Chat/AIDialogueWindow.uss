@@ -1,0 +1,221 @@
+/* ==================================================================
+   AI Dialogue Window - UE5 Style Theme
+   Based on LiveStreamSimulatorWindow.uss
+   ================================================================== */
+
+/* ===== CSS Variables (UE5 Color Palette) ===== */
+:root {
+    /* Primary Background Colors */
+    --ue5-bg-darkest: #1a1a1a;
+    --ue5-bg-dark: #1e1e1e;
+    --ue5-bg-panel: #242424;
+    --ue5-bg-element: #2a2a2a;
+    --ue5-bg-hover: #333333;
+    --ue5-bg-active: #3a3a3a;
+    
+    /* Accent Colors (UE5 Orange) */
+    --ue5-accent-primary: #ff9500;
+    --ue5-accent-secondary: #e68a00;
+    --ue5-accent-glow: rgba(255, 149, 0, 0.15);
+    
+    /* Border Colors */
+    --ue5-border-dark: #0d0d0d;
+    --ue5-border-subtle: #383838;
+    --ue5-border-light: #454545;
+    
+    /* Text Colors */
+    --ue5-text-primary: #e8e8e8;
+    --ue5-text-secondary: #a0a0a0;
+    --ue5-text-disabled: #666666;
+    --ue5-text-highlight: #ffffff;
+
+    /* Button Colors */
+    --ue5-btn-bg: #3d3d3d;
+    --ue5-btn-primary-bg: #ff9500;
+    --ue5-btn-primary-hover: #ffaa33;
+    --ue5-btn-primary-active: #cc7700;
+    
+    /* Selection Colors */
+    --ue5-selected-text: #1a1a1a;
+    --ue5-selected-hover: #ffaa33;
+}
+
+/* ===== Root Container ===== */
+.ue5-root {
+    background-color: var(--ue5-bg-darkest);
+    color: var(--ue5-text-primary);
+    font-size: 12px;
+    -unity-font-style: normal;
+}
+
+/* ===== Header Labels ===== */
+.header-label {
+    height: 28px;
+    min-height: 28px;
+    background-color: var(--ue5-bg-dark);
+    color: var(--ue5-text-secondary);
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 1px;
+    -unity-text-align: middle-left;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ue5-border-dark);
+}
+
+/* ===== Chat Specific Layout ===== */
+.chat-root {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-history {
+    flex-grow: 1;
+    background-color: var(--ue5-bg-panel);
+    padding: 10px;
+}
+
+.chat-input-area {
+    min-height: 60px;
+    flex-direction: row;
+    padding: 8px;
+    background-color: var(--ue5-bg-dark);
+    border-top-width: 1px;
+    border-top-color: var(--ue5-border-light);
+    align-items: center;
+}
+
+/* ===== Chat Text Input ===== */
+.chat-input-field {
+    flex-grow: 1;
+    margin-right: 8px;
+}
+
+.chat-input-field > .unity-text-field__input {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 4px;
+    color: var(--ue5-text-primary);
+    padding: 8px;
+    font-size: 12px;
+}
+
+.chat-input-field > .unity-text-field__input:focus {
+    border-color: var(--ue5-accent-primary);
+}
+
+/* ===== Buttons - UE5 Style ===== */
+.ue5-button {
+    height: 32px;
+    min-width: 80px;
+    font-size: 12px;
+    -unity-font-style: bold;
+    border-radius: 4px;
+    border-width: 0;
+    transition-duration: 0.1s;
+    justify-content: center;
+    align-items: center;
+}
+
+.ue5-button-primary {
+    background-color: var(--ue5-btn-primary-bg);
+    color: var(--ue5-selected-text);
+}
+
+.ue5-button-primary:hover {
+    background-color: var(--ue5-btn-primary-hover);
+}
+
+.ue5-button-primary:active {
+    background-color: var(--ue5-btn-primary-active);
+}
+
+/* ===== Chat Bubbles ===== */
+.chat-message-row {
+    flex-direction: row;
+    margin-bottom: 12px;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.chat-message-row-user {
+    justify-content: flex-end;
+}
+
+.chat-message-row-ai {
+    justify-content: flex-start;
+}
+
+.chat-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    max-width: 80%;
+    font-size: 13px;
+    white-space: normal;
+}
+
+.chat-bubble-user {
+    background-color: var(--ue5-accent-primary);
+    color: #1a1a1a;
+    border-bottom-right-radius: 2px;
+}
+
+.chat-bubble-ai {
+    background-color: var(--ue5-bg-element);
+    color: var(--ue5-text-primary);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-bottom-left-radius: 2px;
+}
+
+.chat-bubble-text {
+    -unity-text-align: middle-left;
+    white-space: normal;
+    -unity-enable-rich-text: true;
+}
+
+/* ===== Config Toolbar ===== */
+.config-toolbar {
+    flex-direction: row;
+    height: 36px;
+    background-color: var(--ue5-bg-panel);
+    border-top-width: 1px;
+    border-top-color: var(--ue5-border-subtle);
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.config-label {
+    margin-left: 10px;
+    color: var(--ue5-text-secondary);
+    font-size: 11px;
+    -unity-text-align: middle-left;
+    -unity-font-style: italic;
+}
+
+.ue5-button-small {
+    height: 24px;
+    min-height: 24px;
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 11px;
+}
+
+.config-select-btn {
+    background-color: var(--ue5-bg-element);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    color: var(--ue5-text-primary);
+    min-width: 120px;
+}
+
+.config-select-btn:hover {
+    background-color: var(--ue5-bg-hover);
+    border-color: var(--ue5-text-secondary);
+}
