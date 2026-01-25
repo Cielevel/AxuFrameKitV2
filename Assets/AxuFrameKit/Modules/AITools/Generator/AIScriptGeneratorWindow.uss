@@ -1,0 +1,526 @@
+/* ==================================================================
+   AI Script Generator Window - UE5 Style Theme
+   Inspired by Unreal Engine 5 Editor Interface
+   ================================================================== */
+
+/* ===== CSS Variables (UE5 Color Palette) ===== */
+:root {
+    /* Primary Background Colors */
+    --ue5-bg-darkest: #1a1a1a;
+    --ue5-bg-dark: #1e1e1e;
+    --ue5-bg-panel: #242424;
+    --ue5-bg-element: #2a2a2a;
+    --ue5-bg-hover: #333333;
+    --ue5-bg-active: #3a3a3a;
+    
+    /* Accent Colors (UE5 Orange) */
+    --ue5-accent-primary: #ff9500;
+    --ue5-accent-secondary: #e68a00;
+    --ue5-accent-glow: rgba(255, 149, 0, 0.15);
+    --ue5-accent-border: rgba(255, 149, 0, 0.4);
+    
+    /* Border Colors */
+    --ue5-border-dark: #0d0d0d;
+    --ue5-border-subtle: #383838;
+    --ue5-border-light: #454545;
+    
+    /* Text Colors */
+    --ue5-text-primary: #e8e8e8;
+    --ue5-text-secondary: #a0a0a0;
+    --ue5-text-disabled: #666666;
+    --ue5-text-highlight: #ffffff;
+    
+    /* Selection Colors */
+    --ue5-selected-bg: #ff9500;
+    --ue5-selected-text: #1a1a1a;
+    --ue5-selected-hover: #ffaa33;
+    
+    /* Button Colors */
+    --ue5-btn-bg: #3d3d3d;
+    --ue5-btn-hover: #4a4a4a;
+    --ue5-btn-active: #555555;
+    --ue5-btn-primary-bg: #ff9500;
+    --ue5-btn-primary-hover: #ffaa33;
+    --ue5-btn-primary-active: #cc7700;
+}
+
+/* ===== Root Container ===== */
+.ue5-root {
+    background-color: #141414;
+    color: var(--ue5-text-primary);
+    font-size: 12px;
+    -unity-font-style: normal;
+    padding: 8px;
+}
+
+/* ===== Title Label ===== */
+.title-label {
+    height: 32px;
+    min-height: 32px;
+    background-color: var(--ue5-bg-dark);
+    color: var(--ue5-accent-primary);
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding-left: 12px;
+    padding-right: 12px;
+    -unity-text-align: middle-left;
+    border-radius: 6px 6px 0 0;
+    border-bottom-width: 2px;
+    border-bottom-color: var(--ue5-accent-primary);
+    margin-bottom: 8px;
+}
+
+/* ===== Section Label ===== */
+.section-label {
+    font-size: 11px;
+    color: var(--ue5-text-secondary);
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    padding-left: 4px;
+    border-left-width: 3px;
+    border-left-color: var(--ue5-accent-primary);
+}
+
+/* ===== Form Row ===== */
+.form-row {
+    background-color: var(--ue5-bg-panel);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    padding: 10px;
+    margin-bottom: 8px;
+}
+
+/* ===== Unity Base Field Styling ===== */
+.unity-base-field__label {
+    min-width: 120px;
+    color: var(--ue5-text-secondary);
+    font-size: 11px;
+    -unity-font-style: normal;
+}
+
+.unity-base-field__input {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 3px;
+    padding: 4px 8px;
+    color: var(--ue5-text-primary);
+    min-height: 24px;
+}
+
+.unity-base-field__input:hover {
+    border-color: var(--ue5-border-light);
+}
+
+.unity-base-field__input:focus {
+    border-color: var(--ue5-accent-primary);
+}
+
+/* ===== Text Fields ===== */
+.unity-text-field > .unity-text-field__input {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 3px;
+    color: var(--ue5-text-primary);
+    padding: 4px 8px;
+    font-size: 11px;
+    min-height: 24px;
+}
+
+.unity-text-field > .unity-text-field__input:hover {
+    border-color: var(--ue5-border-light);
+}
+
+.unity-text-field > .unity-text-field__input:focus {
+    border-color: var(--ue5-accent-primary);
+}
+
+/* ===== Object Field ===== */
+.unity-object-field__selector {
+    background-color: var(--ue5-bg-element);
+    border-left-width: 1px;
+    border-left-color: var(--ue5-border-subtle);
+    border-radius: 0 3px 3px 0;
+}
+
+.unity-object-field__selector:hover {
+    background-color: var(--ue5-bg-hover);
+}
+
+/* ===== Enum Field ===== */
+.unity-enum-field__input {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 3px;
+    padding: 4px 8px;
+}
+
+.unity-enum-field__input:hover {
+    border-color: var(--ue5-border-light);
+}
+
+/* ===== Buttons - UE5 Style ===== */
+.ue5-button {
+    height: 28px;
+    min-height: 28px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    
+    background-color: var(--ue5-btn-bg);
+    color: var(--ue5-text-primary);
+    
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: var(--ue5-border-dark);
+    border-bottom-color: #0a0a0a;
+    border-top-color: var(--ue5-border-light);
+    
+    margin: 4px 0;
+    padding-left: 16px;
+    padding-right: 16px;
+    
+    transition-duration: 0.1s;
+}
+
+.ue5-button:hover {
+    background-color: var(--ue5-btn-hover);
+    border-top-color: var(--ue5-border-light);
+    color: var(--ue5-text-highlight);
+}
+
+.ue5-button:active {
+    background-color: var(--ue5-btn-active);
+    border-top-color: var(--ue5-border-dark);
+    border-bottom-color: var(--ue5-border-light);
+}
+
+.ue5-button:disabled {
+    background-color: #2a2a2a;
+    color: var(--ue5-text-disabled);
+    border-color: #1a1a1a;
+}
+
+/* ===== Primary Button (Accent Color) ===== */
+.ue5-button-primary {
+    height: 36px;
+    min-height: 36px;
+    background-color: var(--ue5-btn-primary-bg);
+    color: var(--ue5-selected-text);
+    border-color: var(--ue5-accent-secondary);
+    border-top-color: var(--ue5-selected-hover);
+    font-size: 12px;
+    margin-top: 12px;
+    margin-bottom: 8px;
+}
+
+.ue5-button-primary:hover {
+    background-color: var(--ue5-btn-primary-hover);
+    color: var(--ue5-selected-text);
+}
+
+.ue5-button-primary:active {
+    background-color: var(--ue5-btn-primary-active);
+}
+
+.ue5-button-primary:disabled {
+    background-color: #4a3d2a;
+    color: #7a6a5a;
+    border-color: #3a3025;
+}
+
+/* ===== Small Button ===== */
+.ue5-button-small {
+    height: 24px;
+    min-height: 24px;
+    font-size: 10px;
+    padding-left: 12px;
+    padding-right: 12px;
+    margin: 0;
+}
+
+/* ===== Config Select Button ===== */
+.config-select-btn {
+    background-color: var(--ue5-bg-element);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    color: var(--ue5-text-primary);
+    min-width: 140px;
+    height: 26px;
+    margin: 4px 0;
+}
+
+.config-select-btn:hover {
+    background-color: var(--ue5-bg-hover);
+    border-color: var(--ue5-accent-primary);
+    color: var(--ue5-text-highlight);
+}
+
+/* ===== Config Label ===== */
+.config-label {
+    margin-top: 6px;
+    margin-left: 4px;
+    color: var(--ue5-text-secondary);
+    font-size: 10px;
+    -unity-font-style: italic;
+}
+
+/* ===== Preview Box ===== */
+.preview-box {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 6px;
+    margin-bottom: 8px;
+    min-height: 120px;
+    max-height: 200px;
+}
+
+.preview-box Label {
+    color: var(--ue5-text-secondary);
+    font-size: 11px;
+    white-space: normal;
+    -unity-text-align: upper-left;
+}
+
+/* ===== Status Box ===== */
+.status-box {
+    margin-top: 8px;
+    padding: 10px 12px;
+    background-color: var(--ue5-bg-panel);
+    border-radius: 4px;
+    border-left-width: 3px;
+    border-left-color: var(--ue5-accent-primary);
+    color: var(--ue5-text-highlight);
+    font-size: 11px;
+    display: none;
+}
+
+/* ===== Scrollbars - UE5 Slim Style ===== */
+.unity-scroller {
+    background-color: transparent;
+}
+
+.unity-scroller--vertical {
+    width: 10px;
+}
+
+.unity-scroller--horizontal {
+    height: 10px;
+}
+
+.unity-scroller__slider {
+    background-color: var(--ue5-bg-dark);
+    border-radius: 0;
+    margin: 0;
+}
+
+.unity-base-slider__dragger {
+    background-color: #4a4a4a;
+    border-radius: 2px;
+    border-width: 0;
+    margin: 2px;
+}
+
+.unity-base-slider__dragger:hover {
+    background-color: #5a5a5a;
+}
+
+.unity-base-slider__dragger:active {
+    background-color: var(--ue5-accent-primary);
+}
+
+.unity-scroller__low-button,
+.unity-scroller__high-button {
+    background-color: var(--ue5-bg-element);
+    border-width: 0;
+    border-radius: 0;
+}
+
+.unity-scroller__low-button:hover,
+.unity-scroller__high-button:hover {
+    background-color: var(--ue5-bg-hover);
+}
+
+/* ===== Preview List Styles ===== */
+.preview-empty-label {
+    color: var(--ue5-text-secondary);
+    font-size: 11px;
+    -unity-font-style: italic;
+    padding: 20px;
+    -unity-text-align: middle-center;
+}
+
+.preview-header {
+    background-color: var(--ue5-bg-dark);
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    border-left-width: 3px;
+    border-left-color: var(--ue5-accent-primary);
+}
+
+.preview-header-label {
+    color: var(--ue5-text-highlight);
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+}
+
+/* ===== Child Object Container ===== */
+.child-object-container {
+    background-color: var(--ue5-bg-element);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    margin-bottom: 6px;
+    overflow: hidden;
+}
+
+.child-object-header {
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--ue5-bg-dark);
+    padding: 6px 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ue5-border-dark);
+}
+
+.child-object-header:hover {
+    background-color: var(--ue5-bg-hover);
+}
+
+/* ===== Expand Button ===== */
+.expand-button {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    background-color: transparent;
+    border-width: 0;
+    color: var(--ue5-accent-primary);
+    font-size: 10px;
+    margin: 0;
+    padding: 0;
+    -unity-text-align: middle-center;
+}
+
+.expand-button:hover {
+    background-color: var(--ue5-accent-glow);
+    border-radius: 2px;
+}
+
+/* ===== Child Object Name ===== */
+.child-object-name {
+    flex-grow: 1;
+    color: var(--ue5-text-highlight);
+    font-size: 11px;
+    -unity-font-style: bold;
+    margin-left: 6px;
+}
+
+.component-count-label {
+    color: var(--ue5-text-secondary);
+    font-size: 10px;
+    margin-left: 8px;
+}
+
+/* ===== Components Container ===== */
+.components-container {
+    padding: 8px 12px 8px 32px;
+    background-color: var(--ue5-bg-darkest);
+}
+
+.no-component-label {
+    color: var(--ue5-text-disabled);
+    font-size: 10px;
+    -unity-font-style: italic;
+    padding: 4px 0;
+}
+
+/* ===== Component Toggle Button (Button Style - Like LiveStream Filter) ===== */
+.component-toggle-btn {
+    height: 26px;
+    min-height: 26px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    border-radius: 3px;
+    border-width: 1px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-bottom: 4px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    transition-duration: 0.1s;
+    -unity-text-align: middle-left;
+}
+
+.component-toggle-btn--active {
+    background-color: var(--ue5-accent-primary);
+    border-color: var(--ue5-accent-secondary);
+    color: #1a1a1a;
+}
+
+.component-toggle-btn--active:hover {
+    background-color: var(--ue5-accent-secondary);
+}
+
+.component-toggle-btn--inactive {
+    background-color: #3a3a3a;
+    border-color: #505050;
+    color: var(--ue5-text-primary);
+}
+
+.component-toggle-btn--inactive:hover {
+    background-color: #454545;
+    border-color: #606060;
+}
+
+/* ===== Preview Box Scrollbar ===== */
+.preview-box .unity-scroller--vertical {
+    width: 10px;
+}
+
+.preview-box .unity-scroller__slider {
+    background-color: var(--ue5-bg-dark);
+    border-radius: 0;
+    margin: 0;
+}
+
+.preview-box .unity-base-slider__dragger {
+    background-color: #4a4a4a;
+    border-radius: 2px;
+    border-width: 0;
+    margin: 2px;
+}
+
+.preview-box .unity-base-slider__dragger:hover {
+    background-color: #5a5a5a;
+}
+
+.preview-box .unity-base-slider__dragger:active {
+    background-color: var(--ue5-accent-primary);
+}
+
+.preview-box .unity-scroller__low-button,
+.preview-box .unity-scroller__high-button {
+    background-color: var(--ue5-bg-element);
+    border-width: 0;
+    border-radius: 0;
+}
+
+.preview-box .unity-scroller__low-button:hover,
+.preview-box .unity-scroller__high-button:hover {
+    background-color: var(--ue5-bg-hover);
+}

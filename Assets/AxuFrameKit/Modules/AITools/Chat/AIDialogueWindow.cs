@@ -12,8 +12,9 @@ namespace AxuFrameKit.Modules.AITools
     public class AIDialogueWindow : EditorWindow
     {
         private const string UXML_PATH = "Assets/AxuFrameKit/Modules/AITools/Chat/AIDialogueWindow.uxml";
+        private const string PREF_KEY_CONFIG = "AIDialogueWindow_LastConfig";
 
-        private AIChatConfig _currentConfig;
+        private AIConfig _currentConfig;
         private Label _configLabel;
         private ScrollView _chatScrollView;
         private TextField _inputField;
@@ -46,6 +47,9 @@ namespace AxuFrameKit.Modules.AITools
             root.Add(labelFromUXML);
 
             SetupInteractions(root);
+
+            // Load saved config
+            LoadSavedConfig();
         }
 
         private void SetupInteractions(VisualElement root)
@@ -79,23 +83,23 @@ namespace AxuFrameKit.Modules.AITools
 
         private void LoadDefaultConfig()
         {
-            string[] guids = AssetDatabase.FindAssets("t:AIChatConfig");
+            string[] guids = AssetDatabase.FindAssets("t:AIConfig");
             if (guids.Length > 0)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[0]);
-                SelectConfig(AssetDatabase.LoadAssetAtPath<AIChatConfig>(path));
+                SelectConfig(AssetDatabase.LoadAssetAtPath<AIConfig>(path));
             }
         }
 
         private void OnSelectConfigClicked()
         {
             var menu = new GenericMenu();
-            string[] guids = AssetDatabase.FindAssets("t:AIChatConfig");
+            string[] guids = AssetDatabase.FindAssets("t:AIConfig");
 
             foreach (var guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
-                AIChatConfig config = AssetDatabase.LoadAssetAtPath<AIChatConfig>(path);
+                AIConfig config = AssetDatabase.LoadAssetAtPath<AIConfig>(path);
                 if (config != null)
                 {
                     menu.AddItem(new GUIContent(config.name), _currentConfig == config, () => SelectConfig(config));
@@ -104,13 +108,13 @@ namespace AxuFrameKit.Modules.AITools
 
             if (guids.Length == 0)
             {
-                menu.AddDisabledItem(new GUIContent("No AIChatConfig found. Create one first."));
+                menu.AddDisabledItem(new GUIContent("No AIConfig found. Create one first."));
             }
 
             menu.ShowAsContext();
         }
 
-        private void SelectConfig(AIChatConfig config)
+        private void SelectConfig(AIConfig config)
         {
             _currentConfig = config;
             if (_configLabel != null)
@@ -118,8 +122,44 @@ namespace AxuFrameKit.Modules.AITools
                 _configLabel.text = config != null ? $"Config: {config.name} ({config.GetModelName()})" : "No Config Selected";
             }
 
+            // Save config selection
+            if (config != null)
+            {
+                string configPath = AssetDatabase.GetAssetPath(config);
+                EditorPrefs.SetString(PREF_KEY_CONFIG, configPath);
+            }
+
             // Reset history when changing config to ensure system prompt is fresh? 
             // Or keep history. Let's keep history for now, but usually system prompt is at the start.
+        }
+
+        private void LoadSavedConfig()
+        {
+            if (EditorPrefs.HasKey(PREF_KEY_CONFIG))
+            {
+                string configPath = EditorPrefs.GetString(PREF_KEY_CONFIG);
+                if (!string.IsNullOrEmpty(configPath))
+                {
+                    var config = AssetDatabase.LoadAssetAtPath<AIConfig>(configPath);
+                    if (config != null)
+                    {
+                        SelectConfig(config);
+                        return;
+                    }
+                }
+            }
+
+            // Fallback: try to find any AIConfig
+            string[] guids = AssetDatabase.FindAssets("t:AIConfig");
+            if (guids.Length > 0)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+                var config = AssetDatabase.LoadAssetAtPath<AIConfig>(path);
+                if (config != null)
+                {
+                    SelectConfig(config);
+                }
+            }
         }
 
         private void OnSendClicked()

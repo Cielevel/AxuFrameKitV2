@@ -1,0 +1,40 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="AIScriptGeneratorWindow.uss" />
+    <ui:VisualElement class="ue5-root">
+        <ui:Label text="AI Script Generator" class="title-label" />
+
+        <ui:VisualElement class="form-row">
+            <ui:Label text="Configuration" class="section-label" />
+            <ui:Button name="ConfigButton" text="Select AI Config" class="ue5-button config-select-btn" />
+            <ui:Label name="CurrentConfigLabel" text="No Config Selected" class="config-label" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="form-row">
+            <ui:Label text="Target Settings" class="section-label" />
+            <ui:VisualElement name="ParentFieldContainer" />
+            <ui:TextField name="ScriptNameField" label="Script Name" value="UIController" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="form-row">
+            <ui:Label text="Style Settings" class="section-label" />
+            <ui:VisualElement name="FieldStyleContainer" />
+            <ui:VisualElement name="NamingConventionContainer" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="form-row">
+            <ui:Label text="Output Path" class="section-label" />
+            <ui:VisualElement style="flex-direction: row;">
+                <ui:TextField name="OutputPathField" label="Folder" value="Assets/Scripts/Generated" style="flex-grow: 1;" />
+                <ui:Button name="BrowsePathButton" text="Browse..." class="ue5-button ue5-button-small" style="margin-left: 4px; width: 80px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:Label text="Child Objects Preview" class="section-label" />
+        <ui:ScrollView name="PreviewScrollView" class="preview-box" mode="Vertical" />
+
+
+        <ui:Button name="GenerateButton" text="Generate Script" class="ue5-button ue5-button-primary" />
+
+        <ui:Label name="StatusLabel" text="" class="status-box" />
+    </ui:VisualElement>
+</ui:UXML>
