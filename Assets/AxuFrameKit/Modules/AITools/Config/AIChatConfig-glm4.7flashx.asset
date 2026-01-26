@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   modelName: glm-4.7-flashx
   apiUrl: https://open.bigmodel.cn/api/paas/v4/chat/completions
-  apiKey: 
+  apiKey: ***REMOVED-SECRET***
   temperature: 0.95
   stream: 0
-  systemPrompt: You are a helpful AI assistant.
+  systemPrompt: "\u4F60\u662F\u4E00\u4E2A\u7A0B\u5E8F\u5458AI\u3002"

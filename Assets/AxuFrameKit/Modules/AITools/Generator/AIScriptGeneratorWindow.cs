@@ -18,15 +18,18 @@ namespace AxuFrameKit.Modules.AITools
         private const string PREF_KEY_CONFIG = "AIScriptGenerator_LastConfig";
         private const string PREF_KEY_OUTPUT_PATH = "AIScriptGenerator_OutputPath";
         private const string DEFAULT_OUTPUT_PATH = "Assets/Scripts/Generated";
+        private const string PREF_KEY_NAMESPACE = "AIScriptGenerator_Namespace";
 
         private AIConfig _currentConfig;
         private string _outputPath = DEFAULT_OUTPUT_PATH;
+        private string _namespace = "";
 
         // UI Elements
         private Button _configBtn;
         private Label _configLabel;
         private ObjectField _parentField;
         private TextField _scriptNameField;
+        private TextField _namespaceField;
         private EnumField _fieldStyleField;
         private EnumField _namingConventionField;
         private TextField _outputPathField;
@@ -140,6 +143,21 @@ namespace AxuFrameKit.Modules.AITools
                     _scriptName = evt.newValue;
                     ValidateState();
                 });
+
+                // Add Namespace field after Script Name
+                _namespaceField = new TextField("Namespace");
+                _namespaceField.value = _namespace;
+                _namespaceField.RegisterValueChangedCallback(evt =>
+                {
+                    _namespace = evt.newValue;
+                    EditorPrefs.SetString(PREF_KEY_NAMESPACE, _namespace);
+                });
+
+                if (_scriptNameField.parent != null)
+                {
+                    int index = _scriptNameField.parent.IndexOf(_scriptNameField);
+                    _scriptNameField.parent.Insert(index + 1, _namespaceField);
+                }
             }
 
             // Output Path
@@ -192,6 +210,15 @@ namespace AxuFrameKit.Modules.AITools
 
         private void LoadSavedPreferences()
         {
+            // Load saved namespace
+            if (EditorPrefs.HasKey(PREF_KEY_NAMESPACE))
+            {
+                _namespace = EditorPrefs.GetString(PREF_KEY_NAMESPACE);
+                if (_namespaceField != null)
+                {
+                    _namespaceField.value = _namespace;
+                }
+            }
             // Load saved output path
             if (EditorPrefs.HasKey(PREF_KEY_OUTPUT_PATH))
             {
@@ -578,9 +605,18 @@ namespace AxuFrameKit.Modules.AITools
                 sb.AppendLine("- Field names should start with underscore (_fieldName)");
             }
 
+            if (!string.IsNullOrEmpty(_namespace))
+            {
+                sb.AppendLine($"- Wrap the class in namespace '{_namespace}'");
+            }
+            else
+            {
+                sb.AppendLine("- Do not use any namespace (global namespace)");
+            }
+
             sb.AppendLine("- Inherit from MonoBehaviour");
             sb.AppendLine("- Only include field declarations, no methods");
-            sb.AppendLine("- Add appropriate using statements");
+            sb.AppendLine("- Add appropriate using statements. CRITICAL: You MUST include the namespace for any component used (e.g., 'using UnityEngine.UI;' for Image/Text, 'using TMPro;' for TextMeshPro).");
             sb.AppendLine("- If a child object name contains Chinese characters, translate it to a suitable English field name");
             sb.AppendLine();
             sb.AppendLine("Child objects information:");

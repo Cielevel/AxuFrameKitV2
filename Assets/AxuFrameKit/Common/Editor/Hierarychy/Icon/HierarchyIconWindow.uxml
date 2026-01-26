@@ -1,0 +1,22 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:VisualElement class="ue5-root">
+        <ui:Label text="Hierarchy Icon Settings" class="header-label" />
+        
+        <!-- Built-in Components Section -->
+        <ui:Label text="Common Unity Components" class="section-label" />
+        <ui:VisualElement name="BuiltInContainer" class="builtin-grid" />
+        
+        <!-- Custom Rules Section -->
+        <ui:Label text="Custom Component Icons" class="section-label" />
+        <ui:ScrollView name="RulesContainer" class="rules-scroll-view" />
+        
+        <ui:VisualElement class="add-rule-btn-container">
+            <ui:Button text="+ Add Custom Icon Rule" name="BtnAddRule" class="ue5-button" style="width: 200px;" />
+        </ui:VisualElement>
+        
+        <ui:VisualElement class="window-footer">
+            <ui:Button text="Reset to Default" name="BtnReset" class="ue5-button" />
+            <ui:Button text="Save Settings" name="BtnSave" class="ue5-button ue5-button-primary" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

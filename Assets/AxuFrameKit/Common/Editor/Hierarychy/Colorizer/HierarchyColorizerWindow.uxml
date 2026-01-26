@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:VisualElement class="ue5-root">
+        <ui:Label text="Hierarchy Colorizer Settings" class="header-label" />
+        <ui:Label text="Configure color rules for objects in the Hierarchy window." style="padding: 10px; color: #a0a0a0; white-space: normal;" />
+        
+        <ui:ScrollView name="RulesContainer" class="rules-scroll-view" />
+        
+        <ui:VisualElement class="add-rule-btn-container">
+            <ui:Button text="+ Add New Rule" name="BtnAddRule" class="ue5-button" style="width: 200px;" />
+        </ui:VisualElement>
+        
+        <ui:VisualElement class="window-footer">
+            <ui:Button text="Reset to Default" name="BtnReset" class="ue5-button" />
+            <ui:Button text="Save Settings" name="BtnSave" class="ue5-button ue5-button-primary" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

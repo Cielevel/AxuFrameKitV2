@@ -1,10 +1,9 @@
 namespace AxuFrameKit.Common.UI.Kit.DataBind
 {
     using Component;
-    
+
     public static class UIData
     {
-        // 自动推断 T，不需要手动写 <string> 或 <Sprite>
         public static UIDataUnit<T> Id<T>(string id, T value)
         {
             return new UIDataUnit<T>(id, value);
@@ -15,43 +14,43 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind
             return new UIDataUnit<T>(index, value);
         }
     }
-    
+
     public interface IUIDataUnit
     {
         string TargetId { get; }
         int TargetIndex { get; }
-        
+
         /// <summary>
         /// 尝试将数据应用到组件上
         /// </summary>
         void TryApply(UIBindComponent component);
     }
-    
+
     public readonly struct UIDataUnit<T> : IUIDataUnit
     {
         public bool UseIndex { get; }
-        
+
         public string TargetId { get; }
         public int TargetIndex { get; }
-        
+
         private readonly T _value;
 
         // 构造 ID 类型的数据
         public UIDataUnit(string id, T value)
         {
-            TargetId    = id;
-            _value      = value;
+            TargetId = id;
+            _value = value;
             TargetIndex = -1;
-            UseIndex    = false;
+            UseIndex = false;
         }
 
         // 构造 Index 类型的数据
         public UIDataUnit(int index, T value)
         {
-            TargetId    = null;
+            TargetId = null;
             TargetIndex = index;
-            _value      = value;
-            UseIndex    = true;
+            _value = value;
+            UseIndex = true;
         }
 
         public void TryApply(UIBindComponent component)

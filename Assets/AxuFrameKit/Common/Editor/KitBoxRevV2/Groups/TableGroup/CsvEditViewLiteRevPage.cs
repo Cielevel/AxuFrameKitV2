@@ -20,8 +20,6 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
         private string _currentCsvPath;
         private List<List<string>> _tableData = new List<List<string>>();
 
-        private float _columnWidth = 120f;
-
         public void Init(IKitBoxRevV2 kitBox) => _kitBox = kitBox;
 
         private VisualElement _dragOverlay;
