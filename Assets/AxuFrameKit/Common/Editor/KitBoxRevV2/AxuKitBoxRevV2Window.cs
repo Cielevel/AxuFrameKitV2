@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.UIElements;
 using AxuFrameKit.Common.Editor.KitBoxRevV2.Core;
 using AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup;
 using AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CopierGroup;
 using AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup;
 using AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup;
-using UnityEditor;
-using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace AxuFrameKit.Common.Editor.KitBoxRevV2
 {
@@ -100,7 +100,8 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
             }));
 
             _groups.Add(new KitGroupRevImpl("实用工具", "Utility", new IKitPageRevV2[] {
-                new SceneJumpRevPage()
+                new SceneJumpRevPage(),
+                new BatchRenameRevPage()
             }));
         }
 
