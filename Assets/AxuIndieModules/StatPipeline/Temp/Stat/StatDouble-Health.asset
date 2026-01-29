@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df1cbc0e0f884ae592397529b49c0ed4, type: 3}
-  m_Name: StatDouble
+  m_Name: StatDouble-Health
   m_EditorClassIdentifier: 
-  <ID>k__BackingField: 
-  <RefreshType>k__BackingField: 0
+  <ID>k__BackingField: StatDouble-Health
+  <RefreshType>k__BackingField: 2
   <Tags>k__BackingField: []
   <IsDirty>k__BackingField: 0
-  <Inited>k__BackingField: 0
+  <Inited>k__BackingField: 1
   <Modifiers>k__BackingField: []
-  <PipelineStages>k__BackingField: {fileID: 11400000, guid: e36b4431e7dc3f54cb9c363faa53bf3d, type: 2}
-  <BaseValue>k__BackingField: 0
+  <Stages>k__BackingField: {fileID: 11400000, guid: e36b4431e7dc3f54cb9c363faa53bf3d, type: 2}
+  <BaseValue>k__BackingField: 100

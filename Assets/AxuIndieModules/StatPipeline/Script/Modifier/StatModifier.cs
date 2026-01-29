@@ -4,14 +4,38 @@ using UnityEngine;
 namespace AxuIndieModules.StatPipeline
 {
     /// <summary>
-    /// 通用StatModifier，不再是泛型类。
+    /// 通用StatModifier
     /// </summary>
     [CreateAssetMenu(fileName = "StatModifier", menuName = "AxuIndieModules/StatPipeline/StatModifier")]
     public class StatModifier : StatModifierBase
     {
-        public string ID => Stat != null ? Stat.ID : string.Empty;
+        [SerializeReference]
+        public StatModifierCalculator Calculator;
 
         public List<string> Tags => Stat != null ? Stat.Tags : null;
+
+        public override double Apply(double value) => Calculator.Calculate(value, Stat.Value);
+
+        public override StatModifierBase Clone()
+        {
+            var modifier = ScriptableObject.CreateInstance<StatModifier>();
+            modifier.Index = Index;
+            modifier.Count = Count;
+            modifier.Weight = Weight;
+            modifier.StageTag = StageTag;
+            modifier.Duration = Duration;
+            modifier.Active = Active;
+            modifier.CountType = CountType;
+            modifier.LifeType = LifeType;
+            modifier.CombineParamType = CombineParamType;
+            modifier.CombineCountType = CombineCountType;
+            modifier.ConditionType = ConditionType;
+            modifier.Stat = Stat;
+            modifier.Calculator = Calculator;
+            return modifier;
+        }
+
+        // ----- Modifier的独立方法 -----
 
 #if UNITY_EDITOR
         public void CreateStatFloat() => CreateStatSubAsset<StatFloat>("Float");

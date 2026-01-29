@@ -241,6 +241,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _attack: {fileID: 11400000, guid: 351080dc0927175488b12e16899e142e, type: 2}
+  _health: {fileID: 11400000, guid: 4b7ce69c22b0be14a941791a87515b27, type: 2}
+  _atkModifier1: {fileID: 11400000, guid: 473f7a3155d19464485962e0dcaad8fd, type: 2}
+  _atkModifier2: {fileID: 11400000, guid: a09f9b87c064a8347b5d5be1b71fc320, type: 2}
+  _healthModifier: {fileID: 11400000, guid: 184cb3d437d246e419bf37d48291a239, type: 2}
+  _atkLinkModifier: {fileID: 11400000, guid: 0397147d3a928234aa3361836bd999e3, type: 2}
 --- !u!4 &1639425338
 Transform:
   m_ObjectHideFlags: 0

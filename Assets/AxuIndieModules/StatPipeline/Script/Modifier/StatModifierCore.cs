@@ -94,48 +94,68 @@ namespace AxuIndieModules.StatPipeline
     public abstract class StatModifierBase : ScriptableObject
     {
         [field: SerializeField]
-        public uint Index { get; private set; }
+        public uint Index { get; protected set; }
 
         [field: SerializeField]
-        public int Count { get; private set; } = 1; // 数量
+        public int Count { get; protected set; } = 1; // 数量
 
         [field: SerializeField]
-        public int Weight { get; private set; } // 排序用Weight
+        public int Weight { get; protected set; } // 排序用Weight
 
         [field: SerializeField]
-        public string StageTag { get; private set; } // 所属阶段的 Tag
+        public string StageTag { get; protected set; } // 所属阶段的 Tag
 
         [field: SerializeField]
-        public float Duration { get; private set; }
+        public float Duration { get; protected set; }
 
         [field: SerializeField]
-        public bool Active { get; private set; }
+        public bool Active { get; protected set; }
 
         [field: SerializeField]
-        public StatModifierCountType CountType { get; private set; }
+        public StatModifierCountType CountType { get; protected set; }
 
         [field: SerializeField]
-        public StatModifierLifeType LifeType { get; private set; }
+        public StatModifierLifeType LifeType { get; protected set; }
 
         [field: SerializeField]
-        public StatModifierCombineParamType CombineParamType { get; private set; }
+        public StatModifierCombineParamType CombineParamType { get; protected set; }
 
         [field: SerializeField]
-        public StatModifierCombineCountType CombineCountType { get; private set; }
+        public StatModifierCombineCountType CombineCountType { get; protected set; }
 
         [field: SerializeField]
-        public ValueModifierValidConditionType ConditionType { get; private set; }
-
-        [SerializeReference]
-        public StatModifierCalculator Calculator;
+        public ValueModifierValidConditionType ConditionType { get; protected set; }
 
         [field: SerializeField]
-        public StatBase Stat { get; protected set; }
+        public StatBase Stat { get; protected set; } // StatModifier中使用自己的Stat；StatModifierLink中使用外部的Stat
+
+        public virtual string ID => Stat != null ? Stat.ID : string.Empty;
 
         [field: SerializeField]
         public StatBase Owner { get; private set; }
 
-        public double Apply(double value) => Calculator.Calculate(value, Stat.Value);
+        public void RegisterOwner(StatBase owner)
+        {
+            Owner = owner;
+        }
+
+        public void UnRegisterOwner(StatBase owner) // 只能由StatBase调用
+        {
+            if (Owner != owner)
+            {
+                Debug.LogWarning($"StatModifier {Index} is not owned by {owner}", this);
+                return;
+            }
+
+            Owner = null;
+        }
+
+        public abstract double Apply(double value);
+
+        /// <summary>
+        /// 克隆（注意不会赋值Owner）
+        /// </summary>
+        public abstract StatModifierBase Clone();
 
         /// <summary>
         /// 有生命周期的ValueModifier，调用Tik方法进行时间流逝计算

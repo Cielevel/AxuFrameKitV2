@@ -11,5 +11,12 @@ namespace AxuIndieModules.StatPipeline
             // 可以定义你的舍入策略：Floor，Ceil，Round
             return (int)Math.Round(value);
         }
+
+        public StatInt Clone()
+        {
+            var instance = CreateInstance<StatInt>();
+            CopyTo(instance);
+            return instance;
+        }
     }
 }

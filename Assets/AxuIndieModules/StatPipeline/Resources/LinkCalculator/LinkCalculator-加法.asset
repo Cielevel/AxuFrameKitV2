@@ -9,10 +9,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 34c73a1d7d73d204db19aad46b5b9053, type: 3}
-  m_Name: StatPipelineStages-Default
+  m_Script: {fileID: 11500000, guid: 65239fc226bc18944a25c6c53a94ce8c, type: 3}
+  m_Name: "LinkCalculator-\u52A0\u6CD5"
   m_EditorClassIdentifier: 
-  _stageTags:
-  - Base
-  - Add
-  - Final

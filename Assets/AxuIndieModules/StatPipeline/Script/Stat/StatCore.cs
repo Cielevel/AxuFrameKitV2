@@ -13,6 +13,9 @@ namespace AxuIndieModules.StatPipeline
     }
 
     // 定义这一层是为了让 Modifier 可以引用任何类型的 Stat
+    /// <summary>
+    /// 使用Stat时请使用具体类型，不要使用StatBase与泛型Stat
+    /// </summary>
     public abstract class StatBase : ScriptableObject
     {
         public abstract double Value { get; }
@@ -21,7 +24,7 @@ namespace AxuIndieModules.StatPipeline
         public string ID { get; set; }
 
         [field: SerializeField]
-        public StatRefreshType RefreshType { get; private set; }
+        public StatRefreshType RefreshType { get; protected set; }
 
         [field: SerializeField]
         public List<string> Tags { get; protected set; }
@@ -36,27 +39,38 @@ namespace AxuIndieModules.StatPipeline
         public List<StatModifierBase> Modifiers { get; protected set; }
 
         [field: SerializeField]
-        public StatPipelineStages PipelineStages { get; private set; }
+        public StatStages Stages { get; protected set; }
 
         protected List<StatModifierBase>[] _stageModifiers;
 
+        private HashSet<string> _stageTags;
+
+        protected HashSet<string> StageTags
+        {
+            get
+            {
+                if (_stageTags == null)
+                    _stageTags = new HashSet<string>(Stages.StageTags);
+                return _stageTags;
+            }
+        }
+
         protected virtual void InitializeGroupedModifiers()
         {
-            if (PipelineStages == null)
+            if (Stages == null)
             {
                 _stageModifiers = null;
                 Debug.LogWarning($"Stat {ID} has no StatPipelineStages", this);
                 return;
             }
 
-            var tags = PipelineStages.StageTags;
-            _stageModifiers = new List<StatModifierBase>[tags.Count];
-            for (int i = 0; i < tags.Count; i++)
+            _stageModifiers = new List<StatModifierBase>[StageTags.Count];
+            for (int i = 0; i < _stageModifiers.Length; i++)
                 _stageModifiers[i] = new List<StatModifierBase>();
 
             foreach (var mod in Modifiers)
             {
-                int index = PipelineStages.GetStageIndex(mod.StageTag);
+                int index = Stages.GetStageIndex(mod.StageTag);
                 if (index >= 0)
                     _stageModifiers[index].Add(mod);
                 else
@@ -69,8 +83,18 @@ namespace AxuIndieModules.StatPipeline
         }
 
         private void OnEnable() => Inited = false;
+
+        public abstract void RefreshCache();
+
+        protected abstract void TryAutoRefresh();
+
+        public abstract void RegisterModifier(StatModifierBase modifier);
+        public abstract void UnRegisterModifier(StatModifierBase modifier);
     }
 
+    /// <summary>
+    /// 使用Stat时请使用具体类型，不要使用StatBase与泛型Stat
+    /// </summary>
     public abstract class Stat<T> : StatBase where T : struct // 统一用double数值，子类负责裁切，提供具体数值
     {
         [field: SerializeField]
@@ -99,7 +123,7 @@ namespace AxuIndieModules.StatPipeline
             return _cachedValue;
         }
 
-        private void RefreshCache()
+        public override void RefreshCache()
         {
             double finalValue = FastConvert(BaseValue);
 
@@ -116,6 +140,7 @@ namespace AxuIndieModules.StatPipeline
             }
             else
             {
+                Debug.LogWarning($"Stat {ID} has no _stageModifiers", this);
                 // Fallback to simple sequential calculation if no stages defined
                 for (int i = 0; i < Modifiers.Count; i++)
                 {
@@ -125,6 +150,47 @@ namespace AxuIndieModules.StatPipeline
 
             _cachedValue = FromDouble(finalValue);
             IsDirty = false;
+        }
+
+        protected override void TryAutoRefresh()
+        {
+            if (RefreshType is StatRefreshType.Auto)
+                RefreshCache();
+
+            if (RefreshType is StatRefreshType.Dirty)
+                IsDirty = true;
+        }
+
+        public override void RegisterModifier(StatModifierBase modifier)
+        {
+            if (!StageTags.Contains(modifier.StageTag))
+                Debug.LogWarning($"Stat {ID} has no stage tag: {modifier.StageTag}", this);
+
+            Modifiers.Add(modifier);
+            modifier.RegisterOwner(this);
+            TryAutoRefresh();
+        }
+
+        public override void UnRegisterModifier(StatModifierBase modifier)
+        {
+            Modifiers.Remove(modifier);
+            modifier.UnRegisterOwner(this);
+            TryAutoRefresh();
+        }
+
+        protected void CopyTo(Stat<T> other)
+        {
+            other.ID = ID;
+            other.RefreshType = RefreshType;
+            other.Tags = Tags != null ? new List<string>(Tags) : new List<string>();
+            other.IsDirty = IsDirty;
+            other.Inited = Inited;
+            other.Modifiers = Modifiers != null ? new List<StatModifierBase>(Modifiers.Count) : new List<StatModifierBase>();
+            if (Modifiers != null)
+                foreach (var mod in Modifiers)
+                    other.Modifiers.Add(mod.Clone());
+            other.Stages = Stages; // Stages 通常是全局配置，保持同一个引用
+            other.BaseValue = BaseValue;
         }
 
         /// <summary>

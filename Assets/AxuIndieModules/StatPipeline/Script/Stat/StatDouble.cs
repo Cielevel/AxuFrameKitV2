@@ -6,5 +6,12 @@ namespace AxuIndieModules.StatPipeline
     public class StatDouble : Stat<double>
     {
         protected override double FromDouble(double value) => value;
+
+        public StatDouble Clone()
+        {
+            var instance = CreateInstance<StatDouble>();
+            CopyTo(instance);
+            return instance;
+        }
     }
 }

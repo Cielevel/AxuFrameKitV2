@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9eed7e4bf38949189f677ae62ce647a9, type: 3}
   m_Name: StatModifier-2-Stat-Float
   m_EditorClassIdentifier: 
-  <ID>k__BackingField: StatModifier-2
+  <ID>k__BackingField: M-EnhanceM
   <RefreshType>k__BackingField: 0
   <Tags>k__BackingField: []
   <IsDirty>k__BackingField: 0
-  <Inited>k__BackingField: 0
+  <Inited>k__BackingField: 1
   <Modifiers>k__BackingField: []
-  <PipelineStages>k__BackingField: {fileID: 11400000, guid: e36b4431e7dc3f54cb9c363faa53bf3d, type: 2}
+  <Stages>k__BackingField: {fileID: 11400000, guid: e36b4431e7dc3f54cb9c363faa53bf3d, type: 2}
   <BaseValue>k__BackingField: 3
 --- !u!114 &11400000
 MonoBehaviour:
@@ -30,12 +30,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a62bf9952ca34ce5aeb2906cecbbee0f, type: 3}
-  m_Name: StatModifier-2
+  m_Name: "StatModifier-\u5F3A\u5316M1"
   m_EditorClassIdentifier: 
   <Index>k__BackingField: 0
   <Count>k__BackingField: 1
   <Weight>k__BackingField: 0
-  <StageTag>k__BackingField: Base
+  <StageTag>k__BackingField: Mult
   <Duration>k__BackingField: 0
   <Active>k__BackingField: 0
   <CountType>k__BackingField: 0
@@ -43,6 +43,6 @@ MonoBehaviour:
   <CombineParamType>k__BackingField: 0
   <CombineCountType>k__BackingField: 0
   <ConditionType>k__BackingField: 0
-  Calculator: {fileID: 11400000, guid: 09d40ce9e146a99499b367b8d53b4d67, type: 2}
   <Stat>k__BackingField: {fileID: -7020925867684111511}
-  <Owner>k__BackingField: {fileID: 11400000, guid: 351080dc0927175488b12e16899e142e, type: 2}
+  <Owner>k__BackingField: {fileID: 0}
+  Calculator: {fileID: 11400000, guid: 09d40ce9e146a99499b367b8d53b4d67, type: 2}

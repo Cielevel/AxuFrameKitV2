@@ -12,6 +12,7 @@ namespace AxuIndieModules.StatPipeline
         private string _targetFolder = "Assets/AxuIndieModules/StatPipeline/Modifier/Calculator";
         private Vector2 _scrollPos;
         private List<Type> _calculatorTypes = new List<Type>();
+        private List<Type> _linkCalculatorTypes = new List<Type>();
 
         private bool _enableChinese;
         private const string PREFS_KEY = "StatCalculatorGenerator_Folder";
@@ -21,7 +22,7 @@ namespace AxuIndieModules.StatPipeline
         public static void ShowWindow()
         {
             var window = GetWindow<StatCalculatorGeneratorWindow>("Calculator-Generator");
-            window.minSize = new Vector2(400, 500);
+            window.minSize = new Vector2(700, 500);
         }
 
         private void OnEnable()
@@ -39,9 +40,15 @@ namespace AxuIndieModules.StatPipeline
 
         private void RefreshTypes()
         {
-            _calculatorTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(s => s.GetTypes())
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var allTypes = assemblies.SelectMany(s => s.GetTypes()).ToList();
+
+            _calculatorTypes = allTypes
                 .Where(p => typeof(StatModifierCalculator).IsAssignableFrom(p) && !p.IsAbstract && p != typeof(StatModifierCalculator))
+                .ToList();
+
+            _linkCalculatorTypes = allTypes
+                .Where(p => typeof(LinkStatModifierCalculator).IsAssignableFrom(p) && !p.IsAbstract && p != typeof(LinkStatModifierCalculator))
                 .ToList();
         }
 
@@ -150,15 +157,33 @@ namespace AxuIndieModules.StatPipeline
 
         private void DrawTypeList()
         {
-            EditorGUILayout.LabelField("Available Calculator Types", EditorStyles.boldLabel);
-            GUILayout.Space(5);
-
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
 
+            EditorGUILayout.BeginHorizontal();
+
+            // Column 1: Calculator
+            EditorGUILayout.BeginVertical();
+            EditorGUILayout.LabelField("Calculator Types", EditorStyles.boldLabel);
+            GUILayout.Space(5);
             foreach (var type in _calculatorTypes)
             {
                 DrawTypeRow(type);
             }
+            EditorGUILayout.EndVertical();
+
+            GUILayout.Space(15);
+
+            // Column 2: Link Calculator
+            EditorGUILayout.BeginVertical();
+            EditorGUILayout.LabelField("Link Calculator Types", EditorStyles.boldLabel);
+            GUILayout.Space(5);
+            foreach (var type in _linkCalculatorTypes)
+            {
+                DrawTypeRow(type);
+            }
+            EditorGUILayout.EndVertical();
+
+            EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.EndScrollView();
         }
@@ -214,14 +239,21 @@ namespace AxuIndieModules.StatPipeline
 
         private string GetAssetName(Type type)
         {
-            string typeName = type.Name.EndsWith("Calculator") ? type.Name.Substring(0, type.Name.Length - "Calculator".Length) : type.Name;
+            bool isLink = typeof(LinkStatModifierCalculator).IsAssignableFrom(type);
+            string typeName = type.Name;
+
+            if (typeName.EndsWith("Calculator"))
+                typeName = typeName.Substring(0, typeName.Length - "Calculator".Length);
+
+            if (isLink && typeName.EndsWith("Link"))
+                typeName = typeName.Substring(0, typeName.Length - "Link".Length);
 
             if (_enableChinese && _chineseNames.ContainsKey(typeName))
             {
                 typeName = _chineseNames[typeName];
             }
 
-            return $"Calculator-{typeName}";
+            return isLink ? $"LinkCalculator-{typeName}" : $"Calculator-{typeName}";
         }
 
         private readonly Dictionary<string, string> _chineseNames = new Dictionary<string, string>()
@@ -258,11 +290,26 @@ namespace AxuIndieModules.StatPipeline
                 AssetDatabase.Refresh();
             }
 
-            // 1. Get all StatModifierCalculator assets in target folder
-            var existingAssets = AssetDatabase.FindAssets("t:StatModifierCalculator", new[] { _targetFolder })
+            ProcessTypes(_calculatorTypes);
+            ProcessTypes(_linkCalculatorTypes);
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("<color=green>[Calculator Generator]</color> Create All & Clean Up completed.");
+        }
+
+        private void ProcessTypes(List<Type> types)
+        {
+            if (types == null || types.Count == 0) return;
+
+            // 1. Get all assets in target folder of the specific base type
+            Type baseType = typeof(StatModifierCalculator).IsAssignableFrom(types[0]) ? typeof(StatModifierCalculator) : typeof(LinkStatModifierCalculator);
+            string filter = baseType == typeof(StatModifierCalculator) ? "t:StatModifierCalculator" : "t:LinkStatModifierCalculator";
+
+            var existingAssets = AssetDatabase.FindAssets(filter, new[] { _targetFolder })
                 .Select(AssetDatabase.GUIDToAssetPath)
-                .Select(p => new { Path = p, Asset = AssetDatabase.LoadAssetAtPath<StatModifierCalculator>(p) })
-                .Where(x => x.Asset != null)
+                .Select(p => new { Path = p, Asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(p) })
+                .Where(x => x.Asset != null && types.Contains(x.Asset.GetType()))
                 .ToList();
 
             // 2. Map existing assets by type
@@ -275,7 +322,7 @@ namespace AxuIndieModules.StatPipeline
             }
 
             // 3. Process each available type
-            foreach (var type in _calculatorTypes)
+            foreach (var type in types)
             {
                 string assetName = GetAssetName(type);
                 string standardPath = Path.Combine(_targetFolder, $"{assetName}.asset").Replace("\\", "/");
@@ -307,10 +354,6 @@ namespace AxuIndieModules.StatPipeline
                     AssetDatabase.CreateAsset(asset, standardPath);
                 }
             }
-
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            Debug.Log("<color=green>[Calculator Generator]</color> Create All & Clean Up completed.");
         }
 
         private void DrawFooter()

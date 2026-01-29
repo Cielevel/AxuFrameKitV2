@@ -6,8 +6,8 @@ namespace AxuIndieModules.StatPipeline
     /// <summary>
     /// 定义 StatPipeline 的计算阶段顺序
     /// </summary>
-    [CreateAssetMenu(fileName = "StatPipelineStages", menuName = "AxuIndieModules/StatPipeline/Stages")]
-    public class StatPipelineStages : ScriptableObject
+    [CreateAssetMenu(fileName = "StatStages", menuName = "AxuIndieModules/StatPipeline/Stages")]
+    public class StatStages : ScriptableObject
     {
         [SerializeField]
         private List<string> _stageTags = new List<string> { "Base", "Add", "Final" };
@@ -22,6 +22,13 @@ namespace AxuIndieModules.StatPipeline
                 if (_stageTags[i] == tag) return i;
             }
             return -1;
+        }
+
+        public StatStages Clone()
+        {
+            var stages = ScriptableObject.CreateInstance<StatStages>();
+            stages._stageTags = new List<string>(_stageTags);
+            return stages;
         }
     }
 }

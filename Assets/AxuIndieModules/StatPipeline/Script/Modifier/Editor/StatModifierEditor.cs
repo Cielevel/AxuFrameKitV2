@@ -9,11 +9,72 @@ namespace AxuIndieModules.StatPipeline
     {
         public override void OnInspectorGUI()
         {
+            serializedObject.Update();
+
+            DrawStageSelection();
+
             base.OnInspectorGUI();
 
             var modifier = target as StatModifier;
-            if (modifier == null) return;
+            if (modifier != null)
+            {
+                DrawStatSubAssetManagement(modifier);
+            }
 
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private void DrawStageSelection()
+        {
+            var baseModifier = target as StatModifierBase;
+            if (baseModifier == null || baseModifier.Owner == null) return;
+
+            var stages = baseModifier.Owner.Stages;
+            if (stages == null || stages.StageTags == null || stages.StageTags.Count == 0) return;
+
+            GUILayout.Space(10);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                GUILayout.Space(5);
+                EditorGUILayout.LabelField("Quick Stage Selection (from Owner)", EditorStyles.boldLabel);
+                GUILayout.Space(5);
+
+                var stageTagProp = serializedObject.FindProperty("<StageTag>k__BackingField");
+                if (stageTagProp == null)
+                    stageTagProp = serializedObject.FindProperty("StageTag");
+
+                if (stageTagProp != null)
+                {
+                    int columnCount = 3;
+                    var tags = stages.StageTags;
+                    for (int i = 0; i < tags.Count; i += columnCount)
+                    {
+                        using (new EditorGUILayout.HorizontalScope())
+                        {
+                            for (int j = 0; j < columnCount && (i + j) < tags.Count; j++)
+                            {
+                                string tag = tags[i + j];
+                                bool isSelected = !stageTagProp.hasMultipleDifferentValues && stageTagProp.stringValue == tag;
+
+                                if (isSelected) GUI.backgroundColor = new Color(0.1f, 0.8f, 0.4f);
+                                if (GUILayout.Button(tag, GUILayout.Height(25)))
+                                {
+                                    stageTagProp.stringValue = tag;
+                                    serializedObject.ApplyModifiedProperties(); // 立即应用修改，防止被 base.OnInspectorGUI 覆盖
+                                    GUI.FocusControl(null); // 清除焦点，确保 UI 刷新
+                                }
+                                GUI.backgroundColor = Color.white;
+                            }
+                        }
+                    }
+                }
+                GUILayout.Space(5);
+            }
+            GUILayout.Space(10);
+        }
+
+        private void DrawStatSubAssetManagement(StatModifier modifier)
+        {
             GUILayout.Space(10);
             EditorGUILayout.LabelField("Stat Sub-Asset Management", EditorStyles.boldLabel);
 
