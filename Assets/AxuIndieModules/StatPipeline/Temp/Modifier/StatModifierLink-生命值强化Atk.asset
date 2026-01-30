@@ -25,5 +25,5 @@ MonoBehaviour:
   <ConditionType>k__BackingField: 0
   <Stat>k__BackingField: {fileID: 0}
   <Owner>k__BackingField: {fileID: 0}
-  <Coefficient>k__BackingField: 1
-  LinkCalculator: {fileID: 11400000, guid: 5c602b9abcdab814fb2fb5c42b001413, type: 2}
+  <Coefficient>k__BackingField: 0.2
+  LinkCalculator: {fileID: 11400000, guid: e6e894b4ca0318040b384f503d24e1a0, type: 2}

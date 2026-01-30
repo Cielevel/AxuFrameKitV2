@@ -42,7 +42,8 @@ MonoBehaviour:
   <RefreshType>k__BackingField: 0
   <Tags>k__BackingField: []
   <IsDirty>k__BackingField: 0
-  <Inited>k__BackingField: 0
-  <Modifiers>k__BackingField: []
+  <IsInit>k__BackingField: 1
+  <Modifiers>k__BackingField:
+  - {fileID: 11400000, guid: 37d45c93008872e46ac44ba87c968d27, type: 2}
   <Stages>k__BackingField: {fileID: 11400000, guid: e36b4431e7dc3f54cb9c363faa53bf3d, type: 2}
   <BaseValue>k__BackingField: 1.5

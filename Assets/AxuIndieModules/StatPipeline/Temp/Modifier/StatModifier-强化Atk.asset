@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <Index>k__BackingField: 0
   <Count>k__BackingField: 1
-  <Weight>k__BackingField: 0
+  <Weight>k__BackingField: 2
   <StageTag>k__BackingField: Mult
   <Duration>k__BackingField: 0
   <Active>k__BackingField: 0
@@ -42,7 +42,7 @@ MonoBehaviour:
   <RefreshType>k__BackingField: 0
   <Tags>k__BackingField: []
   <IsDirty>k__BackingField: 0
-  <Inited>k__BackingField: 1
+  <IsInit>k__BackingField: 1
   <Modifiers>k__BackingField:
   - {fileID: 11400000, guid: a09f9b87c064a8347b5d5be1b71fc320, type: 2}
   <Stages>k__BackingField: {fileID: 11400000, guid: e36b4431e7dc3f54cb9c363faa53bf3d, type: 2}

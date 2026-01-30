@@ -33,7 +33,7 @@ namespace AxuIndieModules.StatPipeline
         public bool IsDirty { get; protected set; }
 
         [field: SerializeField]
-        public bool Inited { get; protected set; }
+        public bool IsInit { get; protected set; }
 
         [field: SerializeField]
         public List<StatModifierBase> Modifiers { get; protected set; }
@@ -82,7 +82,7 @@ namespace AxuIndieModules.StatPipeline
                 stageList.Sort((a, b) => a.Weight.CompareTo(b.Weight));
         }
 
-        private void OnEnable() => Inited = false;
+        private void OnEnable() => IsInit = false;
 
         public abstract void RefreshCache();
 
@@ -90,6 +90,27 @@ namespace AxuIndieModules.StatPipeline
 
         public abstract void RegisterModifier(StatModifierBase modifier);
         public abstract void UnRegisterModifier(StatModifierBase modifier);
+
+        protected void AddModifierToStage(StatModifierBase modifier)
+        {
+            if (_stageModifiers == null || Stages == null) return;
+            int index = Stages.GetStageIndex(modifier.StageTag);
+            if (index >= 0)
+            {
+                _stageModifiers[index].Add(modifier);
+                _stageModifiers[index].Sort((a, b) => a.Weight.CompareTo(b.Weight));
+            }
+        }
+
+        protected void RemoveModifierFromStage(StatModifierBase modifier)
+        {
+            if (_stageModifiers == null || Stages == null) return;
+            int index = Stages.GetStageIndex(modifier.StageTag);
+            if (index >= 0)
+            {
+                _stageModifiers[index].Remove(modifier);
+            }
+        }
     }
 
     /// <summary>
@@ -106,11 +127,11 @@ namespace AxuIndieModules.StatPipeline
 
         public T GetValue()
         {
-            if (!Inited)
+            if (!IsInit)
             {
                 InitializeGroupedModifiers();
                 RefreshCache();
-                Inited = true;
+                IsInit = true;
                 return _cachedValue;
             }
 
@@ -167,6 +188,7 @@ namespace AxuIndieModules.StatPipeline
                 Debug.LogWarning($"Stat {ID} has no stage tag: {modifier.StageTag}", this);
 
             Modifiers.Add(modifier);
+            AddModifierToStage(modifier);
             modifier.RegisterOwner(this);
             TryAutoRefresh();
         }
@@ -174,6 +196,7 @@ namespace AxuIndieModules.StatPipeline
         public override void UnRegisterModifier(StatModifierBase modifier)
         {
             Modifiers.Remove(modifier);
+            RemoveModifierFromStage(modifier);
             modifier.UnRegisterOwner(this);
             TryAutoRefresh();
         }
@@ -184,7 +207,7 @@ namespace AxuIndieModules.StatPipeline
             other.RefreshType = RefreshType;
             other.Tags = Tags != null ? new List<string>(Tags) : new List<string>();
             other.IsDirty = IsDirty;
-            other.Inited = Inited;
+            other.IsInit = false; // 确保克隆体在第一次 GetValue 时会重新执行 InitializeGroupedModifiers
             other.Modifiers = Modifiers != null ? new List<StatModifierBase>(Modifiers.Count) : new List<StatModifierBase>();
             if (Modifiers != null)
                 foreach (var mod in Modifiers)
