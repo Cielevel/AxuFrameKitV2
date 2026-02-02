@@ -1,0 +1,32 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="OllamaScriptFillerWindow.uss" />
+    <ui:VisualElement class="ue5-root">
+        <ui:Label text="Ollama Script Filler" class="title-label" />
+
+        <ui:VisualElement class="form-row">
+            <ui:Label text="Ollama Settings" class="section-label" />
+            <ui:TextField name="UrlField" label="API URL" value="http://localhost:11434/api/generate" />
+            <ui:TextField name="ModelField" label="Model" value="gemma3" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="form-row">
+            <ui:Label text="Target GameObject" class="section-label" />
+            <ui:VisualElement name="TargetObjectContainer" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="form-row">
+            <ui:Label text="Scripts on GameObject" class="section-label" />
+            <ui:ListView name="ScriptListView" class="script-list" />
+        </ui:VisualElement>
+
+        <ui:Label text="Field Mappings" class="section-label" />
+        <ui:ScrollView name="FieldsPreviewScrollView" class="preview-box" mode="Vertical" />
+
+        <ui:VisualElement style="flex-direction: row; margin-top: 8px;">
+            <ui:Button name="AnalyzeButton" text="Analyze with Ollama" class="ue5-button ue5-button-primary" style="flex-grow: 1; margin-right: 4px;" />
+            <ui:Button name="FillButton" text="Fill Fields" class="ue5-button ue5-button-primary" style="flex-grow: 1; margin-left: 4px;" />
+        </ui:VisualElement>
+
+        <ui:Label name="StatusLabel" text="" class="status-box" />
+    </ui:VisualElement>
+</ui:UXML>
