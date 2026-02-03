@@ -4,6 +4,7 @@ using UnityEngine.UI;
 
 namespace AxuFrameKit.Common.UI.Kit.Scroll
 {
+    [System.Obsolete("推荐使用UIListView")]
     [RequireComponent(typeof(ScrollRect))]
     public class UILoopVerticalScrollRect : MonoBehaviour
     {
@@ -54,8 +55,8 @@ namespace AxuFrameKit.Common.UI.Kit.Scroll
         private void Awake()
         {
             scrollRect = GetComponent<ScrollRect>();
-            content    = scrollRect.content;
-            viewPort   = scrollRect.viewport != null ? scrollRect.viewport : transform as RectTransform;
+            content = scrollRect.content;
+            viewPort = scrollRect.viewport != null ? scrollRect.viewport : transform as RectTransform;
 
             // 禁用冲突组件
             var layoutGroup = content.GetComponent<LayoutGroup>();
@@ -104,10 +105,10 @@ namespace AxuFrameKit.Common.UI.Kit.Scroll
         private void OnScroll(Vector2 pos)
         {
             if (!isInited || totalCount == 0) return;
-            float contentY                 = content.anchoredPosition.y;
-            int   startIndex               = Mathf.FloorToInt((contentY - paddingTop) / (itemHeight + space));
+            float contentY = content.anchoredPosition.y;
+            int startIndex = Mathf.FloorToInt((contentY - paddingTop) / (itemHeight + space));
             if (startIndex < 0) startIndex = 0;
-            int endIndex                   = startIndex + visibleCount;
+            int endIndex = startIndex + visibleCount;
             if (startIndex == oldStartIndex) return;
             oldStartIndex = startIndex;
 
@@ -146,17 +147,17 @@ namespace AxuFrameKit.Common.UI.Kit.Scroll
                 {
                     newItem.rectTransform.anchorMin = new Vector2(0, 1);
                     newItem.rectTransform.anchorMax = new Vector2(0, 1);
-                    newItem.rectTransform.pivot     = new Vector2(0, 1);
+                    newItem.rectTransform.pivot = new Vector2(0, 1);
                     float targetWidth = content.rect.width - paddingLeft - paddingRight;
-                    newItem.rectTransform.sizeDelta        = new Vector2(targetWidth, itemHeight);
+                    newItem.rectTransform.sizeDelta = new Vector2(targetWidth, itemHeight);
                     newItem.rectTransform.anchoredPosition = new Vector2(paddingLeft, yPos);
                 }
                 else
                 {
-                    newItem.rectTransform.anchorMin        = new Vector2(0, 1);
-                    newItem.rectTransform.anchorMax        = new Vector2(0, 1);
-                    newItem.rectTransform.pivot            = new Vector2(0, 1);
-                    newItem.rectTransform.sizeDelta        = new Vector2(itemOriginalWidth, itemHeight);
+                    newItem.rectTransform.anchorMin = new Vector2(0, 1);
+                    newItem.rectTransform.anchorMax = new Vector2(0, 1);
+                    newItem.rectTransform.pivot = new Vector2(0, 1);
+                    newItem.rectTransform.sizeDelta = new Vector2(itemOriginalWidth, itemHeight);
                     newItem.rectTransform.anchoredPosition = new Vector2(paddingLeft, yPos);
                 }
 
