@@ -5,6 +5,50 @@ using AxuFrameKit._Core.Utility.Common;
 namespace AxuFrameKit._Core.Utility.RandomX
 {
     /// <summary>
+    /// 抽取容器，基于别名法实现，构建时传入权重数组与被采样集合，可直接按照权重进行采样。
+    /// </summary>
+    public class AliasSampler<T>
+    {
+        private readonly T[] _items;
+        private readonly int _n;
+        private readonly AliasMethod _aliasMethod;
+
+        public AliasSampler(IEnumerable<T> items, double[] weights)
+        {
+            if (items == null || items.Count() == 0)
+            {
+                Logger.Error("采样集合不能为空");
+                return;
+            }
+
+            if (weights == null || weights.Length == 0)
+            {
+                Logger.Error("权重数组不能为空");
+                return;
+            }
+
+            if (items.Count() != weights.Length)
+            {
+                Logger.Error("采样集合和权重数组长度必须相等");
+                return;
+            }
+
+            _n = items.Count();
+            _items = items.ToArray();
+
+            _aliasMethod = new AliasMethod(weights);
+        }
+
+        public T Sample() => _items[_aliasMethod.Sample()];
+
+        public T[] Sample(int count)
+        {
+            int[] indices = _aliasMethod.Sample(count);
+            return indices.Select(i => _items[i]).ToArray();
+        }
+    }
+
+    /// <summary>
     /// 别名法。
     /// 这是一个高效的加权随机抽样算法，预处理时间O(n)，抽样时间O(1)
     /// 适用场景：高频率抽样；权重数量极多的抽样；不需要经常更改权重的抽样；
@@ -31,10 +75,10 @@ namespace AxuFrameKit._Core.Utility.RandomX
                 return;
             }
 
-            _n             = weights.Length;
+            _n = weights.Length;
             _probabilities = new double[_n];
-            _aliases       = new int[_n];
-            _random        = new System.Random();
+            _aliases = new int[_n];
+            _random = new System.Random();
 
             BuildAliasStructure(weights);
         }
@@ -49,7 +93,7 @@ namespace AxuFrameKit._Core.Utility.RandomX
                     return;
                 }
             }
-            
+
             double[] scaledWeights = weights.Select(w => w * _n / totalWeight).ToArray();
 
             var small = new Queue<int>();
@@ -69,7 +113,7 @@ namespace AxuFrameKit._Core.Utility.RandomX
                 int largeIndex = large.Dequeue();
 
                 _probabilities[smallIndex] = scaledWeights[smallIndex];
-                _aliases[smallIndex]       = largeIndex;
+                _aliases[smallIndex] = largeIndex;
 
                 scaledWeights[largeIndex] = scaledWeights[largeIndex] + scaledWeights[smallIndex] - 1.0;
 
@@ -95,7 +139,7 @@ namespace AxuFrameKit._Core.Utility.RandomX
         // ReSharper disable once MemberCanBePrivate.Global
         public int Sample()
         {
-            int    bucketIndex = _random.Next(_n);
+            int bucketIndex = _random.Next(_n);
             double randomValue = _random.NextDouble();
 
             if (randomValue < _probabilities[bucketIndex])
@@ -137,7 +181,7 @@ namespace AxuFrameKit._Core.Utility.RandomX
 
             return items[indices];
         }
-        
+
         /// <summary>
         /// 以相同概率，在给定的数组中随机抽取n个元素
         /// </summary>
@@ -156,7 +200,7 @@ namespace AxuFrameKit._Core.Utility.RandomX
             var aliasMethod = new AliasMethod(weights);
 
             var indices = aliasMethod.Sample(count);
-            
+
             var results = new T[count];
             for (int i = 0; i < count; i++)
                 results[i] = items[indices[i]];
