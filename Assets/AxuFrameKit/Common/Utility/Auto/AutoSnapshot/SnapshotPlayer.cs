@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using AxuFrameKit.Common.Utility.Serializer;
 
 namespace AxuFrameKit.Common.Utility.Auto.AutoSnapshot
 {
@@ -70,7 +71,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSnapshot
         /// </summary>
         /// <param name="json">JSON 字符串</param>
         /// <param name="dataSerializer">用户数据反序列化器 (只需处理 T 类型)</param>
-        public static SnapshotPlayer<T> FromJson(string json, ISnapshotDataSerializer dataSerializer)
+        public static SnapshotPlayer<T> FromJson(string json, ISerializer dataSerializer)
         {
             if (dataSerializer == null)
             {
@@ -93,7 +94,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSnapshot
             // 使用用户提供的反序列化器反序列化每个数据项
             foreach (var serializedSnapshot in serializedData.Snapshots)
             {
-                var item = dataSerializer.DeserializeItem<T>(serializedSnapshot.Data);
+                var item = dataSerializer.Deserialize<T>(serializedSnapshot.Data);
                 data.Snapshots.Add(new TimestampedSnapshot<T>(item, serializedSnapshot.Timestamp));
             }
 

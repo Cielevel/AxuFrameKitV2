@@ -1,22 +1,36 @@
 using System;
+using System.Linq;
 using AxuFrameKit._Core.Utility.Common;
 
 namespace AxuFrameKit._Core.Utility.RandomX
 {
-    public static class RandomX // 注意 System.Random 左闭右开
+    public class RandomX // 注意 System.Random 左闭右开
     {
-        #region Bool
-        
-        private static readonly Random RandomBool = new();
-        public static bool GetBool() => RandomBool.Next(2) == 1;
+        private readonly Random Ran;
 
-        #endregion
+        public RandomX()
+        {
+            Ran = new Random();
+        }
 
-        #region int
+        public RandomX(int seed)
+        {
+            Ran = new Random(seed);
+        }
 
-        private static readonly Random RandomInt = new();
+        // ===Bool===
 
-        public static int GetInt(int minInclude, int max, bool maxInclude = false)
+        public bool GetBool() => Ran.Next(2) == 1;
+
+        // ===Int===
+
+        /// <summary>
+        /// 获取随机整数
+        /// </summary>
+        /// <param name="minInclude">包含最小值</param>
+        /// <param name="max">最大值</param>
+        /// <param name="maxInclude">是否包含最大值</param>
+        public int GetInt(int minInclude, int max, bool maxInclude = false)
         {
             if (max < minInclude)
             {
@@ -26,25 +40,41 @@ namespace AxuFrameKit._Core.Utility.RandomX
 
             if (max == minInclude)
                 return max;
-            
-            if (maxInclude)
-                return RandomInt.Next(minInclude, max + 1);
 
-            return RandomInt.Next(minInclude, max);
+            if (maxInclude)
+                return Ran.Next(minInclude, max + 1);
+
+            return Ran.Next(minInclude, max);
         }
 
-        #endregion
+        // ===Seed===
 
-        #region float
+        /// <summary>
+        /// 获取随机字符串
+        /// </summary>
+        /// <param name="seedLen">字符串长度</param>
+        /// <returns></returns>
+        public string Seed(int seedLen)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            string seed = new(Enumerable.Repeat(chars, seedLen).Select(s => s[Ran.Next(s.Length)]).ToArray());
+            return seed;
+        }
 
-        
-
-        #endregion
-
-        #region double
-
-        
-
-        #endregion
+        /// <summary>
+        /// 获取长度为len的随机整数
+        /// </summary>
+        /// <param name="len">整数长度</param>
+        public int SeedInt(int len)
+        {
+            if (len <= 0 || len > 9)
+            {
+                Logger.Error($"SeedInt length {len} is out of range (1-9)!");
+                return -1;
+            }
+            int min = (len == 1) ? 0 : (int)System.Math.Pow(10, len - 1);
+            int max = (int)System.Math.Pow(10, len);
+            return Ran.Next(min, max);
+        }
     }
 }

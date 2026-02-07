@@ -2,22 +2,13 @@ using System;
 using System.IO;
 using System.Text;
 using UnityEngine;
+using AxuFrameKit.Common.Utility.Serializer;
 
 namespace AxuFrameKit.Common.Utility.Save
 {
     // ==========================================
     // 1. 核心接口定义 (The Abstractions)
     // ==========================================
-
-    /// <summary>
-    /// 序列化接口：负责将对象转换为字符串
-    /// 外部可以通过实现此接口来注入 JsonUtility, Newtonsoft, Odin 等不同方案
-    /// </summary>
-    public interface ISerializer
-    {
-        string Serialize<T>(T data);
-        T Deserialize<T>(string data);
-    }
 
     /// <summary>
     /// 存储介质接口：负责将数据写入具体位置
@@ -58,8 +49,8 @@ namespace AxuFrameKit.Common.Utility.Save
         public SaveUtil(ISerializer serializer, IStorage storage, ICrypto crypto = null)
         {
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
-            _storage    = storage ?? throw new ArgumentNullException(nameof(storage));
-            _crypto     = crypto;
+            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            _crypto = crypto;
         }
 
         /// <summary>

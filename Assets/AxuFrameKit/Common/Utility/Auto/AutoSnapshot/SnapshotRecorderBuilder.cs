@@ -1,4 +1,5 @@
 using System;
+using AxuFrameKit.Common.Utility.Serializer;
 
 namespace AxuFrameKit.Common.Utility.Auto.AutoSnapshot
 {
@@ -128,7 +129,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSnapshot
         /// <summary>
         /// 从 JSON 创建播放器
         /// </summary>
-        public static SnapshotPlayer<T> CreatePlayerFromJson<T>(string json, ISnapshotDataSerializer dataSerializer)
+        public static SnapshotPlayer<T> CreatePlayerFromJson<T>(string json, ISerializer dataSerializer)
         {
             return SnapshotPlayer<T>.FromJson(json, dataSerializer);
         }

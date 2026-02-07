@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using AxuFrameKit.Common.Utility.Serializer;
 
 namespace AxuFrameKit.Common.Utility.Auto.AutoSnapshot
 {
@@ -44,23 +45,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSnapshot
     // 2. 核心接口定义 (Interfaces)
     // ==========================================
 
-    /// <summary>
-    /// 快照数据序列化接口
-    /// 外部可实现此接口注入 JsonUtility, Newtonsoft, Odin 等不同序列化方案
-    /// 注意：此接口只负责序列化用户数据类型 T，元数据由框架内部自动处理
-    /// </summary>
-    public interface ISnapshotDataSerializer
-    {
-        /// <summary>
-        /// 将单个数据项序列化为字符串
-        /// </summary>
-        string SerializeItem<T>(T item);
-
-        /// <summary>
-        /// 将字符串反序列化为单个数据项
-        /// </summary>
-        T DeserializeItem<T>(string data);
-    }
+    // 注意：原 ISnapshotDataSerializer 已被移除，现在统一使用 AxuFrameKit.Common.Utility.Serializer.ISerializer
 
     /// <summary>
     /// 快照回放输出回调接口
@@ -410,7 +395,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSnapshot
         /// 元数据由框架内部自动处理，序列化器只负责序列化用户数据类型 T
         /// </summary>
         /// <param name="dataSerializer">用户数据序列化器 (只需处理 T 类型)</param>
-        public string Serialize(ISnapshotDataSerializer dataSerializer)
+        public string Serialize(ISerializer dataSerializer)
         {
             if (dataSerializer == null)
             {
@@ -434,7 +419,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSnapshot
             // 使用用户提供的序列化器序列化每个数据项
             foreach (var snapshot in _snapshots)
             {
-                var serializedItem = dataSerializer.SerializeItem(snapshot.Data);
+                var serializedItem = dataSerializer.Serialize(snapshot.Data);
                 serializedData.Snapshots.Add(new SerializedSnapshot(snapshot.Timestamp, serializedItem));
             }
 

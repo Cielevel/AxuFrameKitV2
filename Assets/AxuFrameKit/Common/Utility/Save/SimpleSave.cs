@@ -6,7 +6,7 @@ using UnityEngine;
 namespace AxuFrameKit.Common.Utility.Save
 {
     /// <summary>
-    /// 通用存档管理工具类（注意，json序列化实用JsonUtility，一些数据结构可能不支持）
+    /// 通用存档管理工具类（注意，json序列化使用Unity.JsonUtility，一些数据结构可能不支持）
     /// 支持字符串存储和对象泛型存储
     /// 支持 PlayerPrefs, JSON文件, 和 加密文件三种模式
     /// </summary>
@@ -25,10 +25,10 @@ namespace AxuFrameKit.Common.Utility.Save
 
         // 稍微增加一点反编译难度的写法（不是绝对安全，但比直接写死好）
         private static string EncryptionKey() => "kX9#" + "mP2$" + "L5vR";
-        
+
         private const string JsonExt = ".json";
         private const string SavExt = ".sav";
-        
+
         #region 1. 基础字符串存储 (String Storage)
 
         /// <summary>
@@ -122,10 +122,10 @@ namespace AxuFrameKit.Common.Utility.Save
                 SaveString(key, strData, mode);
                 return;
             }
-            
+
             // 将对象序列化为JSON字符串
-            string json = JsonUtility.ToJson(data, true); 
-        
+            string json = JsonUtility.ToJson(data, true);
+
             // 复用字符串存储逻辑
             SaveString(key, json, mode);
         }
@@ -190,26 +190,26 @@ namespace AxuFrameKit.Common.Utility.Save
         }
 
         // --- 简单的异或+Base64加密算法 ---
-    
+
         private static string Encrypt(string data)
         {
             byte[] dataBytes = Encoding.UTF8.GetBytes(data);
-            byte[] keyBytes  = Encoding.UTF8.GetBytes(EncryptionKey());
-        
+            byte[] keyBytes = Encoding.UTF8.GetBytes(EncryptionKey());
+
             for (int i = 0; i < dataBytes.Length; i++)
             {
                 dataBytes[i] = (byte)(dataBytes[i] ^ keyBytes[i % keyBytes.Length]);
             }
-        
+
             return Convert.ToBase64String(dataBytes);
         }
 
         private static string Decrypt(string data)
         {
-            try 
+            try
             {
                 byte[] dataBytes = Convert.FromBase64String(data);
-                byte[] keyBytes  = Encoding.UTF8.GetBytes(EncryptionKey());
+                byte[] keyBytes = Encoding.UTF8.GetBytes(EncryptionKey());
 
                 for (int i = 0; i < dataBytes.Length; i++)
                 {

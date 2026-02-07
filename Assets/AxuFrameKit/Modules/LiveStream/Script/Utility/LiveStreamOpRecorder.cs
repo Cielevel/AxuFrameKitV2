@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using AxuFrameKit.Common.Utility.Auto.AutoSnapshot;
+using AxuFrameKit.Common.Utility.Serializer;
 
 namespace AxuFrameKit.Modules.LiveStream
 {
@@ -214,7 +215,7 @@ namespace AxuFrameKit.Modules.LiveStream
     {
         private readonly LiveStreamRecorderConfig _config;
         private readonly SnapshotRecorder<LiveStreamOpData> _recorder;
-        private readonly ISnapshotDataSerializer _serializer;
+        private readonly ISerializer _serializer;
 
         /// <summary>
         /// 是否正在录制
@@ -236,10 +237,10 @@ namespace AxuFrameKit.Modules.LiveStream
         /// </summary>
         /// <param name="config">录制配置</param>
         /// <param name="serializer">可选的自定义序列化器</param>
-        public LiveStreamOpRecorder(LiveStreamRecorderConfig config = null, ISnapshotDataSerializer serializer = null)
+        public LiveStreamOpRecorder(LiveStreamRecorderConfig config = null, ISerializer serializer = null)
         {
             _config = config ?? new LiveStreamRecorderConfig();
-            _serializer = serializer ?? new UnityJsonDataSerializer();
+            _serializer = serializer ?? new UnityJsonSerializer();
 
             _recorder = SnapshotFactory.CreateRecorder<LiveStreamOpData>()
                 .WithScaleMode(_config.ScaleMode)
@@ -398,7 +399,7 @@ namespace AxuFrameKit.Modules.LiveStream
         /// <param name="filePath">文件路径</param>
         /// <param name="serializer">可选的自定义序列化器</param>
         /// <returns>播放器实例，失败返回 null</returns>
-        public static SnapshotPlayer<LiveStreamOpData> LoadFromFile(string filePath, ISnapshotDataSerializer serializer = null)
+        public static SnapshotPlayer<LiveStreamOpData> LoadFromFile(string filePath, ISerializer serializer = null)
         {
             try
             {
@@ -409,7 +410,7 @@ namespace AxuFrameKit.Modules.LiveStream
                 }
 
                 string json = System.IO.File.ReadAllText(filePath);
-                var usedSerializer = serializer ?? new UnityJsonDataSerializer();
+                var usedSerializer = serializer ?? new UnityJsonSerializer();
                 var player = SnapshotPlayer<LiveStreamOpData>.FromJson(json, usedSerializer);
                 Debug.Log($"[LiveStreamOpRecorder] 已加载 {player.TotalCount} 条记录从: {filePath}");
                 return player;

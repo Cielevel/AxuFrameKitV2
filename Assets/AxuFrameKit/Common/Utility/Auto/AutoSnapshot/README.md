@@ -14,7 +14,7 @@ AutoSnapshot 是一个基于时间的泛型快照记录与回放系统。它允�
   - `RecordFromGameStart`：使用游戏启动后的绝对时间
   - `RecordFromInit`：使用记录器初始化后的相对时间
 - **元数据自动处理**：框架内部自动序列化/反序列化时间模式等元数据
-- **可插拔序列化**：通过 `ISnapshotDataSerializer` 接口支持任意序列化方案，只需处理数据类型 T
+- **统一序列化接口**：使用 `AxuFrameKit.Common.Utility.Serializer.ISerializer` 接口，与整个框架统一
 - **完整的回放控制**：播放、暂停、恢复、停止、重置
 
 ## 快速开始
@@ -42,18 +42,33 @@ recorder.Record(new PlayerPosition { x = 1, y = 2 });
 ### 2. 序列化导出
 
 ```csharp
+using AxuFrameKit.Common.Utility.Serializer;
+
 // 使用框架提供的默认序列化器
-var serializer = new UnityJsonDataSerializer();
+var serializer = new UnityJsonSerializer();
 string json = recorder.Serialize(serializer);
 
-// 或使用自定义序列化器（只需实现数据项的序列化）
-public class NewtonsoftDataSerializer : ISnapshotDataSerializer
+// 或使用自定义序列化器（实现 ISerializer 接口）
+public class NewtonsoftJsonSerializer : ISerializer
 {
-    public string SerializeItem<T>(T item) => JsonConvert.SerializeObject(item);
-    public T DeserializeItem<T>(string data) => JsonConvert.DeserializeObject<T>(data);
+    public string Serialize(object obj) => JsonConvert.SerializeObject(obj);
+    public T Deserialize<T>(string data) => JsonConvert.DeserializeObject<T>(data);
+    public bool TryDeserialize<T>(string data, out T result)
+    {
+        try
+        {
+            result = JsonConvert.DeserializeObject<T>(data);
+            return result != null;
+        }
+        catch
+        {
+            result = default;
+            return false;
+        }
+    }
 }
 
-var serializer = new NewtonsoftDataSerializer();
+var serializer = new NewtonsoftJsonSerializer();
 string json = recorder.Serialize(serializer);
 ```
 
@@ -135,15 +150,16 @@ player.Play(this);
 
 ## API 参考
 
-### ISnapshotDataSerializer
+### ISerializer (统一序列化接口)
 
-用户只需实现此接口来处理数据类型 T 的序列化：
+框架使用统一的序列化接口 `AxuFrameKit.Common.Utility.Serializer.ISerializer`：
 
 ```csharp
-public interface ISnapshotDataSerializer
+public interface ISerializer
 {
-    string SerializeItem<T>(T item);      // 序列化单个数据项
-    T DeserializeItem<T>(string data);    // 反序列化单个数据项
+    string Serialize(object obj);           // 序列化对象
+    T Deserialize<T>(string data);          // 反序列化为指定类型
+    bool TryDeserialize<T>(string data, out T result);  // 尝试反序列化
 }
 ```
 
@@ -158,13 +174,13 @@ public interface ISnapshotDataSerializer
 | `GetSnapshots()` | 获取所有快照 (只读) |
 | `GetSnapshotsInRange(float start, float end)` | 获取时间范围内的快照 |
 | `ExportData()` | 导出为 SnapshotData |
-| `Serialize(ISnapshotDataSerializer)` | 序列化为 JSON |
+| `Serialize(ISerializer)` | 序列化为 JSON |
 
 ### SnapshotPlayer<T>
 
 | 方法 | 说明 |
 |------|------|
-| `FromJson(string json, ISnapshotDataSerializer)` | 从 JSON 创建播放器 |
+| `FromJson(string json, ISerializer)` | 从 JSON 创建播放器 |
 | `Play(MonoBehaviour host)` | 开始回放 |
 | `Pause()` | 暂停回放 |
 | `Resume(MonoBehaviour host)` | 恢复回放 |
@@ -189,6 +205,7 @@ AutoSnapshot/
 ├── SnapshotRecorder.cs      # 核心记录器、枚举、接口、数据结构
 ├── SnapshotPlayer.cs        # 回放器实现
 ├── SnapshotRecorderBuilder.cs # Builder 模式和工厂类
-├── DefaultSerializers.cs    # 默认序列化器实现
+├── DefaultSerializers.cs    # 序列化器使用说明（实际实现已统一到 Serializer 命名空间）
 └── README.md               # 本文档
 ```
+

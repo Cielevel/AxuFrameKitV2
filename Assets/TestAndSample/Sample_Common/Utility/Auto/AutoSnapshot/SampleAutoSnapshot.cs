@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using AxuFrameKit.Common.Utility.Auto.AutoSnapshot;
+using AxuFrameKit.Common.Utility.Serializer;
 
 namespace TestAndSample.Sample_Common.Utility.Auto.AutoSnapshot
 {
@@ -27,7 +28,7 @@ namespace TestAndSample.Sample_Common.Utility.Auto.AutoSnapshot
         // 内部状态
         private SnapshotRecorder<PositionData> _recorder;
         private SnapshotPlayer<PositionData> _player;
-        private ISnapshotDataSerializer _serializer;  // 只需实现数据项的序列化
+        private ISerializer _serializer;  // 只需实现数据项的序列化
         private float _lastRecordTime;
         private string _savedJson;
 
@@ -38,7 +39,7 @@ namespace TestAndSample.Sample_Common.Utility.Auto.AutoSnapshot
         {
             // 使用框架提供的默认序列化器（使用 Unity JsonUtility）
             // 你也可以使用自定义的 Newtonsoft 等实现
-            _serializer = new UnityJsonDataSerializer();
+            _serializer = new UnityJsonSerializer();
         }
 
         private void Start()
