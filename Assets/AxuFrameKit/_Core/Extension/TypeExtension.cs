@@ -35,6 +35,8 @@ namespace AxuFrameKit._Core.Extension
         {
             if (type == null) return false;
 
+            type = Nullable.GetUnderlyingType(type) ?? type;
+
             switch (Type.GetTypeCode(type))
             {
                 case TypeCode.Byte:
@@ -52,6 +54,33 @@ namespace AxuFrameKit._Core.Extension
                 default:
                     return false;
             }
+        }
+
+        /// <summary>
+        /// 判断类型是否为 Nullable&lt;T&gt;
+        /// </summary>
+        public static bool IsNullableType(this Type type)
+        {
+            if (type == null) return false;
+            return Nullable.GetUnderlyingType(type) != null;
+        }
+
+        /// <summary>
+        /// 获取 Nullable&lt;T&gt; 的底层类型；非 Nullable 时返回自身
+        /// </summary>
+        public static Type GetNonNullableType(this Type type)
+        {
+            if (type == null) throw new ArgumentNullException(nameof(type));
+            return Nullable.GetUnderlyingType(type) ?? type;
+        }
+
+        /// <summary>
+        /// 是否是静态类
+        /// </summary>
+        public static bool IsStaticClass(this Type type)
+        {
+            if (type == null) return false;
+            return type.IsClass && type.IsAbstract && type.IsSealed;
         }
     }
 }

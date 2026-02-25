@@ -87,6 +87,34 @@ namespace AxuFrameKit._Core.Extension
                 .Select(x => x.Select(v => v.Value));
         }
 
+        /// <summary>
+        /// 过滤掉集合中的 null 项（仅引用类型）
+        /// </summary>
+        public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T> source) where T : class
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            return source.Where(item => item != null);
+        }
+
+        /// <summary>
+        /// 按键去重（兼容旧版本 .NET，补齐 DistinctBy 能力）
+        /// </summary>
+        public static IEnumerable<TSource> DistinctBy<TSource, TKey>(
+            this IEnumerable<TSource> source,
+            Func<TSource, TKey> keySelector,
+            IEqualityComparer<TKey> comparer = null)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (keySelector == null) throw new ArgumentNullException(nameof(keySelector));
+
+            HashSet<TKey> seen = new(comparer);
+            foreach (var element in source)
+            {
+                if (seen.Add(keySelector(element)))
+                    yield return element;
+            }
+        }
+
         #endregion
 
         #region Random
@@ -393,6 +421,75 @@ namespace AxuFrameKit._Core.Extension
             int index = 0;
             foreach (var item in source)
                 action?.Invoke(item, index++);
+        }
+
+        /// <summary>
+        /// 尝试获取第一个元素，避免异常与重复枚举
+        /// </summary>
+        public static bool TryGetFirst<T>(this IEnumerable<T> source, out T value)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+
+            if (source is IList<T> list)
+            {
+                if (list.Count > 0)
+                {
+                    value = list[0];
+                    return true;
+                }
+
+                value = default;
+                return false;
+            }
+
+            using var enumerator = source.GetEnumerator();
+            if (enumerator.MoveNext())
+            {
+                value = enumerator.Current;
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        /// <summary>
+        /// 返回元素在序列中的索引，未找到返回 -1
+        /// </summary>
+        public static int IndexOf<T>(this IEnumerable<T> source, T value, IEqualityComparer<T> comparer = null)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+
+            comparer ??= EqualityComparer<T>.Default;
+
+            int index = 0;
+            foreach (var item in source)
+            {
+                if (comparer.Equals(item, value))
+                    return index;
+                index++;
+            }
+
+            return -1;
+        }
+
+        /// <summary>
+        /// 返回满足条件的首个元素索引，未找到返回 -1
+        /// </summary>
+        public static int IndexOf<T>(this IEnumerable<T> source, Func<T, bool> predicate)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+
+            int index = 0;
+            foreach (var item in source)
+            {
+                if (predicate(item))
+                    return index;
+                index++;
+            }
+
+            return -1;
         }
         
         /// <summary>

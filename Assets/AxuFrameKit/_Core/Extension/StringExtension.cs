@@ -36,6 +36,11 @@ namespace AxuFrameKit._Core.Extension
         public static bool IsNullOrWhiteSpace(this string self) => string.IsNullOrWhiteSpace(self);
 
         /// <summary>
+        /// 如果字符串为 null/空白，返回 null；否则返回原值
+        /// </summary>
+        public static string NullIfWhiteSpace(this string self) => string.IsNullOrWhiteSpace(self) ? null : self;
+
+        /// <summary>
         /// 将路径中的反斜杠替换为正斜杠
         /// </summary>
         public static string MakeSureFilePath(this string self) =>
@@ -64,6 +69,33 @@ namespace AxuFrameKit._Core.Extension
         public static string Format(this string self, params object[] args)
         {
             return string.Format(self, args);
+        }
+
+        /// <summary>
+        /// 指定字符串比较规则的 Contains（兼容旧版本 .NET）
+        /// </summary>
+        public static bool Contains(this string self, string value, StringComparison comparisonType)
+        {
+            if (self == null) throw new ArgumentNullException(nameof(self));
+            if (value == null) throw new ArgumentNullException(nameof(value));
+
+            return self.IndexOf(value, comparisonType) >= 0;
+        }
+
+        /// <summary>
+        /// 按 Ordinal 比较两个字符串
+        /// </summary>
+        public static bool EqualsOrdinal(this string self, string other)
+        {
+            return string.Equals(self, other, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// 按 OrdinalIgnoreCase 比较两个字符串
+        /// </summary>
+        public static bool EqualsOrdinalIgnoreCase(this string self, string other)
+        {
+            return string.Equals(self, other, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -108,6 +140,28 @@ namespace AxuFrameKit._Core.Extension
         {
             if (string.IsNullOrEmpty(self)) return self;
             return new string(self.Where(c => !char.IsWhiteSpace(c)).ToArray());
+        }
+
+        /// <summary>
+        /// 确保字符串以前缀开头，不满足则拼接
+        /// </summary>
+        public static string EnsureStartsWith(this string self, string prefix, StringComparison comparisonType = StringComparison.Ordinal)
+        {
+            if (self == null) throw new ArgumentNullException(nameof(self));
+            if (string.IsNullOrEmpty(prefix)) return self;
+
+            return self.StartsWith(prefix, comparisonType) ? self : prefix + self;
+        }
+
+        /// <summary>
+        /// 确保字符串以后缀结尾，不满足则拼接
+        /// </summary>
+        public static string EnsureEndsWith(this string self, string suffix, StringComparison comparisonType = StringComparison.Ordinal)
+        {
+            if (self == null) throw new ArgumentNullException(nameof(self));
+            if (string.IsNullOrEmpty(suffix)) return self;
+
+            return self.EndsWith(suffix, comparisonType) ? self : self + suffix;
         }
 
         /// <summary>

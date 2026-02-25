@@ -5,9 +5,11 @@
 ## 目录
 
 - [CollectionExtension](#collectionextension)
+- [DateTimeExtension](#datetimeextension)
 - [EnumExtension](#enumextension)
 - [StringExtension](#stringextension)
 - [ReflectionExtension](#reflectionextension)
+- [TaskExtension](#taskextension)
 - [TypeExtension](#typeextension)
 
 ---
@@ -28,8 +30,12 @@
   - `AddRange(IEnumerable<T>)`: 为 `ICollection<T>` 添加多个元素。
   - `Shuffle()`: 使用 Fisher-Yates 算法对 `IList<T>` 进行就地洗牌。
   - `Chunk(int size)`: 将集合按指定大小分块。
+  - `DistinctBy(keySelector)`: 按键去重。
+  - `WhereNotNull()`: 过滤 null 项（引用类型）。
 - **操作**
   - `Do(Action<T>)`: 对集合中每个元素执行操作（链式调用辅助）。
+  - `TryGetFirst(out T)`: 安全获取第一个元素。
+  - `IndexOf(...)`: 查找元素或按条件查找索引。
   - `RemoveWhere(Predicate<T>)`: 移除满足条件的元素并返回移除数量。
 
 ---
@@ -51,6 +57,20 @@
 
 ---
 
+## DateTimeExtension
+
+为 `DateTime` 和 Unix 时间戳相关场景提供扩展。
+
+### 常用方法
+- `IsBetween(start, end)`: 判断时间是否位于区间内（含边界）。
+- `StartOfDay()` / `EndOfDay()`: 获取当天起止时间。
+- `StartOfWeek(DayOfWeek)`: 获取周起始日期。
+- `IsWeekend()`: 判断是否周末。
+- `ToUnixTimeSeconds()`: 转 Unix 时间戳（秒）。
+- `FromUnixTimeSeconds()`: 从时间戳（秒）转 UTC `DateTime`。
+
+---
+
 ## StringExtension
 
 为 `string` 类型提供扩展。
@@ -64,10 +84,13 @@
 - **检查**
   - `IsNullOrEmpty()` / `IsNotNullOrEmpty()`
   - `IsNullOrWhiteSpace()`
+  - `NullIfWhiteSpace()`: 空白字符串转 null。
 - **处理**
   - `Repeat(int count)`: 重复字符串。
   - `RemoveWhitespace()`: 移除所有空白字符。
   - `MakeSureFilePath()`: 统一路径分隔符。
+  - `EnsureStartsWith(...)` / `EnsureEndsWith(...)`: 确保前后缀。
+  - `Contains(string, StringComparison)`: 指定比较规则的包含判断。
 
 ---
 
@@ -89,6 +112,17 @@
 
 ---
 
+## TaskExtension
+
+为 `Task` / `Task<T>` 提供常见异步控制能力。
+
+### 常用方法
+- `Forget(...)`: fire-and-forget 执行，可选异常回调。
+- `TimeoutAfter(TimeSpan)`: 超时控制，超时抛 `TimeoutException`。
+- `WithCancellation(CancellationToken)`: 为任务增加取消令牌支持。
+
+---
+
 ## TypeExtension
 
 为 `Type` 提供扩展。
@@ -97,3 +131,6 @@
 - `GetDefaultValue()`: 获取类型的默认值（等同于 `default(T)`）。
 - `ImplementsInterface(Type interfaceType)`: 检查是否实现了某接口（支持泛型接口定义）。
 - `IsNumeric()`: 判断是否为数字类型。
+- `IsNullableType()`: 判断是否是 `Nullable<T>`。
+- `GetNonNullableType()`: 获取可空类型底层类型。
+- `IsStaticClass()`: 判断是否是静态类。
