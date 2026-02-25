@@ -93,5 +93,203 @@ namespace AxuFrameKit.Common.Extension
             Color c = Color.HSVToRGB(h, s, v);
             return c.ToRGB255();
         }
+
+        // ==================== 链式修改 ====================
+
+        /// <summary>
+        /// 链式修改透明度，返回新颜色
+        /// </summary>
+        /// <param name="color">原颜色</param>
+        /// <param name="alpha">新的透明度 (0-1)</param>
+        /// <returns>修改透明度后的颜色</returns>
+        public static Color WithAlpha(this Color color, float alpha)
+        {
+            return new Color(color.r, color.g, color.b, Mathf.Clamp01(alpha));
+        }
+
+        /// <summary>
+        /// 链式修改 RGB 分量，保持 Alpha 不变
+        /// </summary>
+        public static Color WithRGB(this Color color, float r, float g, float b)
+        {
+            return new Color(r, g, b, color.a);
+        }
+
+        // ==================== 颜色插值 ====================
+
+        /// <summary>
+        /// 从当前颜色插值到目标颜色
+        /// </summary>
+        /// <param name="from">起始颜色</param>
+        /// <param name="to">目标颜色</param>
+        /// <param name="t">插值因子 (0-1)</param>
+        /// <returns>插值后的颜色</returns>
+        public static Color LerpTo(this Color from, Color to, float t)
+        {
+            return Color.Lerp(from, to, Mathf.Clamp01(t));
+        }
+
+        /// <summary>
+        /// 从当前颜色插值到目标颜色 (无钳制)
+        /// </summary>
+        public static Color LerpToUnclamped(this Color from, Color to, float t)
+        {
+            return Color.LerpUnclamped(from, to, t);
+        }
+
+        // ==================== 十六进制转换 ====================
+
+        /// <summary>
+        /// 将颜色转换为十六进制字符串
+        /// </summary>
+        /// <param name="color">颜色</param>
+        /// <param name="includeAlpha">是否包含透明度，默认 true</param>
+        /// <returns>十六进制字符串，如 "#FF5500" 或 "#FF5500AA"</returns>
+        public static string ToHexString(this Color color, bool includeAlpha = true)
+        {
+            Color32 c32 = color;
+            if (includeAlpha)
+                return $"#{c32.r:X2}{c32.g:X2}{c32.b:X2}{c32.a:X2}";
+            else
+                return $"#{c32.r:X2}{c32.g:X2}{c32.b:X2}";
+        }
+
+        /// <summary>
+        /// 从十六进制字符串解析颜色
+        /// </summary>
+        /// <param name="hexString">十六进制字符串，支持 "#RGB"、"#RGBA"、"#RRGGBB"、"#RRGGBBAA" 格式</param>
+        /// <returns>解析后的颜色，解析失败返回白色</returns>
+        public static Color FromHexString(string hexString)
+        {
+            if (string.IsNullOrEmpty(hexString))
+                return Color.white;
+
+            // 移除 # 前缀
+            if (hexString[0] == '#')
+                hexString = hexString.Substring(1);
+
+            // 根据长度解析
+            switch (hexString.Length)
+            {
+                case 3: // RGB
+                    return new Color(
+                        HexToFloat(hexString[0]) / 15f,
+                        HexToFloat(hexString[1]) / 15f,
+                        HexToFloat(hexString[2]) / 15f);
+
+                case 4: // RGBA
+                    return new Color(
+                        HexToFloat(hexString[0]) / 15f,
+                        HexToFloat(hexString[1]) / 15f,
+                        HexToFloat(hexString[2]) / 15f,
+                        HexToFloat(hexString[3]) / 15f);
+
+                case 6: // RRGGBB
+                    return new Color32(
+                        HexToByte(hexString.Substring(0, 2)),
+                        HexToByte(hexString.Substring(2, 2)),
+                        HexToByte(hexString.Substring(4, 2)),
+                        255);
+
+                case 8: // RRGGBBAA
+                    return new Color32(
+                        HexToByte(hexString.Substring(0, 2)),
+                        HexToByte(hexString.Substring(2, 2)),
+                        HexToByte(hexString.Substring(4, 2)),
+                        HexToByte(hexString.Substring(6, 2)));
+
+                default:
+                    Debug.LogWarning($"ColorExtension.FromHexString: 无效的十六进制格式 '{hexString}'");
+                    return Color.white;
+            }
+        }
+
+        /// <summary>
+        /// 尝试从十六进制字符串解析颜色
+        /// </summary>
+        /// <param name="hexString">十六进制字符串</param>
+        /// <param name="color">解析结果</param>
+        /// <returns>是否解析成功</returns>
+        public static bool TryParseHexString(string hexString, out Color color)
+        {
+            color = Color.white;
+
+            if (string.IsNullOrEmpty(hexString))
+                return false;
+
+            try
+            {
+                color = FromHexString(hexString);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static byte HexToByte(string hex)
+        {
+            return byte.Parse(hex, System.Globalization.NumberStyles.HexNumber);
+        }
+
+        private static float HexToFloat(char c)
+        {
+            return int.Parse(c.ToString(), System.Globalization.NumberStyles.HexNumber);
+        }
+
+        // ==================== 明暗调整 ====================
+
+        /// <summary>
+        /// 调暗颜色
+        /// </summary>
+        /// <param name="color">原颜色</param>
+        /// <param name="amount">调暗程度 (0-1)，0=不变，1=全黑</param>
+        /// <returns>调暗后的颜色</returns>
+        public static Color Darken(this Color color, float amount)
+        {
+            amount = Mathf.Clamp01(amount);
+            return new Color(
+                color.r * (1f - amount),
+                color.g * (1f - amount),
+                color.b * (1f - amount),
+                color.a);
+        }
+
+        /// <summary>
+        /// 调亮颜色
+        /// </summary>
+        /// <param name="color">原颜色</param>
+        /// <param name="amount">调亮程度 (0-1)，0=不变，1=全白</param>
+        /// <returns>调亮后的颜色</returns>
+        public static Color Lighten(this Color color, float amount)
+        {
+            amount = Mathf.Clamp01(amount);
+            return new Color(
+                color.r + (1f - color.r) * amount,
+                color.g + (1f - color.g) * amount,
+                color.b + (1f - color.b) * amount,
+                color.a);
+        }
+
+        /// <summary>
+        /// 反转颜色 (负片效果)
+        /// </summary>
+        public static Color Invert(this Color color)
+        {
+            return new Color(1f - color.r, 1f - color.g, 1f - color.b, color.a);
+        }
+
+        /// <summary>
+        /// 设置饱和度
+        /// </summary>
+        /// <param name="color">原颜色</param>
+        /// <param name="saturation">饱和度 (0=灰度, 1=原色, >1=过饱和)</param>
+        /// <returns>调整后的颜色</returns>
+        public static Color WithSaturation(this Color color, float saturation)
+        {
+            var (h, _, v) = color.ToHSV();
+            return FromHSV(h, Mathf.Clamp01(saturation), v, color.a);
+        }
     }
 }

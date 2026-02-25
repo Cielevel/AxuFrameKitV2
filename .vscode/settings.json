@@ -59,5 +59,6 @@
     "dotnet.defaultSolution": "AxuFrameKitV2.sln",
     "omnisharp.useModernNet": false,
     "omnisharp.monoPath": "/Library/Frameworks/Mono.framework/Versions/Current",
-    "workbench.colorTheme": "Default Dark Modern"
+    "workbench.colorTheme": "Default Dark Modern",
+    "dotnet.preferCSharpExtension": true
 }
