@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEngine;
@@ -38,55 +39,59 @@ namespace AxuFrameKit.Common.Utility.Save
     /// <summary>
     /// SaveUtil (非静态)
     /// 这是一个纯粹的逻辑协调者，它不关心具体怎么存、怎么转Json，全靠注入的模块工作。
+    /// 支持缓存、变更监听、延迟保存、批量操作等高级功能。
     /// </summary>
     public class SaveUtil
     {
         private readonly ISerializer _serializer;
         private readonly IStorage _storage;
         private readonly ICrypto _crypto; // 可以为空
+        private readonly Dictionary<string, object> _cache;
+        private readonly Dictionary<string, Delegate> _callbacks;
+        private readonly string _keyPrefix;
 
         // 构造函数注入所有依赖
-        public SaveUtil(ISerializer serializer, IStorage storage, ICrypto crypto = null)
+        public SaveUtil(ISerializer serializer, IStorage storage, ICrypto crypto = null, string keyPrefix = "")
         {
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _crypto = crypto;
+            _keyPrefix = keyPrefix ?? string.Empty;
+            _cache = new Dictionary<string, object>();
+            _callbacks = new Dictionary<string, Delegate>();
         }
 
-        /// <summary>
-        /// 存储数据
-        /// 流程：对象 -> 序列化 -> (加密) -> 存储
-        /// </summary>
-        public void Save<T>(string key, T data)
+        private string GetFullKey(string key)
         {
-            // 1. 序列化
-            string content = _serializer.Serialize(data);
-
-            // 2. 加密 (如果有配置)
-            if (_crypto != null)
-            {
-                content = _crypto.Encrypt(content);
-            }
-
-            // 3. 写入存储介质
-            _storage.Write(key, content);
+            return string.IsNullOrEmpty(_keyPrefix) ? key : $"{_keyPrefix}.{key}";
         }
 
+        #region 基础读写操作
+
         /// <summary>
-        /// 加载数据
-        /// 流程：读取 -> (解密) -> 反序列化 -> 对象
+        /// 加载数据（带缓存）
+        /// 流程：检查缓存 -> 读取 -> (解密) -> 反序列化 -> 缓存 -> 对象
         /// </summary>
         public T Load<T>(string key, T defaultValue = default)
         {
-            if (!_storage.Exists(key))
+            string fullKey = GetFullKey(key);
+
+            // 1. 检查缓存
+            if (_cache.TryGetValue(fullKey, out var cachedValue))
+            {
+                return (T)cachedValue;
+            }
+
+            // 2. 检查存储是否存在
+            if (!_storage.Exists(fullKey))
             {
                 return defaultValue;
             }
 
-            // 1. 读取
-            string content = _storage.Read(key);
+            // 3. 读取
+            string content = _storage.Read(fullKey);
 
-            // 2. 解密 (如果有配置)
+            // 4. 解密 (如果有配置)
             if (_crypto != null)
             {
                 try
@@ -100,22 +105,179 @@ namespace AxuFrameKit.Common.Utility.Save
                 }
             }
 
-            // 3. 反序列化
+            // 5. 反序列化
+            T result;
             try
             {
-                return _serializer.Deserialize<T>(content);
+                result = _serializer.Deserialize<T>(content);
             }
             catch (Exception e)
             {
                 Debug.LogError($"[SaveUtil] Deserialize failed: {e.Message}");
                 return defaultValue;
             }
+
+            // 6. 缓存并返回
+            _cache[fullKey] = result;
+            return result;
         }
 
+        /// <summary>
+        /// 存储数据（立即保存，带回调和缓存）
+        /// 流程：对象 -> 序列化 -> (加密) -> 存储 -> 触发回调
+        /// </summary>
+        public void Save<T>(string key, T data)
+        {
+            string fullKey = GetFullKey(key);
+
+            // 1. 获取旧值用于回调
+            T oldValue = _cache.TryGetValue(fullKey, out var cached) ? (T)cached : default;
+
+            // 2. 更新缓存
+            _cache[fullKey] = data;
+
+            // 3. 序列化
+            string content = _serializer.Serialize(data);
+
+            // 4. 加密 (如果有配置)
+            if (_crypto != null)
+            {
+                content = _crypto.Encrypt(content);
+            }
+
+            // 5. 写入存储介质
+            _storage.Write(fullKey, content);
+
+            // 6. 触发回调
+            TriggerCallback(fullKey, oldValue, data);
+        }
+
+        /// <summary>
+        /// 延迟保存（仅更新缓存，不立即写入存储）
+        /// </summary>
+        public void SaveDelayed<T>(string key, T data)
+        {
+            string fullKey = GetFullKey(key);
+            T oldValue = _cache.TryGetValue(fullKey, out var cached) ? (T)cached : default;
+            _cache[fullKey] = data;
+            TriggerCallback(fullKey, oldValue, data);
+        }
+
+        /// <summary>
+        /// 保存所有缓存的配置到存储
+        /// </summary>
+        public void SaveAll()
+        {
+            foreach (var kvp in _cache)
+            {
+                string content = _serializer.Serialize(kvp.Value);
+                if (_crypto != null)
+                {
+                    content = _crypto.Encrypt(content);
+                }
+                _storage.Write(kvp.Key, content);
+            }
+        }
+
+        /// <summary>
+        /// 删除数据
+        /// </summary>
         public void Delete(string key)
         {
-            _storage.Delete(key);
+            string fullKey = GetFullKey(key);
+            _storage.Delete(fullKey);
+            _cache.Remove(fullKey);
+            _callbacks.Remove(fullKey);
         }
+
+        /// <summary>
+        /// 检查数据是否存在（优先检查缓存）
+        /// </summary>
+        public bool Exists(string key)
+        {
+            string fullKey = GetFullKey(key);
+            return _cache.ContainsKey(fullKey) || _storage.Exists(fullKey);
+        }
+
+        /// <summary>
+        /// 清空缓存（不删除存储数据）
+        /// </summary>
+        public void ClearCache()
+        {
+            _cache.Clear();
+        }
+
+        /// <summary>
+        /// 清空所有（缓存 + 回调）
+        /// </summary>
+        public void ClearAll()
+        {
+            _cache.Clear();
+            _callbacks.Clear();
+        }
+
+        #endregion
+
+        #region 变更监听
+
+        /// <summary>
+        /// 注册值变更回调
+        /// </summary>
+        /// <typeparam name="T">值类型</typeparam>
+        /// <param name="key">键名</param>
+        /// <param name="callback">回调函数 (oldValue, newValue)</param>
+        public void RegisterCallback<T>(string key, Action<T, T> callback)
+        {
+            string fullKey = GetFullKey(key);
+            if (_callbacks.TryGetValue(fullKey, out var existing))
+            {
+                _callbacks[fullKey] = Delegate.Combine(existing, callback);
+            }
+            else
+            {
+                _callbacks[fullKey] = callback;
+            }
+        }
+
+        /// <summary>
+        /// 取消注册值变更回调
+        /// </summary>
+        public void UnregisterCallback<T>(string key, Action<T, T> callback)
+        {
+            string fullKey = GetFullKey(key);
+            if (_callbacks.TryGetValue(fullKey, out var existing))
+            {
+                _callbacks[fullKey] = Delegate.Remove(existing, callback);
+            }
+        }
+
+        private void TriggerCallback<T>(string fullKey, T oldValue, T newValue)
+        {
+            if (_callbacks.TryGetValue(fullKey, out var callback))
+            {
+                (callback as Action<T, T>)?.Invoke(oldValue, newValue);
+            }
+        }
+
+        #endregion
+
+        #region 批量操作
+
+        /// <summary>
+        /// 批量设置数据（延迟保存后统一写入）
+        /// </summary>
+        public void SaveBatch<T>(Dictionary<string, T> data)
+        {
+            if (data == null) return;
+
+            foreach (var kvp in data)
+            {
+                SaveDelayed(kvp.Key, kvp.Value);
+            }
+            SaveAll();
+        }
+
+        #endregion
     }
 
     // ==========================================
@@ -130,6 +292,7 @@ namespace AxuFrameKit.Common.Utility.Save
         private ISerializer _serializer;
         private IStorage _storage;
         private ICrypto _crypto;
+        private string _keyPrefix;
 
         public SaveUtilBuilder UseSerializer(ISerializer serializer)
         {
@@ -149,13 +312,19 @@ namespace AxuFrameKit.Common.Utility.Save
             return this;
         }
 
+        public SaveUtilBuilder UseKeyPrefix(string prefix)
+        {
+            _keyPrefix = prefix;
+            return this;
+        }
+
         public SaveUtil Build()
         {
             // 默认检查
             if (_serializer == null) throw new Exception("Serializer not set!");
             if (_storage == null) throw new Exception("Storage mechanism not set!");
 
-            return new SaveUtil(_serializer, _storage, _crypto);
+            return new SaveUtil(_serializer, _storage, _crypto, _keyPrefix);
         }
     }
 }
