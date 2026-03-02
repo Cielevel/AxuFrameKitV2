@@ -1,6 +1,7 @@
 using AxuFrameKit.Common.Utility.Save;
 using UnityEngine;
 using AxuFrameKit.Common.Utility.Serializer;
+using AxuFrameKit.Common.Utility.Crypto;
 
 namespace TestAndSample.Sample_Common.Utility.Save
 {

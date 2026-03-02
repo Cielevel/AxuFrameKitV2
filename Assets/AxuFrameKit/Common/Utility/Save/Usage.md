@@ -162,6 +162,10 @@ public class GameSettings
 
 ### 配置管理器
 
+> **提示**: SaveUtil 现在包含 `GetAllKeys()` 和 `Clear()` 方法，可用于枚举/清空存储，行为与 ConfigManager 对齐。
+
+### 配置管理器
+
 ```csharp
 public class SettingsManager : SingletonMono<SettingsManager>
 {
@@ -569,6 +573,17 @@ public class GameStateManager : SingletonMono<GameStateManager>
 ---
 
 ## 7. 简易用法示例
+
+### 构建器便捷方法
+新版本的 `SaveUtilBuilder` 提供与 Config 管理器类似的快捷配置：
+```csharp
+var util = new SaveUtilBuilder()
+    .UsePlayerPrefs()
+    .UseUnityJsonSerializer()
+    .UseXorCrypto("key")
+    .Build();
+```
+
 
 快速原型或小规模数据存储推荐使用 `SimpleSave`。
 

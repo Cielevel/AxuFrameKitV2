@@ -1,84 +1,213 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using UnityEngine;
-using AxuFrameKit.Common.Utility.Serializer;
+using AxuFrameKit.Common.Utility.Crypto;
 
 namespace AxuFrameKit.Common.Utility.Save
 {
     // ==========================================
-    // 默认实现 (Concrete Implementations) --> SaveUtil可以直接使用这些实现
-    // 注意：UnityJsonSerializer 已移至 AxuFrameKit.Common.Utility.Serializer 命名空间
+    // 存储实现 (Storage Implementations)
+    // 注意：序列化器在 AxuFrameKit.Common.Utility.Serializer 中实现
+    //      加密器在 AxuFrameKit.Common.Utility.Crypto 中实现
     // ==========================================
 
     // --- 实现B: 本地文件存储 ---
-    public class LocalFileStorage : IStorage
+    public class LocalFileStorage : IStorage, IStorageExtended
     {
         private string _basePath;
         private string _extension;
 
-        public LocalFileStorage(string extension = ".json")
+        public LocalFileStorage(string directory = null, string extension = ".json")
         {
-            _basePath = Application.persistentDataPath;
-            _extension = extension;
+            _basePath = string.IsNullOrEmpty(directory) ? Application.persistentDataPath : directory;
+            _extension = extension.StartsWith(".") ? extension : "." + extension;
+
+            if (!Directory.Exists(_basePath))
+            {
+                Directory.CreateDirectory(_basePath);
+            }
         }
 
         private string GetPath(string key) => Path.Combine(_basePath, key + _extension);
 
         public void Write(string key, string data) => File.WriteAllText(GetPath(key), data);
 
-        public string Read(string key) => File.ReadAllText(GetPath(key));
+        public string Read(string key) => File.Exists(GetPath(key)) ? File.ReadAllText(GetPath(key)) : null;
 
         public void Delete(string key)
         {
-            if (Exists(key)) File.Delete(GetPath(key));
+            string path = GetPath(key);
+            if (File.Exists(path)) File.Delete(path);
         }
 
         public bool Exists(string key) => File.Exists(GetPath(key));
+
+        public string[] GetAllKeys()
+        {
+            if (!Directory.Exists(_basePath)) return new string[0];
+            var files = Directory.GetFiles(_basePath, "*" + _extension);
+            var keys = new System.Collections.Generic.List<string>(files.Length);
+            foreach (var file in files)
+            {
+                keys.Add(Path.GetFileNameWithoutExtension(file));
+            }
+            return keys.ToArray();
+        }
+
+        public void Clear()
+        {
+            var keys = GetAllKeys();
+            foreach (var k in keys)
+            {
+                Delete(k);
+            }
+        }
     }
 
-    // --- 实现C: 简单的 AES 加密 (比异或更安全) ---
-    public class AesCrypto : ICrypto
+    // --- 实现C: JSON 文件存储（别名，便于区分） ---
+    public class JsonFileStorage : LocalFileStorage
     {
-        private string _key; // 必须是16, 24, 或 32 字节
-
-        public AesCrypto(string key)
+        public JsonFileStorage(string directory = null, string extension = ".json") 
+            : base(directory, extension)
         {
-            // 简单处理，确保key长度符合AES要求
-            _key = key.PadRight(32)[..32];
+        }
+    }
+
+    // --- 实现D: PlayerPrefs 存储 (支持键注册) ---
+    public class PlayerPrefsStorage : IStorage, IStorageExtended
+    {
+        private readonly string _keyRegistryKey;
+
+        public PlayerPrefsStorage(string keyRegistryKey = "__save_keys__")
+        {
+            _keyRegistryKey = keyRegistryKey;
         }
 
-        public string Encrypt(string input)
+        public void Write(string key, string data)
         {
-            // 这里仅作演示，实际生产环境建议使用更严谨的 AES 实现 (IV处理等)
-            byte[] keyArray = Encoding.UTF8.GetBytes(_key);
-            byte[] toEncryptArray = Encoding.UTF8.GetBytes(input);
-
-            var rDel = new System.Security.Cryptography.RijndaelManaged();
-            rDel.Key = keyArray;
-            rDel.Mode = System.Security.Cryptography.CipherMode.ECB; // ECB简单但安全性略低，建议用CBC
-            rDel.Padding = System.Security.Cryptography.PaddingMode.PKCS7;
-
-            var cTransform = rDel.CreateEncryptor();
-            byte[] resultArray = cTransform.TransformFinalBlock(toEncryptArray, 0, toEncryptArray.Length);
-
-            return Convert.ToBase64String(resultArray, 0, resultArray.Length);
+            PlayerPrefs.SetString(key, data);
+            RegisterKey(key);
+            PlayerPrefs.Save();
         }
 
-        public string Decrypt(string input)
+        public string Read(string key)
         {
-            byte[] keyArray = Encoding.UTF8.GetBytes(_key);
-            byte[] toEncryptArray = Convert.FromBase64String(input);
+            return PlayerPrefs.GetString(key, null);
+        }
 
-            var rDel = new System.Security.Cryptography.RijndaelManaged();
-            rDel.Key = keyArray;
-            rDel.Mode = System.Security.Cryptography.CipherMode.ECB;
-            rDel.Padding = System.Security.Cryptography.PaddingMode.PKCS7;
+        public void Delete(string key)
+        {
+            PlayerPrefs.DeleteKey(key);
+            UnregisterKey(key);
+            PlayerPrefs.Save();
+        }
 
-            var cTransform = rDel.CreateDecryptor();
-            byte[] resultArray = cTransform.TransformFinalBlock(toEncryptArray, 0, toEncryptArray.Length);
+        public bool Exists(string key)
+        {
+            return PlayerPrefs.HasKey(key);
+        }
 
-            return Encoding.UTF8.GetString(resultArray);
+        public string[] GetAllKeys()
+        {
+            string keysData = PlayerPrefs.GetString(_keyRegistryKey, "");
+            if (string.IsNullOrEmpty(keysData)) return new string[0];
+            return keysData.Split(';');
+        }
+
+        public void Clear()
+        {
+            var keys = GetAllKeys();
+            foreach (var key in keys)
+            {
+                if (!string.IsNullOrEmpty(key))
+                    PlayerPrefs.DeleteKey(key);
+            }
+            PlayerPrefs.DeleteKey(_keyRegistryKey);
+            PlayerPrefs.Save();
+        }
+
+        private void RegisterKey(string key)
+        {
+            var set = new System.Collections.Generic.HashSet<string>(GetAllKeys());
+            if (set.Add(key))
+            {
+                PlayerPrefs.SetString(_keyRegistryKey, string.Join(";", set));
+            }
+        }
+
+        private void UnregisterKey(string key)
+        {
+            var list = new System.Collections.Generic.List<string>(GetAllKeys());
+            list.Remove(key);
+            PlayerPrefs.SetString(_keyRegistryKey, string.Join(";", list));
+        }
+    }
+
+    // --- 实现F: 二进制文件存储 ---
+    public class BinaryFileStorage : IStorage, IStorageExtended
+    {
+        private readonly string _basePath;
+        private readonly string _extension;
+
+        public BinaryFileStorage(string directory = null, string extension = ".dat")
+        {
+            _basePath = string.IsNullOrEmpty(directory) ? Application.persistentDataPath : directory;
+            _extension = extension.StartsWith(".") ? extension : "." + extension;
+
+            if (!Directory.Exists(_basePath))
+            {
+                Directory.CreateDirectory(_basePath);
+            }
+        }
+
+        private string GetFilePath(string key) => Path.Combine(_basePath, key + _extension);
+
+        public void Write(string key, string data)
+        {
+            string path = GetFilePath(key);
+            using var writer = new BinaryWriter(File.Open(path, FileMode.Create));
+            writer.Write(data);
+        }
+
+        public string Read(string key)
+        {
+            string path = GetFilePath(key);
+            if (!File.Exists(path)) return null;
+            using var reader = new BinaryReader(File.Open(path, FileMode.Open));
+            return reader.ReadString();
+        }
+
+        public void Delete(string key)
+        {
+            string path = GetFilePath(key);
+            if (File.Exists(path)) File.Delete(path);
+        }
+
+        public bool Exists(string key)
+        {
+            return File.Exists(GetFilePath(key));
+        }
+
+        public string[] GetAllKeys()
+        {
+            if (!Directory.Exists(_basePath)) return new string[0];
+            var files = Directory.GetFiles(_basePath, "*" + _extension);
+            var keys = new System.Collections.Generic.List<string>(files.Length);
+            foreach (var file in files)
+            {
+                keys.Add(Path.GetFileNameWithoutExtension(file));
+            }
+            return keys.ToArray();
+        }
+
+        public void Clear()
+        {
+            var keys = GetAllKeys();
+            foreach (var k in keys)
+            {
+                Delete(k);
+            }
         }
     }
 }

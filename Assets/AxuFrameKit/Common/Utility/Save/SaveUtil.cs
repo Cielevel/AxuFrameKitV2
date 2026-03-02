@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 using AxuFrameKit.Common.Utility.Serializer;
+using AxuFrameKit.Common.Utility.Crypto;
 
 namespace AxuFrameKit.Common.Utility.Save
 {
@@ -24,12 +25,20 @@ namespace AxuFrameKit.Common.Utility.Save
     }
 
     /// <summary>
-    /// 加密接口：负责数据的加密与解密处理 (可选)
+    /// 可选的扩展接口，包含枚举与清空能力。
+    /// 现有实现如果不支持可选择不实现；SaveUtil 会在运行时检测并安全降级。
     /// </summary>
-    public interface ICrypto
+    public interface IStorageExtended
     {
-        string Encrypt(string input);
-        string Decrypt(string input);
+        /// <summary>
+        /// 获取当前存储所有键名（不包含前缀）。
+        /// </summary>
+        string[] GetAllKeys();
+
+        /// <summary>
+        /// 清空所有存储的数据（不包含缓存/回调）。
+        /// </summary>
+        void Clear();
     }
 
     // ==========================================
@@ -278,6 +287,42 @@ namespace AxuFrameKit.Common.Utility.Save
         }
 
         #endregion
+
+        #region 额外功能扩展
+
+        /// <summary>
+        /// 如果底层存储支持，返回所有键名。
+        /// 否则返回空数组。
+        /// </summary>
+        public string[] GetAllKeys()
+        {
+            if (_storage is IStorageExtended ext)
+                return ext.GetAllKeys();
+            return new string[0];
+        }
+
+        /// <summary>
+        /// 清空整个存储（调用底层 Clear）并清理缓存/回调。
+        /// </summary>
+        public void Clear()
+        {
+            if (_storage is IStorageExtended ext)
+            {
+                try
+                {
+                    ext.Clear();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[SaveUtil] Clear storage failed: {e.Message}");
+                }
+            }
+
+            // 同步清除本地缓存和回调
+            ClearAll();
+        }
+
+        #endregion
     }
 
     // ==========================================
@@ -293,6 +338,8 @@ namespace AxuFrameKit.Common.Utility.Save
         private IStorage _storage;
         private ICrypto _crypto;
         private string _keyPrefix;
+
+        #region 核心设定
 
         public SaveUtilBuilder UseSerializer(ISerializer serializer)
         {
@@ -318,6 +365,54 @@ namespace AxuFrameKit.Common.Utility.Save
             return this;
         }
 
+        #endregion
+
+        #region 便捷策略 (与 ConfigManagerBuilder 保持一致)
+
+        public SaveUtilBuilder UsePlayerPrefs(string keyRegistryKey = "__save_keys__")
+        {
+            _storage = new PlayerPrefsStorage(keyRegistryKey);
+            return this;
+        }
+
+        public SaveUtilBuilder UseJsonFile(string directory = null, string extension = ".json")
+        {
+            _storage = new JsonFileStorage(directory, extension);
+            return this;
+        }
+
+        public SaveUtilBuilder UseBinaryFile(string directory = null, string extension = ".dat")
+        {
+            _storage = new BinaryFileStorage(directory, extension);
+            return this;
+        }
+
+        public SaveUtilBuilder UseUnityJsonSerializer(bool prettyPrint = false)
+        {
+            _serializer = new UnityJsonSerializer(prettyPrint);
+            return this;
+        }
+
+        public SaveUtilBuilder UseBinarySerializer()
+        {
+            _serializer = new BinarySerializer();
+            return this;
+        }
+
+        public SaveUtilBuilder UseXorCrypto(string key)
+        {
+            _crypto = new XorCrypto(key);
+            return this;
+        }
+
+        public SaveUtilBuilder NoCrypto()
+        {
+            _crypto = null;
+            return this;
+        }
+
+        #endregion
+
         public SaveUtil Build()
         {
             // 默认检查
@@ -325,6 +420,18 @@ namespace AxuFrameKit.Common.Utility.Save
             if (_storage == null) throw new Exception("Storage mechanism not set!");
 
             return new SaveUtil(_serializer, _storage, _crypto, _keyPrefix);
+        }
+
+        /// <summary>
+        /// 创建默认的 SaveUtil（PlayerPrefs + Unity JSON）
+        /// </summary>
+        public static SaveUtil CreateDefault(string keyPrefix = "")
+        {
+            return new SaveUtilBuilder()
+                .UsePlayerPrefs()
+                .UseUnityJsonSerializer()
+                .UseKeyPrefix(keyPrefix)
+                .Build();
         }
     }
 }
