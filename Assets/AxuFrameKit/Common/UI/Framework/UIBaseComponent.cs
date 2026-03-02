@@ -22,11 +22,35 @@ namespace AxuFrameKit.Common.UI.Framework
     
         protected void HideOnStartIfNeeded() => Content?.SetActive(!HideContentOnStart);
         
-        public virtual void Show() => Content?.SetActive(true);
-        public virtual void Show(params object[] objs) => Content?.SetActive(true);
+        public virtual void Show()
+        {
+            Content?.SetActive(true);
+            OnShow();
+        }
 
-        public virtual void Hide() => Content?.SetActive(false);
-        public virtual void Hide(params object[] objs) => Content?.SetActive(false);
+        public virtual void Show(params object[] objs)
+        {
+            Content?.SetActive(true);
+            OnShow(objs);
+        }
+
+        protected virtual void OnShow() { }
+        protected virtual void OnShow(params object[] objs) { }
+
+        public virtual void Hide()
+        {
+            Content?.SetActive(false);
+            OnHide();
+        }
+
+        public virtual void Hide(params object[] objs)
+        {
+            Content?.SetActive(false);
+            OnHide(objs);
+        }
+
+        protected virtual void OnHide() { }
+        protected virtual void OnHide(params object[] objs) { }
         
         public RectTransform RtTsf
         {
