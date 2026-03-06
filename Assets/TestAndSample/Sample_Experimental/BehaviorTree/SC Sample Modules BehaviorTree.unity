@@ -369,7 +369,8 @@ MonoBehaviour:
   - rid: 4667138189797359713
   - rid: 4667138189797359714
   _currentIndex: 0
-  _autoPlay: 0
+  _playMode: 0
+  _eventChannel: {fileID: 0}
   references:
     version: 2
     RefIds:

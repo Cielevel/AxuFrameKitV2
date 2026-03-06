@@ -12,8 +12,10 @@ namespace AxuFrameKit._Core.Advanced.EventSystem
         private static readonly Dictionary<Type, List<Delegate>> _handlers = new(16);
 
         /// <summary>
-        /// 订阅事件
+        /// 订阅特定类型的事件
         /// </summary>
+        /// <typeparam name="T">事件数据类型</typeparam>
+        /// <param name="handler">事件处理回调</param>
         public static void Subscribe<T>(Action<T> handler)
         {
             var type = typeof(T);
@@ -25,8 +27,10 @@ namespace AxuFrameKit._Core.Advanced.EventSystem
         }
 
         /// <summary>
-        /// 取消订阅事件
+        /// 取消订阅特定类型的事件
         /// </summary>
+        /// <typeparam name="T">事件数据类型</typeparam>
+        /// <param name="handler">原先订阅的事件处理回调</param>
         public static void Unsubscribe<T>(Action<T> handler)
         {
             var type = typeof(T);
@@ -42,8 +46,10 @@ namespace AxuFrameKit._Core.Advanced.EventSystem
         }
 
         /// <summary>
-        /// 触发事件
+        /// 发布（触发）特定类型的事件
         /// </summary>
+        /// <typeparam name="T">事件数据类型</typeparam>
+        /// <param name="eventData">传递给订阅者的事件数据</param>
         public static void Publish<T>(T eventData)
         {
             var type = typeof(T);
@@ -66,8 +72,9 @@ namespace AxuFrameKit._Core.Advanced.EventSystem
         }
 
         /// <summary>
-        /// 触发事件（无参数构建，用于 struct 事件）
+        /// 发布（触发）特定类型的事件（自动创建一个新的事件实例）
         /// </summary>
+        /// <typeparam name="T">具有无参构造函数的事件数据类型</typeparam>
         public static void Publish<T>() where T : new()
         {
             Publish(new T());

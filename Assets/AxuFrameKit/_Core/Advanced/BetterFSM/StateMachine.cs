@@ -3,12 +3,18 @@ using System.Collections.Generic;
 
 namespace AxuFrameKit._Core.Advanced.BetterFSM
 {
+    /// <summary>
+    /// 高级状态机系统，支持基于谓词的条件转换 (BetterFSM)
+    /// </summary>
     public class StateMachine
     {
         private StateNode _current;
         private Dictionary<Type, StateNode> _nodes = new();
         private HashSet<ITransition> _anyTransitions = new();
 
+        /// <summary>
+        /// 每帧更新状态机逻辑
+        /// </summary>
         public void Update()
         {
             var transition = GetTransition();
@@ -18,20 +24,28 @@ namespace AxuFrameKit._Core.Advanced.BetterFSM
             _current.State?.Update();
         }
 
+        /// <summary>
+        /// 每物理帧更新状态机逻辑
+        /// </summary>
         public void FixedUpdate()
         {
             _current.State?.FixedUpdate();
         }
 
         /// <summary>
-        /// 设置当前的state
+        /// 设置当前的初始状态
         /// </summary>
+        /// <param name="state">目标状态实例</param>
         public void SetState(IState state)
         {
             _current = _nodes[state.GetType()];
             _current.State?.OnEnter();
         }
 
+        /// <summary>
+        /// 执行状态切换逻辑
+        /// </summary>
+        /// <param name="state">目标状态</param>
         private void ChangeState(IState state)
         {
             if (state == _current.State) return;
@@ -45,8 +59,9 @@ namespace AxuFrameKit._Core.Advanced.BetterFSM
         }
 
         /// <summary>
-        /// 获取transition，如果当前node可以向其它node转移，或者满足了any的转移，就返回一个转移--transition
+        /// 检查转换条件并获取第一个满足条件的转换
         /// </summary>
+        /// <returns>待执行的转换规则，若无则返回 null</returns>
         private ITransition GetTransition() // ! 注意foreach在update中的性能问题
         {
             foreach (var transition in _anyTransitions)
@@ -61,24 +76,31 @@ namespace AxuFrameKit._Core.Advanced.BetterFSM
         }
 
         /// <summary>
-        /// 增添两个state之间的trans关系（每次增添from 到 to的单向的关系）
+        /// 添加两个状态之间的转换关系
         /// </summary>
+        /// <param name="from">起始状态</param>
+        /// <param name="to">目标状态</param>
+        /// <param name="condition">满足转换的条件谓词</param>
         public void AddTransition(IState from, IState to, IPredicate condition)
         {
             GetOrAddNode(from).AddTransition(GetOrAddNode(to).State, condition);
         }
 
         /// <summary>
-        /// 增添到任意state的trans条件，类似于animator的any-->to
+        /// 添加从任意状态跳转至指定状态的转换规则
         /// </summary>
+        /// <param name="to">目标状态</param>
+        /// <param name="condition">满足转换的条件谓词</param>
         public void AddAnyTransition(IState to, IPredicate condition)
         {
             _anyTransitions.Add(new Transition(GetOrAddNode(to).State, condition));
         }
 
         /// <summary>
-        /// 判断这个state是否转化为了node；返回的是已经转化过的node（根据state的类型来判断）
+        /// 获取状态对应的节点，若不存在则创建
         /// </summary>
+        /// <param name="state">关联的状态</param>
+        /// <returns>封装了转换列表的状态节点</returns>
         private StateNode GetOrAddNode(IState state)
         {
             var node = _nodes.GetValueOrDefault(state.GetType());

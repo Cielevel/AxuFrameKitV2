@@ -21,7 +21,7 @@ namespace AxuFrameKit._Core.Structure
 
         public IndexedList(int capacity = 8)
         {
-            _list      = new List<T>(capacity);
+            _list = new List<T>(capacity);
             _indexDict = new Dictionary<T, int>(capacity);
         }
 
@@ -35,7 +35,7 @@ namespace AxuFrameKit._Core.Structure
             {
                 T oldItem = _list[index];
                 _indexDict.Remove(oldItem);
-                _list[index]      = value;
+                _list[index] = value;
                 _indexDict[value] = index;
             }
         }
@@ -53,6 +53,12 @@ namespace AxuFrameKit._Core.Structure
             return true;
         }
 
+        /// <summary>
+        /// 将元素插入到指定位置
+        /// </summary>
+        /// <param name="index">插入的索引位置</param>
+        /// <param name="item">要插入的元素</param>
+        /// <exception cref="ArgumentOutOfRangeException">索引超出范围时抛出</exception>
         public void Insert(int index, T item)
         {
             if (index < 0 || index > _list.Count)
@@ -81,13 +87,13 @@ namespace AxuFrameKit._Core.Structure
 
             // 为了避免 O(n) 删除，这里将最后一个元素换到当前位置
             int lastIndex = _list.Count - 1;
-            T   lastItem  = _list[lastIndex];
+            T lastItem = _list[lastIndex];
             _list.RemoveAt(lastIndex);
             _indexDict.Remove(item);
 
             if (index < lastIndex)
             {
-                _list[index]         = lastItem;
+                _list[index] = lastItem;
                 _indexDict[lastItem] = index;
             }
 

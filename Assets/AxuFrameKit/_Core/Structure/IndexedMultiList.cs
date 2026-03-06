@@ -21,10 +21,10 @@ namespace AxuFrameKit._Core.Structure
 
         public IndexedMultiList(int capacity = 8)
         {
-            _list      = new List<T>(capacity);
+            _list = new List<T>(capacity);
             _indexDict = new Dictionary<T, HashSet<int>>();
         }
-        
+
         /// <summary>
         /// 按索引访问元素。
         /// </summary>
@@ -51,7 +51,7 @@ namespace AxuFrameKit._Core.Structure
                 _list[index] = value;
                 if (!_indexDict.TryGetValue(value, out var set))
                 {
-                    set              = new HashSet<int>();
+                    set = new HashSet<int>();
                     _indexDict[value] = set;
                 }
                 set.Add(index);
@@ -59,8 +59,9 @@ namespace AxuFrameKit._Core.Structure
         }
 
         /// <summary>
-        /// 添加一个元素。
+        /// 向列表中添加一个元素
         /// </summary>
+        /// <param name="item">要添加的元素</param>
         public void Add(T item)
         {
             int index = _list.Count;
@@ -76,8 +77,10 @@ namespace AxuFrameKit._Core.Structure
         }
 
         /// <summary>
-        /// 移除一个元素（只移除第一个找到的）。
+        /// 移除指定元素的第一个匹配项
         /// </summary>
+        /// <param name="item">要移除的元素</param>
+        /// <returns>若成功找到并移除则返回 true</returns>
         public bool Remove(T item)
         {
             if (!_indexDict.TryGetValue(item, out var indices) || indices.Count == 0)
@@ -96,8 +99,10 @@ namespace AxuFrameKit._Core.Structure
         }
 
         /// <summary>
-        /// 按索引移除。
+        /// 根据索引移除元素，并自动维护映射关系
         /// </summary>
+        /// <param name="index">索引位置</param>
+        /// <exception cref="ArgumentOutOfRangeException">索引超出有效范围</exception>
         public void RemoveAt(int index)
         {
             if (index < 0 || index >= _list.Count)
@@ -106,9 +111,9 @@ namespace AxuFrameKit._Core.Structure
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
-            T   item      = _list[index];
+            T item = _list[index];
             int lastIndex = _list.Count - 1;
-            T   lastItem  = _list[lastIndex];
+            T lastItem = _list[lastIndex];
 
             _list.RemoveAt(lastIndex);
             _indexDict[item].Remove(index);

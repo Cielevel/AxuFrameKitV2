@@ -14,9 +14,16 @@ namespace AxuFrameKit._Core.Structure
         private int _start;
         private int _count;
 
+        /// <summary>
+        /// 缓冲区的总容量
+        /// </summary>
         public int Capacity => _buffer.Length;
+
+        /// <summary>
+        /// 当前缓冲区中存储的有效元素数量
+        /// </summary>
         public int Count => _count;
-        
+
         public CircularBuffer(int capacity = 8)
         {
             if (capacity <= 0)
@@ -26,10 +33,14 @@ namespace AxuFrameKit._Core.Structure
             }
 
             _buffer = new T[capacity];
-            _start  = 0;
-            _count  = 0;
+            _start = 0;
+            _count = 0;
         }
 
+        /// <summary>
+        /// 向缓冲区添加一个元素。若缓冲区已满，则覆盖最早的元素。
+        /// </summary>
+        /// <param name="item">要添加的元素</param>
         public void Add(T item)
         {
             int index = (_start + _count) % Capacity;
@@ -46,6 +57,12 @@ namespace AxuFrameKit._Core.Structure
             }
         }
 
+        /// <summary>
+        /// 按索引获取元素
+        /// </summary>
+        /// <param name="index">相对于起始位置的索引</param>
+        /// <returns>找到的元素</returns>
+        /// <exception cref="ArgumentOutOfRangeException">索引超出有效范围时抛出</exception>
         public T this[int index]
         {
             get
@@ -56,6 +73,9 @@ namespace AxuFrameKit._Core.Structure
             }
         }
 
+        /// <summary>
+        /// 清空缓冲区所有元素
+        /// </summary>
         public void Clear()
         {
             _start = 0;

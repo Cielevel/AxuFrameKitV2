@@ -11,13 +11,23 @@ namespace AxuFrameKit._Core.Structure
     {
         private readonly List<T> _data;
 
+        /// <summary>
+        /// 队列中的元素数量
+        /// </summary>
         public int Count => _data.Count;
 
+        /// <summary>
+        /// 初始化空优先级队列
+        /// </summary>
         public PriorityQueue()
         {
             _data = new List<T>();
         }
 
+        /// <summary>
+        /// 向队列中入队一个新元素
+        /// </summary>
+        /// <param name="item">要添加的元素</param>
         public void Enqueue(T item)
         {
             _data.Add(item);
@@ -33,6 +43,11 @@ namespace AxuFrameKit._Core.Structure
             }
         }
 
+        /// <summary>
+        /// 出队优先级最高（值最小）的元素
+        /// </summary>
+        /// <returns>出队的元素</returns>
+        /// <exception cref="InvalidOperationException">队列为空时抛出</exception>
         public T Dequeue()
         {
             if (_data.Count == 0)
@@ -66,6 +81,11 @@ namespace AxuFrameKit._Core.Structure
             return frontItem;
         }
 
+        /// <summary>
+        /// 查看但不移除优先级最高的元素
+        /// </summary>
+        /// <returns>优先级最高的元素</returns>
+        /// <exception cref="InvalidOperationException">队列为空时抛出</exception>
         public T Peek()
         {
             if (_data.Count == 0)
@@ -73,11 +93,19 @@ namespace AxuFrameKit._Core.Structure
             return _data[0];
         }
 
+        /// <summary>
+        /// 清空队列
+        /// </summary>
         public void Clear()
         {
             _data.Clear();
         }
 
+        /// <summary>
+        /// 检查队列是否包含指定元素
+        /// </summary>
+        /// <param name="item">要检查的元素</param>
+        /// <returns>若存在则返回 true</returns>
         public bool Contains(T item)
         {
             return _data.Contains(item);
