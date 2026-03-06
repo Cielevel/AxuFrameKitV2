@@ -384,8 +384,8 @@ namespace AxuFrameKit.Common.Utility.Net
 
         private int CalculateReconnectDelayMs(int attempt)
         {
-            double delay = _options.ReconnectInitialDelayMs * Math.Pow(_options.ReconnectBackoffFactor, Math.Max(0, attempt - 1));
-            return (int)Math.Min(_options.ReconnectMaxDelayMs, delay);
+            double delay = _options.ReconnectInitialDelayMs * System.Math.Pow(_options.ReconnectBackoffFactor, System.Math.Max(0, attempt - 1));
+            return (int)System.Math.Min(_options.ReconnectMaxDelayMs, delay);
         }
 
         private void SetState(SocketConnectionState newState)
