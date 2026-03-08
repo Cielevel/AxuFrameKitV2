@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,39 +43,45 @@ namespace AxuFrameKit.Common.Utility.Net
         {
             if (stream == null) throw new ArgumentNullException(nameof(stream));
 
-            byte[] header = await ReadExactlyAsync(stream, 4, cancellationToken).ConfigureAwait(false);
-            if (header == null)
-                return null;
+            byte[] header = ArrayPool<byte>.Shared.Rent(4);
 
-            int length = (header[0] << 24) | (header[1] << 16) | (header[2] << 8) | header[3];
-            if (length < 0 || length > _maxPacketSize)
-                throw new InvalidDataException($"Invalid packet length: {length}");
+            try
+            {
+                bool headerRead = await ReadExactlyAsync(stream, header, 4, cancellationToken).ConfigureAwait(false);
+                if (!headerRead)
+                    return null;
 
-            if (length == 0)
-                return Array.Empty<byte>();
+                int length = (header[0] << 24) | (header[1] << 16) | (header[2] << 8) | header[3];
+                if (length < 0 || length > _maxPacketSize)
+                    throw new InvalidDataException($"Invalid packet length: {length}");
 
-            byte[] body = await ReadExactlyAsync(stream, length, cancellationToken).ConfigureAwait(false);
-            if (body == null)
-                return null;
+                if (length == 0)
+                    return Array.Empty<byte>();
 
-            return body;
+                byte[] body = new byte[length];
+                bool bodyRead = await ReadExactlyAsync(stream, body, length, cancellationToken).ConfigureAwait(false);
+                return bodyRead ? body : null;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(header);
+            }
         }
 
-        private static async Task<byte[]> ReadExactlyAsync(Stream stream, int size, CancellationToken cancellationToken)
+        private static async Task<bool> ReadExactlyAsync(Stream stream, byte[] buffer, int size, CancellationToken cancellationToken)
         {
-            byte[] buffer = new byte[size];
             int offset = 0;
 
             while (offset < size)
             {
                 int read = await stream.ReadAsync(buffer, offset, size - offset, cancellationToken).ConfigureAwait(false);
                 if (read <= 0)
-                    return null;
+                    return false;
 
                 offset += read;
             }
 
-            return buffer;
+            return true;
         }
     }
 }

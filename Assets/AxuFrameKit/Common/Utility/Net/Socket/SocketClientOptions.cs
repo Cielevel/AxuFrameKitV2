@@ -11,6 +11,7 @@ namespace AxuFrameKit.Common.Utility.Net
         public int ReconnectInitialDelayMs { get; set; } = 1000;
         public int ReconnectMaxDelayMs { get; set; } = 15000;
         public double ReconnectBackoffFactor { get; set; } = 1.8;
+        public int MaxReconnectAttempts { get; set; } = 0;
 
         public bool HeartbeatEnabled { get; set; }
         public int HeartbeatIntervalMs { get; set; } = 5000;
@@ -26,6 +27,8 @@ namespace AxuFrameKit.Common.Utility.Net
 
         public bool VerboseLogging { get; set; }
         public Action<string> Logger { get; set; }
+        public bool DispatchEventsOnUnityMainThread { get; set; } = true;
+        public int DisposeWaitTimeoutMs { get; set; } = 3000;
 
         public void Validate()
         {
@@ -41,14 +44,23 @@ namespace AxuFrameKit.Common.Utility.Net
             if (ReconnectBackoffFactor < 1d)
                 throw new ArgumentOutOfRangeException(nameof(ReconnectBackoffFactor));
 
+            if (MaxReconnectAttempts < 0)
+                throw new ArgumentOutOfRangeException(nameof(MaxReconnectAttempts));
+
             if (HeartbeatIntervalMs <= 0)
                 throw new ArgumentOutOfRangeException(nameof(HeartbeatIntervalMs));
 
             if (HeartbeatTimeoutMs <= 0)
                 throw new ArgumentOutOfRangeException(nameof(HeartbeatTimeoutMs));
 
+            if (HeartbeatTimeoutMs < HeartbeatIntervalMs)
+                throw new ArgumentOutOfRangeException(nameof(HeartbeatTimeoutMs), "HeartbeatTimeoutMs must be >= HeartbeatIntervalMs.");
+
             if (MaxPacketSizeBytes <= 0)
                 throw new ArgumentOutOfRangeException(nameof(MaxPacketSizeBytes));
+
+            if (DisposeWaitTimeoutMs < 0)
+                throw new ArgumentOutOfRangeException(nameof(DisposeWaitTimeoutMs));
         }
     }
 }

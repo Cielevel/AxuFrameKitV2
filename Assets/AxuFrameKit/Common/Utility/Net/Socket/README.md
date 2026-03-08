@@ -9,6 +9,8 @@
 - 心跳检测
 - 自动重连（指数退避）
 - 主线程事件回调（在 Unity 主线程创建实例时）
+- Unity 主线程分发兜底（可配置）
+- 可配置最大重连次数与重连失败事件
 
 ## 主要类型
 
@@ -41,6 +43,8 @@ public class NetEntry
             HeartbeatTimeoutMs = 15000,
             HeartbeatRequestPayload = Encoding.UTF8.GetBytes("ping"),
             HeartbeatResponsePayload = Encoding.UTF8.GetBytes("pong"),
+            MaxReconnectAttempts = 10, // 0 表示无限重连
+            DispatchEventsOnUnityMainThread = true,
             VerboseLogging = true
         };
 
@@ -77,5 +81,6 @@ var client = new SocketClient(options, codec);
 ## 注意事项
 
 - `SocketClient` 仅做传输层，业务协议解析建议放在上层（如 ProtoBuf/JSON/MessagePack）。
-- `MessageReceived` 回调默认在创建 `SocketClient` 时捕获的 `SynchronizationContext` 上分发。
-- 在 Unity 中请优先在主线程创建实例，以保证事件回调线程一致性。
+- `MessageReceived`/`Connected`/`Disconnected`/`Error` 会优先分发到创建实例时捕获的 `SynchronizationContext`，若为空且 `DispatchEventsOnUnityMainThread=true`，会回退到内部 Unity 主线程分发器。
+- `MaxReconnectAttempts > 0` 时，超过上限后会触发 `Disconnected`，`Reason = ReconnectFailed`。
+- 在 Unity 中推荐在主线程创建实例，并在 `OnDestroy` 中调用 `Dispose()`。

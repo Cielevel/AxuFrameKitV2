@@ -11,6 +11,7 @@
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 /[Dd]ocs/
+/.[Cc]laude/
 *.log
 
 # MemoryCaptures can get excessive in size.

@@ -28,12 +28,13 @@ namespace AxuFrameKit.Common.Utility.Net
         private string _host;
         private int _port;
         private int _reconnectAttempt;
-        private DateTime _lastReceiveUtc = DateTime.UtcNow;
+        private long _lastReceiveTicks = DateTime.UtcNow.Ticks;
 
-        private bool _disposed;
-        private bool _manualDisconnectRequested;
+        private volatile bool _disposed;
+        private volatile bool _manualDisconnectRequested;
+        private int _state = (int)SocketConnectionState.Disconnected;
 
-        public SocketConnectionState State { get; private set; } = SocketConnectionState.Disconnected;
+        public SocketConnectionState State => (SocketConnectionState)Volatile.Read(ref _state);
         public bool IsConnected => State == SocketConnectionState.Connected;
 
         public event Action Connected;
@@ -82,8 +83,9 @@ namespace AxuFrameKit.Common.Utility.Net
         public async Task SendAsync(byte[] payload, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
+            var stream = _stream;
 
-            if (!IsConnected || _stream == null)
+            if (!IsConnected || stream == null)
                 throw new InvalidOperationException("Socket is not connected.");
 
             byte[] frame = _codec.Encode(payload);
@@ -91,8 +93,8 @@ namespace AxuFrameKit.Common.Utility.Net
 
             try
             {
-                await _stream.WriteAsync(frame, 0, frame.Length, cancellationToken).ConfigureAwait(false);
-                await _stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+                await stream.WriteAsync(frame, 0, frame.Length, cancellationToken).ConfigureAwait(false);
+                await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -144,7 +146,7 @@ namespace AxuFrameKit.Common.Utility.Net
                     _stream = client.GetStream();
                     _sessionCts?.Dispose();
                     _sessionCts = sessionCts;
-                    _lastReceiveUtc = DateTime.UtcNow;
+                    Volatile.Write(ref _lastReceiveTicks, DateTime.UtcNow.Ticks);
                     _reconnectAttempt = 0;
                 }
 
@@ -195,7 +197,7 @@ namespace AxuFrameKit.Common.Utility.Net
                         return;
                     }
 
-                    _lastReceiveUtc = DateTime.UtcNow;
+                    Volatile.Write(ref _lastReceiveTicks, DateTime.UtcNow.Ticks);
 
                     if (ShouldIgnoreHeartbeatPacket(payload))
                         continue;
@@ -225,7 +227,9 @@ namespace AxuFrameKit.Common.Utility.Net
                     if (!IsConnected)
                         return;
 
-                    if ((DateTime.UtcNow - _lastReceiveUtc).TotalMilliseconds > _options.HeartbeatTimeoutMs)
+                    long lastTicks = Volatile.Read(ref _lastReceiveTicks);
+                    var lastReceiveUtc = new DateTime(lastTicks, DateTimeKind.Utc);
+                    if ((DateTime.UtcNow - lastReceiveUtc).TotalMilliseconds > _options.HeartbeatTimeoutMs)
                     {
                         await CloseAndNotifyAsync(SocketDisconnectReason.HeartbeatTimeout, null, false).ConfigureAwait(false);
                         return;
@@ -354,6 +358,20 @@ namespace AxuFrameKit.Common.Utility.Net
                 {
                     while (!_disposed && !_manualDisconnectRequested && _options.AutoReconnect)
                     {
+                        if (_options.MaxReconnectAttempts > 0 && _reconnectAttempt > _options.MaxReconnectAttempts)
+                        {
+                            Raise(() => Disconnected?.Invoke(new SocketDisconnectedEvent
+                            {
+                                Reason = SocketDisconnectReason.ReconnectFailed,
+                                Exception = null,
+                                IsRemote = false,
+                                WillReconnect = false,
+                                ReconnectAttempt = _reconnectAttempt - 1
+                            }));
+                            Log($"Reconnect failed after {_reconnectAttempt - 1} attempts.");
+                            return;
+                        }
+
                         int delayMs = CalculateReconnectDelayMs(_reconnectAttempt);
                         Log($"Reconnect attempt {_reconnectAttempt}, wait {delayMs}ms");
                         await Task.Delay(delayMs, _disposeCts.Token).ConfigureAwait(false);
@@ -405,7 +423,7 @@ namespace AxuFrameKit.Common.Utility.Net
             if (State == newState)
                 return false;
 
-            State = newState;
+            Volatile.Write(ref _state, (int)newState);
             return true;
         }
 
@@ -413,19 +431,44 @@ namespace AxuFrameKit.Common.Utility.Net
         {
             if (action == null) return;
 
-            if (_syncContext != null)
-            {
-                _syncContext.Post(_ =>
-                {
-                    try { action.Invoke(); }
-                    catch (Exception ex) { LogException(ex); }
-                }, null);
-            }
-            else
+            void SafeInvoke()
             {
                 try { action.Invoke(); }
                 catch (Exception ex) { LogException(ex); }
             }
+
+            if (_options.DispatchEventsOnUnityMainThread)
+            {
+                if (_syncContext != null)
+                {
+                    _syncContext.Post(_ => SafeInvoke(), null);
+                    return;
+                }
+
+                if (SocketUnityMainThreadDispatcher.IsMainThread)
+                {
+                    SafeInvoke();
+                    return;
+                }
+
+                if (SocketUnityMainThreadDispatcher.IsReady)
+                {
+                    SocketUnityMainThreadDispatcher.Post(SafeInvoke);
+                    return;
+                }
+
+                // Dispatcher is not ready yet (e.g. early startup or edit mode); fallback to current thread.
+                SafeInvoke();
+                return;
+            }
+
+            if (_syncContext != null)
+            {
+                _syncContext.Post(_ => SafeInvoke(), null);
+                return;
+            }
+
+            SafeInvoke();
         }
 
         private void HandleError(Exception ex)
@@ -491,9 +534,46 @@ namespace AxuFrameKit.Common.Utility.Net
                 .GetAwaiter()
                 .GetResult();
 
+            WaitBackgroundTasks();
             _sessionCts?.Dispose();
             _disposeCts.Dispose();
             _sendSemaphore.Dispose();
+        }
+
+        private void WaitBackgroundTasks()
+        {
+            Task[] tasks = { _receiveTask, _heartbeatTask, _reconnectTask };
+            int timeoutMs = _options.DisposeWaitTimeoutMs;
+
+            try
+            {
+                int activeTaskCount = 0;
+                for (int i = 0; i < tasks.Length; i++)
+                {
+                    if (tasks[i] != null)
+                        activeTaskCount++;
+                }
+
+                if (activeTaskCount == 0)
+                    return;
+
+                var activeTasks = new Task[activeTaskCount];
+                int index = 0;
+                for (int i = 0; i < tasks.Length; i++)
+                {
+                    if (tasks[i] != null)
+                        activeTasks[index++] = tasks[i];
+                }
+
+                if (timeoutMs == 0)
+                    Task.WaitAll(activeTasks);
+                else
+                    Task.WaitAll(activeTasks, timeoutMs);
+            }
+            catch (Exception ex)
+            {
+                LogException(ex);
+            }
         }
     }
 }
