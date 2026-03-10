@@ -45,7 +45,7 @@ namespace AxuExperimental.OllamaModelCall
             public bool isConfirmed = false;
         }
 
-        [MenuItem("AxuExpiremental/Ollama/Script Filler")]
+        [MenuItem("AxuExperimental/Ollama/Script Filler")]
         public static void ShowWindow()
         {
             OllamaScriptFillerWindow wnd = GetWindow<OllamaScriptFillerWindow>();

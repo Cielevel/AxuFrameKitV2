@@ -47,7 +47,7 @@ namespace AxuFrameKit.Modules.AITools
             public bool isConfirmed = false;
         }
 
-        [MenuItem("AxuFrameKit/AI Tools/Script Filler")]
+        [MenuItem("AxuFrameKit/Modules/AI Tools/Script Filler")]
         public static void ShowWindow()
         {
             AIScriptFillerWindow wnd = GetWindow<AIScriptFillerWindow>();

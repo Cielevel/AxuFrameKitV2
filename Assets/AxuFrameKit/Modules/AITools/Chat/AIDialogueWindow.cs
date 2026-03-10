@@ -23,7 +23,7 @@ namespace AxuFrameKit.Modules.AITools
 
         private List<Message> _messageHistory = new List<Message>();
 
-        [MenuItem("AxuFrameKit/AI Tools/Chat Window")]
+        [MenuItem("AxuFrameKit/Modules/AI Tools/Chat Window")]
         public static void ShowWindow()
         {
             AIDialogueWindow wnd = GetWindow<AIDialogueWindow>();

@@ -54,7 +54,7 @@ namespace AxuFrameKit.Common.Editor.Window
 
         #endregion
 
-        [MenuItem("AxuFrameKit/Avatar Downloader")]
+        [MenuItem("AxuFrameKit/Utility/Avatar Downloader")]
         public static void ShowWindow()
         {
             var window = GetWindow<AvatarDownloaderWindow>("Avatar Downloader");
@@ -74,7 +74,10 @@ namespace AxuFrameKit.Common.Editor.Window
         private void CreateGUI()
         {
             // Load and add USS
-            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/AxuFrameKit/Common/Editor/Window/CommonWindowStyles.uss");
+            var scriptPath = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(this));
+            var dirPath = System.IO.Path.GetDirectoryName(scriptPath);
+
+            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/CommonWindowStyles.uss");
             if (styleSheet != null)
             {
                 rootVisualElement.styleSheets.Add(styleSheet);

@@ -47,15 +47,18 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
             _root = rootVisualElement;
 
             // Load UXML & USS
-            var uxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/AxuFrameKit/Common/Editor/KitBoxRevV2/UI/AxuKitBoxV2.uxml");
+            var scriptPath = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(this));
+            var dirPath = System.IO.Path.GetDirectoryName(scriptPath);
+
+            var uxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>($"{dirPath}/UI/AxuKitBoxV2.uxml");
             if (uxml != null) uxml.CloneTree(_root);
 
             // Theme Selection - Switch between default and UE5 theme
             // Default Theme:
-            var uss = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/AxuFrameKit/Common/Editor/KitBoxRevV2/UI/AxuKitBoxV2.uss");
+            var uss = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/UI/AxuKitBoxV2.uss");
 
             // UE5 Theme (uncomment to use):
-            // var uss = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/AxuFrameKit/Common/Editor/KitBoxRevV2/UI/AxuKitBoxV2_UE5Theme.uss");
+            // var uss = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/UI/AxuKitBoxV2_UE5Theme.uss");
 
             if (uss != null) _root.styleSheets.Add(uss);
 

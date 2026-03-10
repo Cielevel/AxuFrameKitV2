@@ -10,7 +10,7 @@ namespace AxuFrameKit.Modules.LiveStream
 {
     public class LiveStreamSimulatorWindow : EditorWindow
     {
-        [MenuItem("AxuFrameKit/LiveStream/Simulator")]
+        [MenuItem("AxuFrameKit/Modules/LiveStream/Simulator")]
         public static void ShowWindow()
         {
             var wnd = GetWindow<LiveStreamSimulatorWindow>();
@@ -120,7 +120,10 @@ namespace AxuFrameKit.Modules.LiveStream
             _instance = this;
 
             // Load and add USS
-            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/AxuFrameKit/Modules/LiveStream/Script/EditorWindow/LiveStreamSimulatorWindow.uss");
+            var scriptPath = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(this));
+            var dirPath = System.IO.Path.GetDirectoryName(scriptPath);
+
+            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/LiveStreamSimulatorWindow.uss");
             if (styleSheet != null)
             {
                 rootVisualElement.styleSheets.Add(styleSheet);

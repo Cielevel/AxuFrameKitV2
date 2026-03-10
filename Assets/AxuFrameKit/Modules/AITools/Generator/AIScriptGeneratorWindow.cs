@@ -56,7 +56,7 @@ namespace AxuFrameKit.Modules.AITools
             PascalCase    // MyButton
         }
 
-        [MenuItem("AxuFrameKit/AI Tools/Script Generator")]
+        [MenuItem("AxuFrameKit/Modules/AI Tools/Script Generator")]
         public static void ShowWindow()
         {
             AIScriptGeneratorWindow wnd = GetWindow<AIScriptGeneratorWindow>();

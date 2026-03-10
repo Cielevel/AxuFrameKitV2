@@ -9,7 +9,7 @@ namespace AxuExperimental.BehaviorTree.Editor
         BehaviorTreeGraphView treeView;
         InspectorView inspectorView;
 
-        [MenuItem("AxuFrameKit/BehaviorTree/Editor")]
+        [MenuItem("AxuExperimental/BehaviorTree/Editor")]
         public static void OpenWindow()
         {
             BehaviorTreeEditor wnd = GetWindow<BehaviorTreeEditor>();

@@ -40,7 +40,7 @@ namespace AxuFrameKit.Common.Editor.Window
         private TextField _newGroupNameField;
         private ScrollView _contentScrollView;
 
-        [MenuItem("AxuFrameKit/AssetFavorites")]
+        [MenuItem("AxuFrameKit/Utility/Asset Favorites")]
         public static void ShowWindow()
         {
             var window = GetWindow<AssetFavoritesWindow>("Asset Favorites");
@@ -62,7 +62,10 @@ namespace AxuFrameKit.Common.Editor.Window
             LoadData();
 
             // Load and add USS
-            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/AxuFrameKit/Common/Editor/Window/CommonWindowStyles.uss");
+            var scriptPath = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(this));
+            var dirPath = System.IO.Path.GetDirectoryName(scriptPath);
+
+            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/CommonWindowStyles.uss");
             if (styleSheet != null)
             {
                 rootVisualElement.styleSheets.Add(styleSheet);

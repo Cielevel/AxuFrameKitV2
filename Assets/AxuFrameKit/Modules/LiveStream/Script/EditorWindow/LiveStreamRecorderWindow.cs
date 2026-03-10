@@ -15,7 +15,7 @@ namespace AxuFrameKit.Modules.LiveStream
     /// </summary>
     public class LiveStreamRecorderWindow : EditorWindow
     {
-        [MenuItem("AxuFrameKit/LiveStream/Operation Recorder")]
+        [MenuItem("AxuFrameKit/Modules/LiveStream/Operation Recorder")]
         public static void ShowWindow()
         {
             var wnd = GetWindow<LiveStreamRecorderWindow>();
@@ -94,8 +94,10 @@ namespace AxuFrameKit.Modules.LiveStream
         public void CreateGUI()
         {
             // 加载样式表
-            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(
-                "Assets/AxuFrameKit/Modules/LiveStream/Script/EditorWindow/LiveStreamSimulatorWindow.uss");
+            var scriptPath = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(this));
+            var dirPath = System.IO.Path.GetDirectoryName(scriptPath);
+
+            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/LiveStreamSimulatorWindow.uss");
             if (styleSheet != null)
             {
                 rootVisualElement.styleSheets.Add(styleSheet);

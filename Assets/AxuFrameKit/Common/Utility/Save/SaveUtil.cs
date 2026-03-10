@@ -4,7 +4,8 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 using AxuFrameKit.Common.Utility.Serializer;
-using AxuFrameKit.Common.Utility.Crypto;
+using AxuFrameKit._Core.Utility.Encrypt.Core;
+using AxuFrameKit._Core.Utility.Encrypt.Symmetric;
 
 namespace AxuFrameKit.Common.Utility.Save
 {
@@ -54,17 +55,19 @@ namespace AxuFrameKit.Common.Utility.Save
     {
         private readonly ISerializer _serializer;
         private readonly IStorage _storage;
-        private readonly ICrypto _crypto; // 可以为空
+        private readonly ISymmetricCrypto _crypto; // 可以为空
         private readonly Dictionary<string, object> _cache;
         private readonly Dictionary<string, Delegate> _callbacks;
         private readonly string _keyPrefix;
+        private readonly string _cryptoKey;
 
         // 构造函数注入所有依赖
-        public SaveUtil(ISerializer serializer, IStorage storage, ICrypto crypto = null, string keyPrefix = "")
+        public SaveUtil(ISerializer serializer, IStorage storage, ISymmetricCrypto crypto = null, string cryptoKey = "", string keyPrefix = "")
         {
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _crypto = crypto;
+            _cryptoKey = cryptoKey ?? string.Empty;
             _keyPrefix = keyPrefix ?? string.Empty;
             _cache = new Dictionary<string, object>();
             _callbacks = new Dictionary<string, Delegate>();
@@ -101,11 +104,11 @@ namespace AxuFrameKit.Common.Utility.Save
             string content = _storage.Read(fullKey);
 
             // 4. 解密 (如果有配置)
-            if (_crypto != null)
+            if (_crypto != null && !string.IsNullOrEmpty(_cryptoKey))
             {
                 try
                 {
-                    content = _crypto.Decrypt(content);
+                    content = _crypto.DecryptString(content, _cryptoKey);
                 }
                 catch (Exception)
                 {
@@ -149,9 +152,9 @@ namespace AxuFrameKit.Common.Utility.Save
             string content = _serializer.Serialize(data);
 
             // 4. 加密 (如果有配置)
-            if (_crypto != null)
+            if (_crypto != null && !string.IsNullOrEmpty(_cryptoKey))
             {
-                content = _crypto.Encrypt(content);
+                content = _crypto.EncryptString(content, _cryptoKey);
             }
 
             // 5. 写入存储介质
@@ -180,9 +183,9 @@ namespace AxuFrameKit.Common.Utility.Save
             foreach (var kvp in _cache)
             {
                 string content = _serializer.Serialize(kvp.Value);
-                if (_crypto != null)
+                if (_crypto != null && !string.IsNullOrEmpty(_cryptoKey))
                 {
-                    content = _crypto.Encrypt(content);
+                    content = _crypto.EncryptString(content, _cryptoKey);
                 }
                 _storage.Write(kvp.Key, content);
             }
@@ -336,7 +339,8 @@ namespace AxuFrameKit.Common.Utility.Save
     {
         private ISerializer _serializer;
         private IStorage _storage;
-        private ICrypto _crypto;
+        private ISymmetricCrypto _crypto;
+        private string _cryptoKey;
         private string _keyPrefix;
 
         #region 核心设定
@@ -353,9 +357,10 @@ namespace AxuFrameKit.Common.Utility.Save
             return this;
         }
 
-        public SaveUtilBuilder UseEncryption(ICrypto crypto)
+        public SaveUtilBuilder UseEncryption(ISymmetricCrypto crypto, string cryptoKey)
         {
             _crypto = crypto;
+            _cryptoKey = cryptoKey;
             return this;
         }
 
@@ -401,13 +406,15 @@ namespace AxuFrameKit.Common.Utility.Save
 
         public SaveUtilBuilder UseXorCrypto(string key)
         {
-            _crypto = new XorCrypto(key);
+            _crypto = new XorCrypto();
+            _cryptoKey = key;
             return this;
         }
 
         public SaveUtilBuilder NoCrypto()
         {
             _crypto = null;
+            _cryptoKey = null;
             return this;
         }
 
@@ -419,7 +426,7 @@ namespace AxuFrameKit.Common.Utility.Save
             if (_serializer == null) throw new Exception("Serializer not set!");
             if (_storage == null) throw new Exception("Storage mechanism not set!");
 
-            return new SaveUtil(_serializer, _storage, _crypto, _keyPrefix);
+            return new SaveUtil(_serializer, _storage, _crypto, _cryptoKey, _keyPrefix);
         }
 
         /// <summary>

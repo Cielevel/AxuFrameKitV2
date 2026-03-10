@@ -41,12 +41,18 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             _root = new VisualElement();
 
             // Allow this element to access the same USS styles as the Window
-            // Assuming the window style needs to be loaded explicitly if not already in context, but typically KitBox might not include it.
             // SceneJumperWindow loads: "Assets/AxuFrameKit/Common/Editor/Window/CommonWindowStyles.uss"
-            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/AxuFrameKit/Common/Editor/Window/CommonWindowStyles.uss");
-            if (styleSheet != null)
+            string[] guids = AssetDatabase.FindAssets("SceneJumpRevPage t:MonoScript");
+            if (guids.Length > 0)
             {
-                _root.styleSheets.Add(styleSheet);
+                var scriptPath = AssetDatabase.GUIDToAssetPath(guids[0]);
+                var dirPath = System.IO.Path.GetDirectoryName(scriptPath);
+                var styleSheetPath = $"{dirPath}/../../../../Window/CommonWindowStyles.uss";
+                var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(styleSheetPath);
+                if (styleSheet != null)
+                {
+                    _root.styleSheets.Add(styleSheet);
+                }
             }
 
             _root.AddToClassList("ue5-root");

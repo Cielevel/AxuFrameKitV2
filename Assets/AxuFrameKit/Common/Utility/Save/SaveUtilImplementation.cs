@@ -2,14 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using AxuFrameKit.Common.Utility.Crypto;
 
 namespace AxuFrameKit.Common.Utility.Save
 {
     // ==========================================
     // 存储实现 (Storage Implementations)
     // 注意：序列化器在 AxuFrameKit.Common.Utility.Serializer 中实现
-    //      加密器在 AxuFrameKit.Common.Utility.Crypto 中实现
     // ==========================================
 
     // --- 实现B: 本地文件存储 ---
@@ -68,7 +66,7 @@ namespace AxuFrameKit.Common.Utility.Save
     // --- 实现C: JSON 文件存储（别名，便于区分） ---
     public class JsonFileStorage : LocalFileStorage
     {
-        public JsonFileStorage(string directory = null, string extension = ".json") 
+        public JsonFileStorage(string directory = null, string extension = ".json")
             : base(directory, extension)
         {
         }

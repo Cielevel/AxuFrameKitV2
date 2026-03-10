@@ -1,7 +1,7 @@
 using AxuFrameKit.Common.Utility.Save;
 using UnityEngine;
 using AxuFrameKit.Common.Utility.Serializer;
-using AxuFrameKit.Common.Utility.Crypto;
+using AxuFrameKit._Core.Utility.Encrypt.Symmetric;
 
 namespace TestAndSample.Sample_Common.Utility.Save
 {
@@ -37,7 +37,7 @@ namespace TestAndSample.Sample_Common.Utility.Save
             _secureSaver = new SaveUtilBuilder()
                            .UseSerializer(new UnityJsonSerializer())
                            .UseStorage(new LocalFileStorage(".dat"))               // 使用不同的后缀
-                           .UseEncryption(new AesCrypto("MySuperSecretKey123456")) // 注入加密
+                           .UseEncryption(new AesCrypto(), "MySuperSecretKey123456") // 注入加密
                            .Build();
 
             Debug.Log("Save Utils Initialized!");
