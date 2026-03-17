@@ -22,6 +22,7 @@ namespace AxuFrameKit.Common.Editor.Window
         private const string PrefsKeyCreateAnimator = "SpriteToAnim_CreateAnimator";
         private const string PrefsKeyAnimatorName = "SpriteToAnim_AnimatorName";
         private const string PrefsKeyLoopAnimation = "SpriteToAnim_LoopAnimation";
+        private const string PrefsKeySetAsDefault = "SpriteToAnim_SetAsDefault";
 
         #endregion
 
@@ -34,6 +35,7 @@ namespace AxuFrameKit.Common.Editor.Window
         private bool _createAnimator = false;
         private string _animatorName = "NewAnimator";
         private bool _loopAnimation = true;
+        private bool _setAsDefault = false;
 
         // UI Elements
         private TextField _savePathField;
@@ -43,6 +45,7 @@ namespace AxuFrameKit.Common.Editor.Window
         private VisualElement _animatorSettingsContainer;
         private TextField _animatorNameField;
         private Toggle _loopAnimationToggle;
+        private Toggle _setAsDefaultToggle;
         private Button _createBtn;
         private ScrollView _spriteListScrollView;
         private Label _statusLabel;
@@ -378,6 +381,24 @@ namespace AxuFrameKit.Common.Editor.Window
                 _animatorName = evt.newValue;
             });
             animatorNameRow.Add(_animatorNameField);
+
+            // Set As Default Row
+            var defaultRow = new VisualElement();
+            defaultRow.AddToClassList("item-row");
+            _animatorSettingsContainer.Add(defaultRow);
+
+            var defaultLabel = new Label("创建动画为Default:");
+            defaultLabel.AddToClassList("toolbar-label");
+            defaultLabel.style.minWidth = 120;
+            defaultRow.Add(defaultLabel);
+
+            _setAsDefaultToggle = new Toggle();
+            _setAsDefaultToggle.value = _setAsDefault;
+            _setAsDefaultToggle.RegisterValueChangedCallback(evt =>
+            {
+                _setAsDefault = evt.newValue;
+            });
+            defaultRow.Add(_setAsDefaultToggle);
 
             // Help box
             var helpBox = new VisualElement();
@@ -821,16 +842,26 @@ namespace AxuFrameKit.Common.Editor.Window
             // Get the state machine
             var rootStateMachine = controller.layers[0].stateMachine;
 
-            // Create Default empty state with position
-            var defaultState = rootStateMachine.AddState("Default", new Vector3(250, 100, 0));
-            defaultState.motion = null; // Empty state
+            if (_setAsDefault)
+            {
+                // Create animation state as default
+                var animState = rootStateMachine.AddState(_clipName, new Vector3(250, 100, 0));
+                animState.motion = animClip;
+                rootStateMachine.defaultState = animState;
+            }
+            else
+            {
+                // Create Default empty state with position (Original Logic)
+                var defaultState = rootStateMachine.AddState("Default", new Vector3(250, 100, 0));
+                defaultState.motion = null; // Empty state
 
-            // Create animation state with position
-            var animState = rootStateMachine.AddState(_clipName, new Vector3(250, 200, 0));
-            animState.motion = animClip;
+                // Create animation state with position
+                var animState = rootStateMachine.AddState(_clipName, new Vector3(250, 200, 0));
+                animState.motion = animClip;
 
-            // Set Default as the entry state
-            rootStateMachine.defaultState = defaultState;
+                // Set Default as the entry state
+                rootStateMachine.defaultState = defaultState;
+            }
 
             return controller;
         }
@@ -847,6 +878,7 @@ namespace AxuFrameKit.Common.Editor.Window
             _createAnimator = EditorPrefs.GetBool(PrefsKeyCreateAnimator, false);
             _animatorName = EditorPrefs.GetString(PrefsKeyAnimatorName, "NewAnimator");
             _loopAnimation = EditorPrefs.GetBool(PrefsKeyLoopAnimation, true);
+            _setAsDefault = EditorPrefs.GetBool(PrefsKeySetAsDefault, false);
         }
 
         private void SavePreferences()
@@ -857,6 +889,7 @@ namespace AxuFrameKit.Common.Editor.Window
             EditorPrefs.SetBool(PrefsKeyCreateAnimator, _createAnimator);
             EditorPrefs.SetString(PrefsKeyAnimatorName, _animatorName);
             EditorPrefs.SetBool(PrefsKeyLoopAnimation, _loopAnimation);
+            EditorPrefs.SetBool(PrefsKeySetAsDefault, _setAsDefault);
         }
 
         #endregion

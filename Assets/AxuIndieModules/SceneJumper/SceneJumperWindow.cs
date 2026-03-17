@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -56,7 +57,10 @@ namespace AxuIndieModules.SceneJumper
         private void CreateGUI()
         {
             // Load and add USS
-            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/AxuIndieModules/SceneJumper/CommonWindowStyles.uss");
+            var scriptPath = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(this));
+            var dirPath = System.IO.Path.GetDirectoryName(scriptPath);
+
+            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/CommonWindowStyles.uss");
             if (styleSheet != null)
             {
                 rootVisualElement.styleSheets.Add(styleSheet);
@@ -457,3 +461,4 @@ namespace AxuIndieModules.SceneJumper
         #endregion
     }
 }
+#endif
