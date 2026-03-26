@@ -1,7 +1,7 @@
 {
   "env": {
     "ANTHROPIC_BASE_URL": "https://api.minimaxi.com/anthropic",
-    "ANTHROPIC_AUTH_TOKEN": "MINIMAX_API_KEY",
+    "ANTHROPIC_AUTH_TOKEN": "***REMOVED-SECRET***",
     "API_TIMEOUT_MS": "3000000",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1,
     "ANTHROPIC_MODEL": "MiniMax-M2.7",
