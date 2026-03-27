@@ -20,6 +20,8 @@ namespace AxuFrameKit.Common.Utility.Multiton
 
         private static readonly Dictionary<string, T> Instances = new(8);
 
+        private bool _isDestroyed = false;
+
         public static T GetInstance(string key)
         {
             if (Instances.TryGetValue(key, out var instance) && instance != null)
@@ -58,8 +60,15 @@ namespace AxuFrameKit.Common.Utility.Multiton
             {
                 if (Instances.TryGetValue(key, out var instance))
                 {
-                    instance.OnThisDestroyed();
-                    Destroy(instance.gameObject);
+                    if (instance != null)
+                    {
+                        if (!instance._isDestroyed)
+                        {
+                            instance._isDestroyed = true;
+                            instance.OnThisDestroyed();
+                        }
+                        Destroy(instance.gameObject);
+                    }
                 }
             }
         }
@@ -70,7 +79,11 @@ namespace AxuFrameKit.Common.Utility.Multiton
             {
                 foreach (var instance in Instances.Values.Where(instance => instance != null))
                 {
-                    instance.OnThisDestroyed();
+                    if (!instance._isDestroyed)
+                    {
+                        instance._isDestroyed = true;
+                        instance.OnThisDestroyed();
+                    }
                     Destroy(instance.gameObject);
                 }
 
@@ -83,6 +96,12 @@ namespace AxuFrameKit.Common.Utility.Multiton
             // 理论上此处是不需要锁的，但是Instances在其他同步块内会使用，所以依旧保持锁。
             lock (Lock)
                 Instances.Remove(Key);
+
+            if (_isDestroyed)
+                return;
+            
+            _isDestroyed = true;
+            OnThisDestroyed();
         }
 
         protected virtual void OnThisCreated() { }

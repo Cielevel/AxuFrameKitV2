@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine.UIElements;
 
-namespace AxuFrameKit.Common.Utility.Analysis.InGameConsole
+namespace AxuExperimental.InGameConsole
 {
     /// <summary>
     /// UI元素对象池，用于高性能虚拟化滚动

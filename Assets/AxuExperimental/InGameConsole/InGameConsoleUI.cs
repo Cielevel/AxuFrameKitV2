@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace AxuFrameKit.Common.Utility.Analysis.InGameConsole
+namespace AxuExperimental.InGameConsole
 {
     /// <summary>
     /// InGameConsole的UI管理类

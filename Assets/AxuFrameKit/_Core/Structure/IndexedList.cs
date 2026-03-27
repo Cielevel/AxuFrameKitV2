@@ -34,6 +34,12 @@ namespace AxuFrameKit._Core.Structure
             set
             {
                 T oldItem = _list[index];
+                if (EqualityComparer<T>.Default.Equals(oldItem, value)) return; // 相同元素不处理
+                if (_indexDict.ContainsKey(value))
+                {
+                    Logger.Error("IndexedList: 重复元素");
+                    throw new ArgumentException("Duplicate item.", nameof(value));
+                }
                 _indexDict.Remove(oldItem);
                 _list[index] = value;
                 _indexDict[value] = index;
@@ -78,7 +84,8 @@ namespace AxuFrameKit._Core.Structure
 
         /// <summary>
         /// 移除指定元素。
-        /// 注意此操作后数组顺序可能会改变。
+        /// 注意：为保证O(1)性能，此操作会将最后一个元素移到被删除的位置，顺序会改变。
+        /// 若需要保持顺序，请使用 RemoveAt 的有序版本（性能为O(n)）。
         /// </summary>
         public bool Remove(T item)
         {
@@ -97,6 +104,23 @@ namespace AxuFrameKit._Core.Structure
                 _indexDict[lastItem] = index;
             }
 
+            return true;
+        }
+
+        /// <summary>
+        /// 有序移除O(n)，保证顺序
+        /// </summary>
+        /// <param name="item">要移除的元素</param>
+        /// <returns>如果成功移除则返回 true</returns>
+        public bool RemoveOrdered(T item)
+        {
+            if (!_indexDict.TryGetValue(item, out int index))
+                return false;
+
+            _list.RemoveAt(index);
+            _indexDict.Remove(item);
+            for (int i = index; i < _list.Count; i++)
+                _indexDict[_list[i]] = i;
             return true;
         }
 

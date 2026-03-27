@@ -21,6 +21,47 @@ namespace AxuFrameKit.Common.Utility.Event
         public static IUnRegister Register<T>(Action<T> onEvent) =>
             Container.GetOrAddEvent<EventUnit<T>>().Register(onEvent);
 
+        /// <summary>
+        /// 注册一次性事件，触发后自动注销。
+        /// </summary>
+        public static IUnRegister RegisterOnce<T>(Action<T> onEvent)
+        {
+            void Wrapper(T evt)
+            {
+                onEvent(evt);
+                Container.GetEvent<EventUnit<T>>()?.UnRegister(Wrapper); // 注销wrapper本身
+            }
+
+            return Container.GetOrAddEvent<EventUnit<T>>().Register(Wrapper);
+        }
+
+        public static IUnRegister Register<T>(Action<T> onEvent, Predicate<T> condition) =>
+            Container.GetOrAddEvent<EventUnit<T>>().Register(evt =>
+            {
+                if (condition(evt)) onEvent(evt);
+            });
+
+        /// <summary>
+        /// 注册一次性事件，触发后自动注销。
+        /// 指定condition时，仅在条件满足时触发并注销；条件不满足的事件会被忽略，继续等待。
+        /// </summary>
+        public static IUnRegister RegisterOnce<T>(Action<T> onEvent, Predicate<T> condition)
+        {
+            void Wrapper(T evt)
+            {
+                if (condition(evt))
+                {
+                    onEvent(evt);
+                    Container.GetEvent<EventUnit<T>>()?.UnRegister(Wrapper); // 注销wrapper本身
+                }
+            }
+
+            return Container.GetOrAddEvent<EventUnit<T>>().Register(Wrapper);
+        }
+
+        /// <summary>
+        /// 注意：对于Lambda表达式注册的事件，需要采用获得的IUnregister句柄进行注销，Lambda表达式无法参与注销。
+        /// </summary>
         public static void UnRegister<T>(Action<T> onEvent)
         {
             var e = Container.GetEvent<EventUnit<T>>();

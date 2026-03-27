@@ -102,6 +102,6 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             _taskQueue.Clear();
         }
 
-        public override void Dispose() => _taskQueue.Clear();
+        protected override void OnDispose() => _taskQueue.Clear();
     }
 }

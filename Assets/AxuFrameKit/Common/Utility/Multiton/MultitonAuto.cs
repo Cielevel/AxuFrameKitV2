@@ -15,6 +15,8 @@ namespace AxuFrameKit.Common.Utility.Multiton
 
         private static readonly Dictionary<ulong, T> Instances = new(8);
 
+        public bool IsDisposed { get; private set; }
+
         public static T GetInstance(ulong key = 0)
         {
             if (key != 0)
@@ -60,6 +62,17 @@ namespace AxuFrameKit.Common.Utility.Multiton
             }
         }
 
-        public abstract void Dispose();
+        public void Dispose()
+        {
+            if (IsDisposed) return;
+            IsDisposed = true;
+
+            lock (Lock)
+                Instances.Remove(Key);
+
+            OnDispose();
+        }
+
+        protected abstract void OnDispose();
     }
 }

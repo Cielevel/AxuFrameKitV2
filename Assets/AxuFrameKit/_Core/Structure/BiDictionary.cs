@@ -11,8 +11,8 @@ namespace AxuFrameKit._Core.Structure
     /// </summary>
     public class BiDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
     {
-        private readonly Dictionary<TKey, TValue> _forward = new();
-        private readonly Dictionary<TValue, TKey> _backward = new();
+        private readonly Dictionary<TKey, TValue> _forward;
+        private readonly Dictionary<TValue, TKey> _backward;
 
         public int Count => _forward.Count;
 
@@ -41,7 +41,7 @@ namespace AxuFrameKit._Core.Structure
             if (_backward.ContainsKey(value))
             {
                 Logger.Error("BiDictionary: 重复键值->" + value);
-                throw new ArgumentException("Duplicate key.", nameof(key));
+                throw new ArgumentException("Duplicate value.", nameof(value));
             }
 
             _forward.Add(key, value);
@@ -131,7 +131,9 @@ namespace AxuFrameKit._Core.Structure
         public bool ContainsValue(TValue value) => _backward.ContainsKey(value);
 
         /// <summary>
-        /// 通过索引器读取（仅支持 key→value 方向）。
+        /// 通过索引器读取或设置（仅支持 key→value 方向）。
+        /// 设置时若键或值已存在，会自动清理旧映射后覆盖，等同于 <see cref="Set"/>。
+        /// 若需要严格的唯一性检查，请使用 <see cref="Add"/>。
         /// </summary>
         public TValue this[TKey key]
         {

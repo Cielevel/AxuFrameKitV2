@@ -11,6 +11,8 @@ namespace AxuFrameKit.Common.Utility.Multiton
 
         private static readonly Dictionary<string, T> Instances = new(8);
 
+        public bool IsDisposed { get; private set; }
+
         public static T GetInstance(string key)
         {
             if (Instances.TryGetValue(key, out var instance))
@@ -33,10 +35,21 @@ namespace AxuFrameKit.Common.Utility.Multiton
             lock (Lock)
             {
                 if (Instances.Remove(key, out var instance))
-                    instance?.Dispose();
+                    instance?.OnDispose();
             }
         }
 
-        public abstract void Dispose();
+        public void Dispose()
+        {
+            if (IsDisposed) return;
+            IsDisposed = true;
+
+            lock (Lock)
+                Instances.Remove(Key);
+
+            OnDispose();
+        }
+
+        public abstract void OnDispose();
     }
 }

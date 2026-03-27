@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AxuFrameKit.Common.Utility.Analysis.InGameConsole
+namespace AxuExperimental.InGameConsole
 {
     /// <summary>
     /// InGameConsole核心逻辑类

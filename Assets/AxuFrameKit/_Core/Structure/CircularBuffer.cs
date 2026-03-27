@@ -58,6 +58,34 @@ namespace AxuFrameKit._Core.Structure
         }
 
         /// <summary>
+        /// 查看最新添加的元素，不移除
+        /// </summary>
+        public T PeekLast()
+        {
+            if (_count == 0) throw new InvalidOperationException("Buffer is empty.");
+            return _buffer[(_start + _count - 1) % Capacity];
+        }
+
+        /// <summary>
+        /// 查看最早添加的元素，不移除
+        /// </summary>
+        public T PeekFirst()
+        {
+            if (_count == 0) throw new InvalidOperationException("Buffer is empty.");
+            return _buffer[_start];
+        }
+
+        /// <summary>
+        /// 是否已满
+        /// </summary>
+        public bool IsFull => _count == Capacity;
+
+        /// <summary>
+        /// 是否为空
+        /// </summary>
+        public bool IsEmpty => _count == 0;
+
+        /// <summary>
         /// 按索引获取元素
         /// </summary>
         /// <param name="index">相对于起始位置的索引</param>
@@ -83,7 +111,7 @@ namespace AxuFrameKit._Core.Structure
             Array.Clear(_buffer, 0, _buffer.Length);
         }
 
-        // 🔹 实现 IEnumerable<T>
+        // 实现 IEnumerable<T>
         public IEnumerator<T> GetEnumerator()
         {
             for (var i = 0; i < _count; i++)

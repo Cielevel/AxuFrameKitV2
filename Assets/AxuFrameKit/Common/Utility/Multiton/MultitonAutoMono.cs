@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace AxuFrameKit.Common.Utility.Multiton
@@ -6,7 +7,6 @@ namespace AxuFrameKit.Common.Utility.Multiton
     /// <summary>
     /// 多例模式基类（自动化ID）（由于是MonoBehaviour，销毁直接调用Destroy即可）
     /// </summary>
-    /// <typeparam name="T"></typeparam>
     public abstract class MultitonAutoMono<T> : MonoBehaviour where T : MultitonAutoMono<T>
     {
         // ReSharper disable once StaticMemberInGenericType
@@ -22,6 +22,8 @@ namespace AxuFrameKit.Common.Utility.Multiton
         private static readonly object Lock = new object();
         
         private static readonly Dictionary<ulong, T> Instances = new(16);
+
+        private bool _isDestroyed = false;
 
         /// <summary>
         /// 略
@@ -89,7 +91,17 @@ namespace AxuFrameKit.Common.Utility.Multiton
             lock (Lock)
             {
                 if (Instances.TryGetValue(key, out var instance))
-                    Destroy(instance.gameObject);
+                {
+                    if (instance != null)
+                    {
+                        if (!instance._isDestroyed)
+                        {
+                            instance._isDestroyed = true;
+                            instance.OnThisDestroyed();
+                        }
+                        Destroy(instance.gameObject);
+                    }
+                }
             }
         }
         
@@ -97,19 +109,27 @@ namespace AxuFrameKit.Common.Utility.Multiton
         {
             lock (Lock)
             {
-                foreach (var instance in Instances.Values)
+                foreach (var instance in Instances.Values.Where(instance => instance != null))
                 {
-                    if (instance != null)
-                        Destroy(instance.gameObject);
+                    if (!instance._isDestroyed)
+                    {
+                        instance._isDestroyed = true;
+                        instance.OnThisDestroyed();
+                    }
+                    Destroy(instance.gameObject);
+                    Instances.Clear();
                 }
-                Instances.Clear();
             }
         }
-        
+
+
         private void OnDestroy()
         {
             lock (Lock)
                 Instances.Remove(Key);
         }
+
+        protected virtual void OnThisCreated() { }
+        protected virtual void OnThisDestroyed() { }
     }
 }

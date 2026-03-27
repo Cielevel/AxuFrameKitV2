@@ -1,7 +1,7 @@
 using AxuFrameKit.Common.Utility.Singleton;
 using UnityEngine;
 
-namespace AxuFrameKit.Common.Utility.Analysis.InGameConsole
+namespace AxuExperimental.InGameConsole
 {
     /// <summary>
     /// InGameConsole的Manager组件，挂载在场景中以启用Console功能。

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace AxuFrameKit.Common.Utility.Analysis.InGameConsole
+namespace AxuExperimental.InGameConsole
 {
     /// <summary>
     /// 日志条目的数据结构
