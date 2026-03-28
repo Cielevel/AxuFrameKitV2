@@ -14,7 +14,7 @@ namespace TestAndSample.Sample_Common.Utility.Event
     {
         private void Awake()
         {
-            EventCentral.Register<TestEvent>(Trigger)
+            EventCentral.Default.Register<TestEvent>(Trigger)
                         .UnRegisterWhenDisabled(gameObject)
                         .UnRegisterWhenGameObjectDestroyed(gameObject);
         }

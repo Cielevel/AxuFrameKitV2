@@ -9,7 +9,7 @@ namespace TestAndSample.Sample_Common.Utility.Event
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                EventCentral.Send(new TestEvent(3));
+                EventCentral.Default.Send(new TestEvent(3));
             }
         }
     }

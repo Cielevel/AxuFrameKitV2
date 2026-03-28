@@ -10,21 +10,23 @@ namespace AxuFrameKit.Common.Utility.Event
     /// <summary>
     /// 适用于Unity中的事件中心，静态事件Central，可直接使用。
     /// </summary>
-    public static class EventCentral
+    public class EventCentral
     {
-        private static readonly EventContainer Container = new();
+        public static readonly EventCentral Default = new();
 
-        public static void Send<T>() where T : new() => Container.GetEvent<EventUnit<T>>()?.Trigger(new T());
+        private readonly EventContainer Container = new();
 
-        public static void Send<T>(T e) => Container.GetEvent<EventUnit<T>>()?.Trigger(e);
+        public void Send<T>() where T : new() => Container.GetEvent<EventUnit<T>>()?.Trigger(new T());
 
-        public static IUnRegister Register<T>(Action<T> onEvent) =>
+        public void Send<T>(T e) => Container.GetEvent<EventUnit<T>>()?.Trigger(e);
+
+        public IUnRegister Register<T>(Action<T> onEvent) =>
             Container.GetOrAddEvent<EventUnit<T>>().Register(onEvent);
 
         /// <summary>
         /// 注册一次性事件，触发后自动注销。
         /// </summary>
-        public static IUnRegister RegisterOnce<T>(Action<T> onEvent)
+        public IUnRegister RegisterOnce<T>(Action<T> onEvent)
         {
             void Wrapper(T evt)
             {
@@ -35,7 +37,7 @@ namespace AxuFrameKit.Common.Utility.Event
             return Container.GetOrAddEvent<EventUnit<T>>().Register(Wrapper);
         }
 
-        public static IUnRegister Register<T>(Action<T> onEvent, Predicate<T> condition) =>
+        public IUnRegister Register<T>(Action<T> onEvent, Predicate<T> condition) =>
             Container.GetOrAddEvent<EventUnit<T>>().Register(evt =>
             {
                 if (condition(evt)) onEvent(evt);
@@ -45,7 +47,7 @@ namespace AxuFrameKit.Common.Utility.Event
         /// 注册一次性事件，触发后自动注销。
         /// 指定condition时，仅在条件满足时触发并注销；条件不满足的事件会被忽略，继续等待。
         /// </summary>
-        public static IUnRegister RegisterOnce<T>(Action<T> onEvent, Predicate<T> condition)
+        public IUnRegister RegisterOnce<T>(Action<T> onEvent, Predicate<T> condition)
         {
             void Wrapper(T evt)
             {
@@ -62,11 +64,16 @@ namespace AxuFrameKit.Common.Utility.Event
         /// <summary>
         /// 注意：对于Lambda表达式注册的事件，需要采用获得的IUnregister句柄进行注销，Lambda表达式无法参与注销。
         /// </summary>
-        public static void UnRegister<T>(Action<T> onEvent)
+        public void UnRegister<T>(Action<T> onEvent)
         {
             var e = Container.GetEvent<EventUnit<T>>();
             e?.UnRegister(onEvent);
         }
+
+        /// <summary>
+        /// 清理所有事件，慎用！通常不需要手动调用，除非你想在特定时刻重置整个事件系统（比如场景切换时）。如果只是想取消某个事件的订阅，建议使用UnRegister方法或IUnRegister接口。
+        /// </summary>
+        public void Clear() => Container.Clear();
     }
     
     // 中间间
@@ -93,6 +100,8 @@ namespace AxuFrameKit.Common.Utility.Event
             _typeEvents.Add(eType, t);
             return t;
         }
+
+        public void Clear() => _typeEvents.Clear();
     }
 
     #region Interface

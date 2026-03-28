@@ -7,23 +7,27 @@ namespace AxuFrameKit._Core.Advanced.EventSystem
     /// <summary>
     /// 基于类型系统的事件中心（类型安全）
     /// </summary>
-    public static class EventCenter
+    public class EventCenter
     {
-        private static readonly Dictionary<Type, List<Delegate>> _handlers = new(16);
+        public static EventCenter Default { get; } = new EventCenter();
+
+        private readonly Dictionary<Type, List<Delegate>> _handlers = new(16);
 
         /// <summary>
         /// 订阅特定类型的事件
         /// </summary>
         /// <typeparam name="T">事件数据类型</typeparam>
         /// <param name="handler">事件处理回调</param>
-        public static void Subscribe<T>(Action<T> handler)
+        public IDisposable Subscribe<T>(Action<T> handler)
         {
             var type = typeof(T);
-            if (!_handlers.ContainsKey(type))
+            if (!_handlers.TryGetValue(type, out var list))
             {
-                _handlers[type] = new List<Delegate>();
+                list = new List<Delegate>();
+                _handlers[type] = list;
             }
-            _handlers[type].Add(handler);
+            list.Add(handler);
+            return new Unsubscriber(() => Unsubscribe(handler));
         }
 
         /// <summary>
@@ -31,7 +35,7 @@ namespace AxuFrameKit._Core.Advanced.EventSystem
         /// </summary>
         /// <typeparam name="T">事件数据类型</typeparam>
         /// <param name="handler">原先订阅的事件处理回调</param>
-        public static void Unsubscribe<T>(Action<T> handler)
+        public void Unsubscribe<T>(Action<T> handler)
         {
             var type = typeof(T);
             if (_handlers.ContainsKey(type))
@@ -50,7 +54,7 @@ namespace AxuFrameKit._Core.Advanced.EventSystem
         /// </summary>
         /// <typeparam name="T">事件数据类型</typeparam>
         /// <param name="eventData">传递给订阅者的事件数据</param>
-        public static void Publish<T>(T eventData)
+        public void Publish<T>(T eventData)
         {
             var type = typeof(T);
             if (_handlers.TryGetValue(type, out var list))
@@ -75,7 +79,7 @@ namespace AxuFrameKit._Core.Advanced.EventSystem
         /// 发布（触发）特定类型的事件（自动创建一个新的事件实例）
         /// </summary>
         /// <typeparam name="T">具有无参构造函数的事件数据类型</typeparam>
-        public static void Publish<T>() where T : new()
+        public void Publish<T>() where T : new()
         {
             Publish(new T());
         }
@@ -83,9 +87,13 @@ namespace AxuFrameKit._Core.Advanced.EventSystem
         /// <summary>
         /// 清理所有事件
         /// </summary>
-        public static void Clear()
+        public void Clear() => _handlers.Clear();
+
+        private class Unsubscriber : IDisposable
         {
-            _handlers.Clear();
+            private readonly Action _unsubscribe;
+            public Unsubscriber(Action unsubscribe) => _unsubscribe = unsubscribe;
+            public void Dispose() => _unsubscribe();
         }
     }
 }
