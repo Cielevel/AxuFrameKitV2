@@ -123,4 +123,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aed504318d7c40fabbe7e45f2f822f87, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <ObjName>k__BackingField: Obj3
+  <ObjId>k__BackingField: Blue

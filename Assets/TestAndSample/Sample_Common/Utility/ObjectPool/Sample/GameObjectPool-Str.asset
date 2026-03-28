@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ab243edcd4447c0b190cda904d68314, type: 3}
   m_Name: GameObjectPool-Str
   m_EditorClassIdentifier: 
-  _objectUnitIntList:
-  - <ObjName>k__BackingField: Obj1
+  _objectUnitList:
+  - <ObjID>k__BackingField: Red
     <Prefab>k__BackingField: {fileID: 7394114312570793832, guid: 6dffb8c12e89525499e46a0817153e1c, type: 3}
-  - <ObjName>k__BackingField: Obj2
+  - <ObjID>k__BackingField: Purple
     <Prefab>k__BackingField: {fileID: 1307159429088465165, guid: 25bc5bbb63f9c6f46be19a9bb4ea27fe, type: 3}
-  - <ObjName>k__BackingField: Obj3
+  - <ObjID>k__BackingField: Blue
     <Prefab>k__BackingField: {fileID: -4808265484662787728, guid: ce0b0043490e8704c8f8078f7fb8459d, type: 3}

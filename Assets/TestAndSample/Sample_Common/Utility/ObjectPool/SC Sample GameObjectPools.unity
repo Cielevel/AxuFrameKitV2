@@ -167,9 +167,9 @@ MonoBehaviour:
   _strPoolMgr: {fileID: 11400000, guid: b6b3d11b6103b1b41a8cfc4ffc60729d, type: 2}
   _intIDs: 010000000200000003000000
   _strIDs:
-  - Obj1
-  - Obj2
-  - Obj3
+  - Red
+  - Purple
+  - Blue
 --- !u!1 &410074426
 GameObject:
   m_ObjectHideFlags: 0
