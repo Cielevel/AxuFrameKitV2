@@ -50,6 +50,16 @@ namespace AxuFrameKit._Core.Advanced.ObjectPool
         public IPools Pools { get; protected set; }
 
         /// <summary>
+        /// 对象的归属池类型，取出时由池管理器自动烙印，防止多态继承漂移
+        /// </summary>
+        Type PoolKey { get; set; }
+
+        /// <summary>
+        /// 标识对象当前是否已经处于池中缓存状态，用于 O(1) 复杂度防御重复归还
+        /// </summary>
+        bool IsInPool { get; set; }
+
+        /// <summary>
         /// 初始化对象所属的池管理器
         /// </summary>
         /// <param name="pools">关联的管理器实例</param>
@@ -77,6 +87,8 @@ namespace AxuFrameKit._Core.Advanced.ObjectPool
     public abstract class Poolable : IPoolable
     {
         IPools IPoolable.Pools { get; set; }
+        Type IPoolable.PoolKey { get; set; }
+        bool IPoolable.IsInPool { get; set; }
 
         /// <summary>
         /// 获取时的处理逻辑
@@ -98,8 +110,16 @@ namespace AxuFrameKit._Core.Advanced.ObjectPool
         /// </summary>
         public void Push()
         {
-            OnPush();
-            (this as IPoolable).Pools.Push(this);
+            var pools = (this as IPoolable).Pools;
+            if (pools != null)
+            {
+                pools.Push(this);
+            }
+            else
+            {
+                Logger.Warning($"尝试给尚未池化归属的对象 {GetType().Name} 执行 Push，未找到池管理器，直接执行 Dispose() 销毁。");
+                // Dispose(); // 这里不做任何操作、只Warning可能更安全，让调用者自己决定怎么处理。
+            }
         }
     }
 
@@ -110,85 +130,94 @@ namespace AxuFrameKit._Core.Advanced.ObjectPool
     {
         private const int InitialPoolSize = 8;
 
+        /// <summary>
+        /// 单个类型的最大缓存容量，超出此数量归还的对象将被丢弃（Dispose）
+        /// </summary>
+        public int MaxPoolSize { get; set; } = 128;
+
         private Dictionary<Type, Func<IPoolable>> _createFuncDict = new(InitialPoolSize);
         private Dictionary<Type, Stack<IPoolable>> _poolDict = new(InitialPoolSize);
 
         void IPools.AddCreateFunc<T>(Func<T> createFunc)
         {
-            Validate();
-
-            _createFuncDict.Add(typeof(T), () => createFunc?.Invoke());
+            var key = typeof(T);
+            if (!_createFuncDict.TryAdd(key, () => createFunc?.Invoke()))
+            {
+                _createFuncDict[key] = () => createFunc?.Invoke();
+                Logger.Warning($"重复为 {key.Name} 添加了对象的创建方法，已覆盖原方法。");
+            }
         }
 
         IPoolable IPools.Get<T>()
         {
-            Validate();
-
             var key = typeof(T);
 
-            if (_poolDict.TryGetValue(key, out var pool))
+            if (!_poolDict.TryGetValue(key, out var pool))
             {
-                if (pool.Count <= 0)
-                {
-                    if (_createFuncDict.TryGetValue(key, out var func))
-                    {
-                        var result = func?.Invoke();
-                        ValidatePoolable(result);
-                        result?.OnGet();
-                        return result;
-                    }
+                pool = new Stack<IPoolable>();
+                _poolDict.Add(key, pool);
+            }
 
-                    Logger.Warning($"尝试获取 {typeof(T).Name} 对象时，对象池没有元素，且没有对应的创建方法。");
-                    return null;
-                }
+            IPoolable obj = null;
+            if (pool.Count > 0)
+            {
+                obj = pool.Pop();
+            }
+            else if (_createFuncDict.TryGetValue(key, out var func))
+            {
+                obj = func?.Invoke();
+            }
+            else
+            {
+                Logger.Warning($"尝试获取 {key.Name} 对象时，对象池没有元素，且没有对应的创建方法。");
+                return null;
+            }
 
-                var obj = pool.Pop();
+            if (obj != null)
+            {
+                obj.PoolKey = key; // 【核心】无论是新建还是取出，统一烙印确切归属
+                obj.IsInPool = false; // 出借分配时清空在池状态
                 ValidatePoolable(obj);
-                obj?.OnGet();
-                return obj;
+                obj.OnGet();
             }
-
-            _poolDict.Add(typeof(T), new Stack<IPoolable>());
-            if (_createFuncDict.TryGetValue(key, out var create))
-            {
-                var result = create?.Invoke();
-                ValidatePoolable(result);
-                result?.OnGet();
-                return result;
-            }
-
-            Logger.Warning($"尝试获取 {typeof(T).Name} 对象时，对象池为空，且没有对应的创建方法。");
-
-            return null;
+            return obj;
         }
 
         T IPools.GetInstance<T>()
         {
-            Validate();
-
             var result = (this as IPools).Get<T>();
-
             return result as T;
         }
 
         void IPools.Push<T>(T obj)
         {
-            Validate();
+            if (obj == null) return;
 
-            var key = typeof(T);
+            // 【核心】检票：优先读取 PoolKey 判断老家，如果未受池管辖(比如外部直接New出来的)则退化为 GetType()
+            var key = obj.PoolKey ?? obj.GetType();
 
-            if (_poolDict.ContainsKey(key) == false)
-                _poolDict.Add(key, new Stack<IPoolable>());
+            if (!_poolDict.TryGetValue(key, out var pool))
+            {
+                pool = new Stack<IPoolable>();
+                _poolDict.Add(key, pool);
+            }
 
+            // 【核心】高频 O(1) 重复归还过滤，取代 O(N) 的 Stack.Contains
+            if (obj.IsInPool)
+            {
+                Logger.Warning($"对象已经处于闲置化缓存池中，请勿引发逻辑死循环重复归还：{key.Name}");
+                return;
+            }
+
+            if (pool.Count >= MaxPoolSize)
+            {
+                obj.Dispose();
+                return;
+            }
+
+            obj.IsInPool = true; // 登记入池保存状态
             obj.OnPush();
-            _poolDict[key].Push(obj);
-        }
-
-        private void Validate()
-        {
-            _createFuncDict ??= new Dictionary<Type, Func<IPoolable>>(InitialPoolSize);
-
-            _poolDict ??= new Dictionary<Type, Stack<IPoolable>>(InitialPoolSize);
+            pool.Push(obj);
         }
 
         private void ValidatePoolable(IPoolable poolable)
