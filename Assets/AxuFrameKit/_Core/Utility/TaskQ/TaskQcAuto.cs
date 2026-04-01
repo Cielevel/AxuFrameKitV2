@@ -2,15 +2,15 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
-using AxuFrameKit.Common.Utility.Multiton;
-using UnityEngine;
+using AxuFrameKit._Core.Utility.Multiton;
+using AxuFrameKit._Core.Utility.Common;
 
 namespace AxuFrameKit.Common.Utility.TaskQ
 {
     /// <summary>
-    /// 任务队列控制（需带参数：CancelToken，并要求在方法内实现Cancel的判断）
+    /// 任务队列控制（需带参数：CancelToken，并要求在方法内实现Cancel的判断）（自动ID多例）
     /// </summary>
-    public class TaskQc : Multiton<TaskQc>, ITaskQc
+    public class TaskQcAuto : MultitonAuto<TaskQcAuto>, ITaskQc
     {
         public bool IsRunning { get; private set; }
 
@@ -34,7 +34,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             }
             catch (OperationCanceledException)
             {
-                Debug.LogWarning("任务队列已取消，TaskQ.Key：" + Key);
+                Logger.Error("任务队列已取消，TaskQ.Key：" + Key);
             }
             finally
             {
@@ -53,7 +53,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             _taskQueue.Enqueue(func);
             return this;
         }
-        
+
         ITaskQc ITaskQc.Then(Action action)
         {
             _taskQueue.Enqueue(_ =>
@@ -79,13 +79,13 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             {
                 if (IsRunning)
                     return;
-                _cts      = new CancellationTokenSource();
+                _cts = new CancellationTokenSource();
                 IsRunning = true;
                 await ProcessQueueAsync();
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                Logger.Exception(e);
             }
         }
 
@@ -101,7 +101,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             IsRunning = false;
             _taskQueue.Clear();
         }
-        
-        public override void OnDispose() => _taskQueue.Clear();
+
+        protected override void OnDispose() => _taskQueue.Clear();
     }
 }

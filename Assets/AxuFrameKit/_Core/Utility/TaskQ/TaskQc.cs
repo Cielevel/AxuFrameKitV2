@@ -1,37 +1,40 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
-using AxuFrameKit.Common.Utility.Multiton;
-using UnityEngine;
+using AxuFrameKit._Core.Utility.Multiton;
+using AxuFrameKit._Core.Utility.Common;
 
 namespace AxuFrameKit.Common.Utility.TaskQ
 {
     /// <summary>
-    /// 任务队列控制（停止时，将在执行完当前任务后停止）（自动ID多例）
+    /// 任务队列控制（需带参数：CancelToken，并要求在方法内实现Cancel的判断）
     /// </summary>
-    public class TaskQAuto : MultitonAuto<TaskQAuto>, ITaskQ
+    public class TaskQc : Multiton<TaskQc>, ITaskQc
     {
         public bool IsRunning { get; private set; }
 
-        private readonly ConcurrentQueue<Func<Task>> _taskQueue = new();
+        private readonly ConcurrentQueue<Func<CancellationToken, Task>> _taskQueue = new();
 
         private Task _currentTask;
+
+        private CancellationTokenSource _cts;
 
         private async Task ProcessQueueAsync()
         {
             try
             {
-                while (IsRunning)
+                while (IsRunning && !_cts.IsCancellationRequested)
                 {
                     if (_taskQueue.TryDequeue(out var taskFunc))
-                        await taskFunc.Invoke();
+                        await taskFunc.Invoke(_cts.Token);
                     else
                         await Task.Yield();
                 }
             }
             catch (OperationCanceledException)
             {
-                Debug.LogWarning("任务队列已取消，TaskQ.Key：" + Key);
+                Logger.Error("任务队列已取消，TaskQ.Key：" + Key);
             }
             finally
             {
@@ -39,31 +42,31 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             }
         }
 
-        public ITaskQ EnQ(Func<Task> func)
+        public ITaskQc EnQ(Func<CancellationToken, Task> func)
         {
             _taskQueue.Enqueue(func);
             return this;
         }
 
-        ITaskQ ITaskQ.Then(Func<Task> func)
+        ITaskQc ITaskQc.Then(Func<CancellationToken, Task> func)
         {
             _taskQueue.Enqueue(func);
             return this;
         }
-        
-        ITaskQ ITaskQ.Then(Action action)
+
+        ITaskQc ITaskQc.Then(Action action)
         {
-            _taskQueue.Enqueue(() =>
+            _taskQueue.Enqueue(_ =>
             {
                 action?.Invoke();
                 return Task.CompletedTask;
             });
             return this;
         }
-        
-        ITaskQ ITaskQ.Delay(float delay)
+
+        ITaskQc ITaskQc.Delay(float delay)
         {
-            _taskQueue.Enqueue(async () => { await Task.Delay(TimeSpan.FromSeconds(delay)); });
+            _taskQueue.Enqueue(async token => { await Task.Delay(TimeSpan.FromSeconds(delay), token); });
             return this;
         }
 
@@ -76,26 +79,29 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             {
                 if (IsRunning)
                     return;
+                _cts = new CancellationTokenSource();
                 IsRunning = true;
                 await ProcessQueueAsync();
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                Logger.Exception(e);
             }
         }
-        
+
         public void Stop()
         {
+            _cts?.Cancel();
             IsRunning = false;
         }
-        
+
         public void StopAndClear()
         {
+            _cts?.Cancel();
             IsRunning = false;
             _taskQueue.Clear();
         }
 
-        protected override void OnDispose() => _taskQueue.Clear();
+        public override void OnDispose() => _taskQueue.Clear();
     }
 }

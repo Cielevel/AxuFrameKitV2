@@ -116,7 +116,13 @@ namespace AxuFrameKit._Core.Advanced.FSM
         /// </summary>
         public void RevertToPreviousState()
         {
-            ChangeState(PreviousState);
+            if (PreviousState == null) return;
+
+            CurrentState?.OnExit(Owner);
+            // 回退时 PreviousState 应置 null 或保持语义一致
+            CurrentState = PreviousState;
+            PreviousState = null;
+            CurrentState.OnEnter(Owner);
         }
 
         /// <summary>
@@ -133,8 +139,8 @@ namespace AxuFrameKit._Core.Advanced.FSM
         /// </summary>
         public void Clear()
         {
-            CurrentState?.OnExit(Owner);
             GlobalState?.OnExit(Owner);
+            CurrentState?.OnExit(Owner);
             CurrentState = null;
             GlobalState = null;
             PreviousState = null;

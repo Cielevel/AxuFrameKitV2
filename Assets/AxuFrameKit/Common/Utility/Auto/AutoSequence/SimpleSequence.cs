@@ -167,6 +167,11 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
                 StopLoop();
                 Stop();
             }
+            else if (_coroutine != null || _loopCoroutine != null)
+            {
+                Debugger.LogWarning("SimpleSequence is already running. Please wait for it to finish or pass forceRestart=true.");
+                return;
+            }
 
             _isLoop = false;
 
@@ -188,6 +193,11 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
                 StopLoop();
                 Stop();
             }
+            else if (_coroutine != null || _loopCoroutine != null)
+            {
+                Debugger.LogWarning("SimpleSequence is already running. Please wait for it to finish or pass forceRestart=true.");
+                return;
+            }
 
             _isLoop = true;
 
@@ -199,7 +209,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
                 WaitForSeconds wait = new(interval);
                 while (true)
                 {
-                    yield return this.StartCoroutine(IESequence());
+                    yield return IESequence();
                     yield return wait;
                 }
             }
@@ -224,7 +234,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
                         yield return unit.CustomYieldInstruction;
                         break;
                     case SequenceUnitType.Enumerator:
-                        yield return this.StartCoroutine(unit.Enumerator);
+                        yield return unit.Enumerator;
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();

@@ -19,7 +19,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
         ICoroutineQ Insert(Action action);
 
         void Run();
-        
+
         void Pause();
 
         void StopAndClear();
@@ -31,7 +31,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
     public class CoroutineQ : MultitonMono<CoroutineQ>, ICoroutineQ
     {
         private bool _isRunning = false;
-        
+
         private Coroutine _loopCoroutine;
 
         private ConcurrentQueue<IEnumerator> _queue;
@@ -41,14 +41,14 @@ namespace AxuFrameKit.Common.Utility.TaskQ
         {
             base.OnThisCreated();
 
-            _queue   = new ConcurrentQueue<IEnumerator>();
+            _queue = new ConcurrentQueue<IEnumerator>();
             _insertQ = new ConcurrentQueue<IEnumerator>();
         }
 
         protected override void OnThisDestroyed()
         {
             base.OnThisDestroyed();
-            
+
             StopAndClear();
         }
 
@@ -65,7 +65,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             _queue.Enqueue(IEAction(action));
             return this;
         }
-        
+
         public ICoroutineQ Delay(float duration, Action action)
         {
             if (Mathf.Approximately(duration, 0f) || duration <= 0)
@@ -74,7 +74,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
                 EnQ(IEDelay(duration, action));
             return this;
         }
-        
+
         public ICoroutineQ Delay(float duration)
         {
             EnQ(IEDelay(duration));
@@ -101,7 +101,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             {
                 while (0 < _insertQ.Count && _insertQ.TryDequeue(out var insertNext))
                     yield return StartCoroutine(insertNext);
-                
+
                 if (0 < _queue.Count && _queue.TryDequeue(out var next))
                     yield return StartCoroutine(next);
                 else
@@ -114,7 +114,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             yield return new WaitForSeconds(duration);
             action?.Invoke();
         }
-        
+
         private static IEnumerator IEDelay(float duration)
         {
             yield return new WaitForSeconds(duration);
@@ -130,7 +130,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
         {
             if (_loopCoroutine != null && _isRunning)
                 return;
-            
+
             _isRunning = true;
             _loopCoroutine = StartCoroutine(Loop());
         }
@@ -146,14 +146,14 @@ namespace AxuFrameKit.Common.Utility.TaskQ
                 StopCoroutine(_loopCoroutine);
             }
         }
-        
+
         /// <summary>
         /// 暂停，然后清除未执行的任务。
         /// </summary>
         public void StopAndClear()
         {
             Pause();
-            
+
             _queue.Clear();
             _insertQ.Clear();
         }

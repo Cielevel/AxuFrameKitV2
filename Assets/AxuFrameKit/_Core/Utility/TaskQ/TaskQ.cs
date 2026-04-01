@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
-using AxuFrameKit.Common.Utility.Multiton;
-using UnityEngine;
+using AxuFrameKit._Core.Utility.Multiton;
+using AxuFrameKit._Core.Utility.Common;
 
 namespace AxuFrameKit.Common.Utility.TaskQ
 {
@@ -31,7 +31,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
                         }
                         catch (Exception ex)
                         {
-                            Debug.LogError($"任务执行失败: {ex}");
+                            Logger.Error($"任务执行失败: {ex}");
                         }
                     }
                     else
@@ -40,7 +40,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             }
             catch (OperationCanceledException)
             {
-                Debug.LogWarning("任务队列已取消，TaskQ.Key：" + Key);
+                Logger.Error("任务队列已取消，TaskQ.Key：" + Key);
             }
             finally
             {
@@ -59,7 +59,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             _taskQueue.Enqueue(func);
             return this;
         }
-        
+
         ITaskQ ITaskQ.Then(Action action)
         {
             _taskQueue.Enqueue(() =>
@@ -90,21 +90,21 @@ namespace AxuFrameKit.Common.Utility.TaskQ
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                Logger.Exception(e);
             }
         }
-        
+
         public void Stop()
         {
             IsRunning = false;
         }
-        
+
         public void StopAndClear()
         {
             IsRunning = false;
             _taskQueue.Clear();
         }
 
-        public override void OnDispose() => _taskQueue.Clear(); 
+        public override void OnDispose() => _taskQueue.Clear();
     }
 }

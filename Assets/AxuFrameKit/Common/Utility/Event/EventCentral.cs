@@ -5,6 +5,9 @@ using UnityEngine.SceneManagement;
 
 // QFramework的事件系统，作者：liangxie。
 // 代码做过命名与结构的调整。
+
+// 与EventChannel完全隔离，无共享代码。
+
 namespace AxuFrameKit.Common.Utility.Event
 {
     /// <summary>
@@ -75,7 +78,7 @@ namespace AxuFrameKit.Common.Utility.Event
         /// </summary>
         public void Clear() => Container.Clear();
     }
-    
+
     // 中间间
     // 负责存储IEvent
     public class EventContainer
@@ -109,6 +112,18 @@ namespace AxuFrameKit.Common.Utility.Event
     public interface IUnRegister // 可注销接口
     {
         void UnRegister();
+    }
+
+    public struct CommonUnRegister : IUnRegister
+    {
+        private Action _onUnRegister;
+        public CommonUnRegister(Action unRegister) => _onUnRegister = unRegister;
+
+        public void UnRegister()
+        {
+            _onUnRegister?.Invoke();
+            _onUnRegister = null;
+        }
     }
 
     public interface IEvent // Event基础
@@ -171,7 +186,7 @@ namespace AxuFrameKit.Common.Utility.Event
         private void Awake()
         {
             DontDestroyOnLoad(this);
-            hideFlags                  =  HideFlags.HideInHierarchy;
+            hideFlags = HideFlags.HideInHierarchy;
             SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
 
@@ -196,7 +211,7 @@ namespace AxuFrameKit.Common.Utility.Event
 
         public static IUnRegister UnRegisterWhenGameObjectDestroyed(this IUnRegister unRegister, GameObject gameObject) =>
             GetOrAddComponent<UnRegisterOnDestroyTrigger>(gameObject).AddUnRegister(unRegister);
-        
+
         public static IUnRegister UnRegisterWhenDisabled<T>(this IUnRegister self, T component)
             where T : Component => self.UnRegisterWhenDisabled(component.gameObject);
 
@@ -208,18 +223,6 @@ namespace AxuFrameKit.Common.Utility.Event
     }
 
     #endregion
-
-    public struct CommonUnRegister : IUnRegister
-    {
-        private Action OnUnRegister { get; set; }
-        public CommonUnRegister(Action unRegister) => OnUnRegister = unRegister;
-
-        public void UnRegister()
-        {
-            OnUnRegister?.Invoke();
-            OnUnRegister = null;
-        }
-    }
 
     /// <summary>
     /// 常规-事件-单元

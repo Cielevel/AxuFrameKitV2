@@ -3,7 +3,7 @@ namespace AxuFrameKit.Common.Utility.Auto
     /// <summary>
     /// 自动注册并持续执行事件的 Channel
     /// </summary>
-    public class AutoEventChannelContinue : AutoEventChannelBase
+    public class AutoEventChannelRegister : AutoEventChannelBase
     {
         private void Awake()
         {

@@ -10,7 +10,7 @@ namespace TestAndSample.Sample_Common.Utility.Timer
             for (int i = 6; i < 10; i++)
             {
                 int index = i;
-                CdTimer.StartCd(index, () => { Debug.Log("Time=>" + index); });
+                Timers.StartCd(index).OnComplete(() => { Debug.Log("Time=>" + index); });
             }
         }
     }

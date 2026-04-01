@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace AxuFrameKit.Common.Utility.Multiton
+namespace AxuFrameKit._Core.Utility.Multiton
 {
     public abstract class Multiton<T> : IDisposable where T : Multiton<T>, new()
     {

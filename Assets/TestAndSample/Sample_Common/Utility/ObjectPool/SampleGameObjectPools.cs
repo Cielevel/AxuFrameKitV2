@@ -28,7 +28,7 @@ namespace TestAndSample.Sample_Common.Utility.ObjectPool
 
                 obj.transform.position = new Vector3(Random.Range(-10, 10), Random.Range(-10, 10), Random.Range(-10, 10));
 
-                CountDownU.Get().StartTik(5).OnComplete += () => obj.Release();
+                Timers.StartCd(5).OnComplete(() => obj.Release());
             }
 
             if (Input.GetKeyDown(KeyCode.S))
@@ -37,7 +37,7 @@ namespace TestAndSample.Sample_Common.Utility.ObjectPool
 
                 obj.transform.position = new Vector3(Random.Range(-10, 10), Random.Range(-10, 10), Random.Range(-10, 10));
 
-                CountDownU.Get().StartTik(5).OnComplete += () => obj.Release();
+                Timers.StartCd(5).OnComplete(() => obj.Release());
             }
         }
     }
