@@ -24,6 +24,10 @@ namespace AxuFrameKit.Common.Utility.Analysis
         public long gcAllocPerFrame; // 每帧产生的 GC 垃圾 (Bytes)
     }
 
+    /// <summary>
+    /// 一个轻量级、安全且标准的 Unity 性能监控工具。
+    /// 可以直接用于 IL2CPP 打包，并且支持多平台。
+    /// </summary>
     public class PerformanceMonitor : SingletonMonoCrDs<PerformanceMonitor>
     {
         #region 配置

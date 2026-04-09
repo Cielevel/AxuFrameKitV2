@@ -186,6 +186,7 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
                 _loopCoroutine = null;
             }
         }
+
         public void Loop(float interval, bool forceRestart = false)
         {
             if (forceRestart)
