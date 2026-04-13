@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using AxuFrameKit._Core.Utility.Common;
 
 namespace AxuFrameKit._Core.Utility.RandomX
@@ -57,8 +56,10 @@ namespace AxuFrameKit._Core.Utility.RandomX
         public string Seed(int seedLen)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            string seed = new(Enumerable.Repeat(chars, seedLen).Select(s => s[Ran.Next(s.Length)]).ToArray());
-            return seed;
+            char[] result = new char[seedLen];
+            for (int i = 0; i < seedLen; i++)
+                result[i] = chars[Ran.Next(chars.Length)];
+            return new string(result);
         }
 
         /// <summary>
