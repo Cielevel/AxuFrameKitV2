@@ -24,6 +24,9 @@ namespace AxuIndieModules.SpriteToAnimation
         private const string PrefsKeyAnimatorName = "SpriteToAnim_AnimatorName";
         private const string PrefsKeyLoopAnimation = "SpriteToAnim_LoopAnimation";
         private const string PrefsKeySetAsDefault = "SpriteToAnim_SetAsDefault";
+        private const string PrefsKeyUseSpriteDir = "SpriteToAnim_UseSpriteDir";
+        private const string PrefsKeySuffix = "SpriteToAnim_Suffix";
+        private const string PrefsKeyUseFolderAsSuffix = "SpriteToAnim_UseFolderAsSuffix";
 
         #endregion
 
@@ -37,6 +40,9 @@ namespace AxuIndieModules.SpriteToAnimation
         private string _animatorName = "NewAnimator";
         private bool _loopAnimation = true;
         private bool _setAsDefault = false;
+        private bool _useSpriteDir = false;
+        private string _suffix = string.Empty;
+        private bool _useFolderAsSuffix = false;
 
         // UI Elements
         private TextField _savePathField;
@@ -47,12 +53,14 @@ namespace AxuIndieModules.SpriteToAnimation
         private TextField _animatorNameField;
         private Toggle _loopAnimationToggle;
         private Toggle _setAsDefaultToggle;
+        private VisualElement _helpBox;
         private Button _createBtn;
         private ScrollView _spriteListScrollView;
         private Label _statusLabel;
 
         // Sprite data
         private List<Sprite> _selectedSprites = new List<Sprite>();
+        private string _selectedFolder = string.Empty;
 
         #endregion
 
@@ -151,6 +159,109 @@ namespace AxuIndieModules.SpriteToAnimation
             sortBtn.tooltip = "按名称排序";
             sortBtn.AddToClassList("action-btn");
             helperRow.Add(sortBtn);
+
+            // Folder Selection Row
+            var folderRow = new VisualElement();
+            folderRow.AddToClassList("item-row");
+            folderRow.style.position = Position.Relative;
+            folderRow.style.marginBottom = 4;
+            container.Add(folderRow);
+
+            var folderLabel = new Label("文件夹:");
+            folderLabel.AddToClassList("toolbar-label");
+            folderLabel.style.minWidth = 50;
+            folderRow.Add(folderLabel);
+
+            var folderDropZone = new VisualElement();
+            folderDropZone.style.flexGrow = 1;
+            folderDropZone.style.flexDirection = FlexDirection.Row;
+            folderDropZone.style.alignItems = Align.Center;
+            folderRow.Add(folderDropZone);
+
+            var folderTextField = new TextField();
+            folderTextField.AddToClassList("ue5-text-field");
+            folderTextField.value = _selectedFolder;
+            folderTextField.style.flexGrow = 1;
+            folderTextField.RegisterValueChangedCallback(evt =>
+            {
+                _selectedFolder = evt.newValue;
+            });
+            folderDropZone.Add(folderTextField);
+
+            // Folder drag hint
+            var folderDragHint = new Label("📂 拖放文件夹到此处");
+            folderDragHint.style.position = Position.Absolute;
+            folderDragHint.style.left = 0;
+            folderDragHint.style.right = 0;
+            folderDragHint.style.top = 0;
+            folderDragHint.style.bottom = 0;
+            folderDragHint.style.unityTextAlign = TextAnchor.MiddleCenter;
+            folderDragHint.style.backgroundColor = new Color(1f, 0.58f, 0f, 0.2f);
+            folderDragHint.style.color = new Color(1f, 0.58f, 0f, 1f);
+            folderDragHint.style.unityFontStyleAndWeight = FontStyle.Bold;
+            folderDragHint.style.borderTopLeftRadius = 4;
+            folderDragHint.style.borderTopRightRadius = 4;
+            folderDragHint.style.borderBottomLeftRadius = 4;
+            folderDragHint.style.borderBottomRightRadius = 4;
+            folderDragHint.style.borderTopWidth = 2;
+            folderDragHint.style.borderBottomWidth = 2;
+            folderDragHint.style.borderLeftWidth = 2;
+            folderDragHint.style.borderRightWidth = 2;
+            folderDragHint.style.borderTopColor = new Color(1f, 0.58f, 0f, 0.6f);
+            folderDragHint.style.borderBottomColor = new Color(1f, 0.58f, 0f, 0.6f);
+            folderDragHint.style.borderLeftColor = new Color(1f, 0.58f, 0f, 0.6f);
+            folderDragHint.style.borderRightColor = new Color(1f, 0.58f, 0f, 0.6f);
+            folderDragHint.style.display = DisplayStyle.None;
+            folderDragHint.style.fontSize = 10;
+            folderDropZone.Add(folderDragHint);
+
+            // Setup folder drag and drop
+            SetupFolderDragAndDrop(folderDropZone, folderDragHint, folderTextField);
+
+            var folderBrowseBtn = new Button(OnFolderBrowseClicked) { text = "📂" };
+            folderBrowseBtn.AddToClassList("action-btn");
+            folderBrowseBtn.tooltip = "浏览文件夹";
+            folderRow.Add(folderBrowseBtn);
+
+            var folderLoadBtn = new Button(LoadSpritesFromFolder) { text = "📥" };
+            folderLoadBtn.AddToClassList("action-btn");
+            folderLoadBtn.tooltip = "从文件夹加载Sprites";
+            folderRow.Add(folderLoadBtn);
+
+            // Suffix Settings Row
+            var suffixRow = new VisualElement();
+            suffixRow.AddToClassList("item-row");
+            suffixRow.style.marginBottom = 4;
+            container.Add(suffixRow);
+
+            var suffixLabel = new Label("后缀连接:");
+            suffixLabel.AddToClassList("toolbar-label");
+            suffixLabel.style.minWidth = 50;
+            suffixRow.Add(suffixLabel);
+
+            var suffixTextField = new TextField();
+            suffixTextField.AddToClassList("ue5-text-field");
+            suffixTextField.value = _suffix;
+            suffixTextField.style.flexGrow = 1;
+            suffixTextField.style.minWidth = 40;
+            suffixTextField.RegisterValueChangedCallback(evt =>
+            {
+                _suffix = evt.newValue;
+            });
+            suffixRow.Add(suffixTextField);
+
+            var suffixToggle = new Toggle();
+            suffixToggle.value = _useFolderAsSuffix;
+            suffixToggle.RegisterValueChangedCallback(evt =>
+            {
+                _useFolderAsSuffix = evt.newValue;
+            });
+            suffixRow.Add(suffixToggle);
+
+            var suffixToggleLabel = new Label("使用文件夹名作为后缀");
+            suffixToggleLabel.style.color = new Color(0.6f, 0.6f, 0.6f, 1f);
+            suffixToggleLabel.style.marginLeft = 4;
+            suffixRow.Add(suffixToggleLabel);
 
             // Content - Sprite List
             _spriteListScrollView = new ScrollView(ScrollViewMode.Vertical);
@@ -317,6 +428,29 @@ namespace AxuIndieModules.SpriteToAnimation
                 _loopAnimation = evt.newValue;
             });
             loopRow.Add(_loopAnimationToggle);
+
+            // Use Sprite Directory Toggle
+            var spriteDirRow = new VisualElement();
+            spriteDirRow.AddToClassList("item-row");
+            content.Add(spriteDirRow);
+
+            var spriteDirLabel = new Label("创建到sprite目录:");
+            spriteDirLabel.AddToClassList("toolbar-label");
+            spriteDirLabel.style.minWidth = 80;
+            spriteDirRow.Add(spriteDirLabel);
+
+            var spriteDirToggle = new Toggle();
+            spriteDirToggle.value = _useSpriteDir;
+            spriteDirToggle.RegisterValueChangedCallback(evt =>
+            {
+                _useSpriteDir = evt.newValue;
+            });
+            spriteDirRow.Add(spriteDirToggle);
+
+            var spriteDirHint = new Label("以第一个sprite所在目录为准");
+            spriteDirHint.style.color = new Color(0.6f, 0.6f, 0.6f, 1f);
+            spriteDirHint.style.marginLeft = 8;
+            spriteDirRow.Add(spriteDirHint);
         }
 
         private void CreateAnimatorSettingsPanel()
@@ -398,20 +532,22 @@ namespace AxuIndieModules.SpriteToAnimation
             _setAsDefaultToggle.RegisterValueChangedCallback(evt =>
             {
                 _setAsDefault = evt.newValue;
+                UpdateHelpBoxVisibility();
             });
             defaultRow.Add(_setAsDefaultToggle);
 
             // Help box
-            var helpBox = new VisualElement();
-            helpBox.AddToClassList("help-box");
-            helpBox.style.marginTop = 8;
-            _animatorSettingsContainer.Add(helpBox);
+            _helpBox = new VisualElement();
+            _helpBox.AddToClassList("help-box");
+            _helpBox.style.marginTop = 8;
+            _animatorSettingsContainer.Add(_helpBox);
 
             var helpText = new Label("💡 将创建包含 Default (空状态) 和动画状态的 Animator Controller");
             helpText.AddToClassList("help-box-text");
-            helpBox.Add(helpText);
+            _helpBox.Add(helpText);
 
             UpdateAnimatorSettingsVisibility();
+            UpdateHelpBoxVisibility();
         }
 
         private void CreateActionPanel()
@@ -538,6 +674,70 @@ namespace AxuIndieModules.SpriteToAnimation
             return !string.IsNullOrEmpty(path) && AssetDatabase.IsValidFolder(path);
         }
 
+        private void SetupFolderDragAndDrop(VisualElement dropZone, Label dragHint, TextField textField)
+        {
+            // Register drag enter - show hint
+            dropZone.RegisterCallback<DragEnterEvent>(evt =>
+            {
+                if (IsSingleFolderDrag())
+                {
+                    dragHint.style.display = DisplayStyle.Flex;
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                }
+                else
+                {
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Rejected;
+                }
+            });
+
+            // Register drag leave - hide hint
+            dropZone.RegisterCallback<DragLeaveEvent>(evt =>
+            {
+                dragHint.style.display = DisplayStyle.None;
+            });
+
+            // Register drag updated - update visual mode
+            dropZone.RegisterCallback<DragUpdatedEvent>(evt =>
+            {
+                if (IsSingleFolderDrag())
+                {
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                }
+                else
+                {
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Rejected;
+                }
+            });
+
+            // Register drag perform - accept the drop
+            dropZone.RegisterCallback<DragPerformEvent>(evt =>
+            {
+                dragHint.style.display = DisplayStyle.None;
+
+                if (!IsSingleFolderDrag())
+                {
+                    EditorUtility.DisplayDialog("提示", "请只拖放一个文件夹！", "确定");
+                    return;
+                }
+
+                DragAndDrop.AcceptDrag();
+
+                string folderPath = DragAndDrop.paths[0];
+                if (AssetDatabase.IsValidFolder(folderPath))
+                {
+                    _selectedFolder = folderPath;
+                    textField.SetValueWithoutNotify(_selectedFolder);
+                    LoadSpritesFromFolder();
+                }
+            });
+
+            // Register drag exited - cleanup
+            dropZone.RegisterCallback<DragExitedEvent>(evt =>
+            {
+                dragHint.style.display = DisplayStyle.None;
+            });
+        }
+
         #endregion
 
         #region Event Handlers
@@ -576,6 +776,63 @@ namespace AxuIndieModules.SpriteToAnimation
             }
 
             UpdateSpriteListUI();
+            UpdateCreateButtonState();
+        }
+
+        private void OnFolderBrowseClicked()
+        {
+            string selectedPath = EditorUtility.OpenFolderPanel("选择Sprite文件夹", Application.dataPath, "");
+            if (!string.IsNullOrEmpty(selectedPath))
+            {
+                // Convert to relative path if inside Assets
+                if (selectedPath.StartsWith(Application.dataPath))
+                {
+                    selectedPath = "Assets" + selectedPath.Substring(Application.dataPath.Length);
+                }
+                _selectedFolder = selectedPath;
+                LoadSpritesFromFolder();
+            }
+        }
+
+        private void LoadSpritesFromFolder()
+        {
+            if (string.IsNullOrEmpty(_selectedFolder))
+            {
+                return;
+            }
+
+            if (!AssetDatabase.IsValidFolder(_selectedFolder))
+            {
+                EditorUtility.DisplayDialog("错误", "请选择有效的文件夹路径！", "确定");
+                return;
+            }
+
+            _selectedSprites.Clear();
+
+            // Get all asset paths in the folder
+            var guids = AssetDatabase.FindAssets("t:Sprite", new[] { _selectedFolder });
+
+            foreach (var guid in guids)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                var sprites = AssetDatabase.LoadAllAssetsAtPath(assetPath).OfType<Sprite>().ToArray();
+
+                if (sprites.Length > 0)
+                {
+                    _selectedSprites.AddRange(sprites);
+                }
+            }
+
+            if (_selectedSprites.Count == 0)
+            {
+                _statusLabel.text = "⚠️ 文件夹中没有找到Sprites";
+            }
+            else
+            {
+                _statusLabel.text = $"📂 已从文件夹加载 {_selectedSprites.Count} 个Sprites";
+            }
+
+            SortSpritesByName();
             UpdateCreateButtonState();
         }
 
@@ -674,6 +931,16 @@ namespace AxuIndieModules.SpriteToAnimation
             }
         }
 
+        private void UpdateHelpBoxVisibility()
+        {
+            if (_helpBox != null)
+            {
+                _helpBox.style.display = _setAsDefault
+                    ? DisplayStyle.None
+                    : DisplayStyle.Flex;
+            }
+        }
+
         private void UpdateCreateButtonState()
         {
             if (_createBtn == null) return;
@@ -748,6 +1015,25 @@ namespace AxuIndieModules.SpriteToAnimation
 
             try
             {
+                // Determine save directory
+                string saveDirectory = _savePath;
+                if (_useSpriteDir && _selectedSprites.Count > 0)
+                {
+                    string spritePath = AssetDatabase.GetAssetPath(_selectedSprites[0]);
+                    saveDirectory = Path.GetDirectoryName(spritePath);
+                }
+
+                // Calculate suffix
+                string suffix = string.Empty;
+                if (_useFolderAsSuffix && !string.IsNullOrEmpty(_selectedFolder))
+                {
+                    string folderName = Path.GetFileName(_selectedFolder);
+                    if (!string.IsNullOrEmpty(folderName))
+                    {
+                        suffix = _suffix + folderName;
+                    }
+                }
+
                 // Create AnimationClip
                 var animClip = CreateAnimationClip();
 
@@ -757,7 +1043,8 @@ namespace AxuIndieModules.SpriteToAnimation
                     return;
                 }
 
-                string clipPath = $"{_savePath}/{_clipName}.anim";
+                string finalClipName = _clipName + suffix;
+                string clipPath = $"{saveDirectory}/{finalClipName}.anim";
                 clipPath = AssetDatabase.GenerateUniqueAssetPath(clipPath);
                 AssetDatabase.CreateAsset(animClip, clipPath);
 
@@ -770,7 +1057,8 @@ namespace AxuIndieModules.SpriteToAnimation
 
                     if (animatorController != null)
                     {
-                        string animatorPath = $"{_savePath}/{_animatorName}.controller";
+                        string finalAnimatorName = _animatorName + suffix;
+                        string animatorPath = $"{saveDirectory}/{finalAnimatorName}.controller";
                         animatorPath = AssetDatabase.GenerateUniqueAssetPath(animatorPath);
                         AssetDatabase.CreateAsset(animatorController, animatorPath);
 
@@ -880,6 +1168,9 @@ namespace AxuIndieModules.SpriteToAnimation
             _animatorName = EditorPrefs.GetString(PrefsKeyAnimatorName, "NewAnimator");
             _loopAnimation = EditorPrefs.GetBool(PrefsKeyLoopAnimation, true);
             _setAsDefault = EditorPrefs.GetBool(PrefsKeySetAsDefault, false);
+            _useSpriteDir = EditorPrefs.GetBool(PrefsKeyUseSpriteDir, false);
+            _suffix = EditorPrefs.GetString(PrefsKeySuffix, string.Empty);
+            _useFolderAsSuffix = EditorPrefs.GetBool(PrefsKeyUseFolderAsSuffix, false);
         }
 
         private void SavePreferences()
@@ -891,6 +1182,9 @@ namespace AxuIndieModules.SpriteToAnimation
             EditorPrefs.SetString(PrefsKeyAnimatorName, _animatorName);
             EditorPrefs.SetBool(PrefsKeyLoopAnimation, _loopAnimation);
             EditorPrefs.SetBool(PrefsKeySetAsDefault, _setAsDefault);
+            EditorPrefs.SetBool(PrefsKeyUseSpriteDir, _useSpriteDir);
+            EditorPrefs.SetString(PrefsKeySuffix, _suffix);
+            EditorPrefs.SetBool(PrefsKeyUseFolderAsSuffix, _useFolderAsSuffix);
         }
 
         #endregion
