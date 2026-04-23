@@ -15,7 +15,7 @@ namespace AxuFrameKit.Modules.LiveStream
 
         [SerializeField] private int _generateCount;
         [SerializeField] private int _userIdLength;
-        [SerializeField] private IntBound _userNicknameLength;
+        [SerializeField] private Vector2Int _userNicknameLength;
 
         [Space]
 
@@ -31,7 +31,7 @@ namespace AxuFrameKit.Modules.LiveStream
                 _userDataUnitList.Add(new UserDataUnit
                 {
                     UserId = RandomId.Get(_userIdLength),
-                    Nickname = RandomNickname.GetCombine(Random.Range(_userNicknameLength.min, _userNicknameLength.max))
+                    Nickname = RandomNickname.GetCombine(Random.Range(_userNicknameLength.x, _userNicknameLength.y))
                 });
             }
         }

@@ -25,12 +25,32 @@ namespace AxuFrameKit.Common.Extension
         public static Vector3 WithYZ(this Vector3 v, float y, float z) => new Vector3(v.x, y, z);
 
         /// <summary>
-        /// 获取平面距离 (忽略Y轴高度差，常用于判定水平攻击范围)
+        /// 获取平面距离 (忽略Y轴高度差)
         /// </summary>
-        public static float FlatDistance(this Vector3 a, Vector3 b)
+        public static float FlatDistanceXZ(this Vector3 a, Vector3 b)
         {
             Vector2 aFlat = new Vector2(a.x, a.z);
             Vector2 bFlat = new Vector2(b.x, b.z);
+            return Vector2.Distance(aFlat, bFlat);
+        }
+
+        /// <summary>
+        /// 获取平面距离 (忽略Z轴差值)
+        /// </summary>
+        public static float FlatDistanceXY(this Vector3 a, Vector3 b)
+        {
+            Vector2 aFlat = new Vector2(a.x, a.y);
+            Vector2 bFlat = new Vector2(b.x, b.y);
+            return Vector2.Distance(aFlat, bFlat);
+        }
+
+        /// <summary>
+        /// 获取平面距离 (忽略X轴差值)
+        /// </summary>
+        public static float FlatDistanceYZ(this Vector3 a, Vector3 b)
+        {
+            Vector2 aFlat = new Vector2(a.y, a.z);
+            Vector2 bFlat = new Vector2(b.y, b.z);
             return Vector2.Distance(aFlat, bFlat);
         }
 

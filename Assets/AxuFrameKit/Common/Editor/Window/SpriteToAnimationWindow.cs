@@ -1052,17 +1052,18 @@ namespace AxuFrameKit.Common.Editor.Window
                 // Optionally create Animator Controller
                 if (_createAnimator)
                 {
-                    var animatorController = CreateAnimatorController(animClip);
+                    // FIX: Use CreateAnimatorControllerAtPath so the asset file exists
+                    // before we manipulate its StateMachine, preventing StateMachine loss
+                    // after domain reload or asset re-import.
+                    string finalAnimatorName = _animatorName + suffix;
+                    string animatorPath = $"{saveDirectory}/{finalAnimatorName}.controller";
+                    animatorPath = AssetDatabase.GenerateUniqueAssetPath(animatorPath);
+
+                    var animatorController = CreateAnimatorController(animClip, animatorPath);
 
                     if (animatorController != null)
                     {
-                        string finalAnimatorName = _animatorName + suffix;
-                        string animatorPath = $"{saveDirectory}/{finalAnimatorName}.controller";
-                        animatorPath = AssetDatabase.GenerateUniqueAssetPath(animatorPath);
-                        AssetDatabase.CreateAsset(animatorController, animatorPath);
-
                         _statusLabel.text = $"✅ 已创建: {Path.GetFileName(clipPath)} 和 {Path.GetFileName(animatorPath)}";
-
                         EditorGUIUtility.PingObject(animatorController);
                     }
                 }
@@ -1119,15 +1120,19 @@ namespace AxuFrameKit.Common.Editor.Window
             return animClip;
         }
 
-        private AnimatorController CreateAnimatorController(AnimationClip animClip)
+        /// <summary>
+        /// FIX: 必须先通过 CreateAnimatorControllerAtPath 建立资产文件，
+        /// 再操作 StateMachine，否则子资产无法被正确序列化，
+        /// 导致域重载后 StateMachine 丢失并报
+        /// "Statemachine for layer 'Base Layer' is missing"。
+        /// </summary>
+        private AnimatorController CreateAnimatorController(AnimationClip animClip, string animatorPath)
         {
-            var controller = new AnimatorController();
-            controller.name = _animatorName;
+            // Creates the .controller file on disk immediately, so all subsequent
+            // StateMachine/State objects are correctly registered as sub-assets.
+            var controller = AnimatorController.CreateAnimatorControllerAtPath(animatorPath);
 
-            // Add a layer
-            controller.AddLayer("Base Layer");
-
-            // Get the state machine
+            // Base Layer is created automatically by CreateAnimatorControllerAtPath.
             var rootStateMachine = controller.layers[0].stateMachine;
 
             if (_setAsDefault)
@@ -1139,17 +1144,19 @@ namespace AxuFrameKit.Common.Editor.Window
             }
             else
             {
-                // Create Default empty state with position (Original Logic)
+                // Create Default empty state
                 var defaultState = rootStateMachine.AddState("Default", new Vector3(250, 100, 0));
-                defaultState.motion = null; // Empty state
+                defaultState.motion = null;
 
-                // Create animation state with position
+                // Create animation state
                 var animState = rootStateMachine.AddState(_clipName, new Vector3(250, 200, 0));
                 animState.motion = animClip;
 
                 // Set Default as the entry state
                 rootStateMachine.defaultState = defaultState;
             }
+
+            EditorUtility.SetDirty(controller);
 
             return controller;
         }

@@ -6,7 +6,7 @@ using AxuFrameKit._Core.Utility.Common;
 namespace AxuFrameKit._Core.Structure
 {
     /// <summary>
-    /// 双向字典：可通过键查值，也可通过值查键。
+    /// 双向字典（键与值均不会重复）：可通过键查值，也可通过值查键。
     /// 内部维护两字典，保证映射一致。
     /// </summary>
     public class BiDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
