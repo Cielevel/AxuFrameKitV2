@@ -19,7 +19,7 @@ namespace TestAndSample.Sample_Common.Utility.Table.Csv
 
             Debug.Log("================================");
 
-            var list = CsvTool.CsvToList<SampleData>(textAsset.text);
+            var list = SimpleCsvTool.CsvToList<SampleData>(textAsset.text);
 
             foreach (var data in list)
             {

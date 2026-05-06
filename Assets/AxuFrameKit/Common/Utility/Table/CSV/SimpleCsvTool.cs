@@ -6,7 +6,7 @@ using AxuFrameKit.Common.Utility.Analysis;
 
 namespace AxuFrameKit.Common.Utility.Table.CSV
 {
-    public class CsvTool
+    public class SimpleCsvTool
     {
         private readonly CsvParser _parser;
         private readonly CsvParseOptions _options;
@@ -15,7 +15,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
         /// 创建一个新的CsvTool实例
         /// </summary>
         /// <param name="options">解析配置，如果为null则使用默认配置</param>
-        public CsvTool(CsvParseOptions options = null)
+        public SimpleCsvTool(CsvParseOptions options = null)
         {
             _options = options ?? new CsvParseOptions();
             _parser = new CsvParser(_options);
@@ -61,7 +61,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
                 TrimFields = true
             };
 
-            return new CsvTool(options).Parse<T>(table);
+            return new SimpleCsvTool(options).Parse<T>(table);
         }
 
         #endregion

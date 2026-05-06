@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 using AxuFrameKit.Common.CustomAttribute;
-using AxuFrameKit.Common.Utility.Analysis;
 
 namespace AxuFrameKit.Common.Utility.Table.CSV
 {
@@ -21,7 +20,9 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
     }
 
     /// <summary>
-    /// 即开即用的Csv表解析容器，导入CsvAsset后能直接使用解析后的元素集合
+    /// 即开即用的Csv表解析容器，导入CsvAsset后能直接使用解析后的元素集合。
+    /// 通过继承该类，并在子类中指定泛型参数为对应的表元素类型，即可快速实现从Csv文本到元素集合的转换。
+    /// 本类支持直接当做集合来使用（实现了IEnumerable<T>接口），也支持通过预设的字典来快速访问元素（需要先调用SetSelfDictionary方法进行设置）。
     /// </summary>
     public abstract class CsvContainerSo<T> : CsvContainerBase, IEnumerable<T>, IDisposable where T : class, new()
     {
@@ -137,7 +138,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
         {
             if (string.IsNullOrEmpty(json))
             {
-                Debugger.LogError("PreloadFromJson: 输入的json字符串为空!");
+                Debug.LogError("PreloadFromJson: 输入的json字符串为空!");
                 return false;
             }
 
@@ -156,7 +157,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
 
                 if (_tableUnitList == null || _tableUnitList.Count == 0)
                 {
-                    Debugger.LogError("解析Json后无任何内容！");
+                    Debug.LogError("解析Json后无任何内容！");
                     return false;
                 }
 
@@ -164,7 +165,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
             }
             catch (Exception ex)
             {
-                Debugger.LogError($"PreloadFromJson反序列化失败: {ex.Message}\n{ex.StackTrace}");
+                Debug.LogError($"PreloadFromJson反序列化失败: {ex.Message}\n{ex.StackTrace}");
                 _tableUnitList = new List<T>();
 
                 return false;
@@ -185,7 +186,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
         {
             if (TableUnitList == null)
             {
-                Debugger.LogError("TableUnitList is null, please preload data first.");
+                Debug.LogError("TableUnitList is null, please preload data first.");
                 return;
             }
 
@@ -197,7 +198,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
         {
             if (TableUnitList == null)
             {
-                Debugger.LogError("TableUnitList is null, please preload data first.");
+                Debug.LogError("TableUnitList is null, please preload data first.");
                 return null;
             }
 

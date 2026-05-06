@@ -1,9 +1,8 @@
 using System;
 using UnityEditor;
 using UnityEngine;
-using AxuFrameKit.Common.CustomAttribute;
 
-namespace AxU_NextGen.Common.CustomAttribute.Editor
+namespace AxuFrameKit.Common.CustomAttribute.Editor
 {
     // odin插件未装载在项目时，该attribute不会生效，也不会报错
     [CustomEditor(typeof(CustomScriptableObject), true)]
