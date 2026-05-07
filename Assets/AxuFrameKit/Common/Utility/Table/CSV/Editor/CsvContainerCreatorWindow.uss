@@ -1,0 +1,204 @@
+/* ==================================================================
+   CsvContainerCreatorWindow — Local Overrides
+   Shared base styles are loaded from CommonWindowStyles.uss
+   ================================================================== */
+
+/* ===== Main Split Layout ===== */
+.csv-main-container {
+    flex-direction: row;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+/* ===== Left Panel (type list) ===== */
+.csv-left-panel {
+    width: 260px;
+    min-width: 200px;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    margin-right: 6px;
+}
+
+/* ===== Right Panel (detail) ===== */
+.csv-right-panel {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* ===== Selected Item Highlight ===== */
+.csv-item-selected {
+    background-color: rgba(255, 149, 0, 0.15);
+    border-color: var(--ue5-accent-border);
+}
+
+.csv-item-selected:hover {
+    background-color: rgba(255, 149, 0, 0.22);
+}
+
+/* ===== Namespace Badge (small pill) ===== */
+.csv-ns-badge {
+    font-size: 9px;
+    color: var(--ue5-text-disabled);
+    background-color: #2a2a2a;
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 6px;
+    padding-left: 5px;
+    padding-right: 5px;
+    margin-right: 4px;
+    -unity-text-align: middle-center;
+}
+
+/* ===== Detail Info Row ===== */
+.csv-info-row {
+    flex-direction: row;
+    align-items: flex-start;
+    margin-bottom: 6px;
+    padding: 6px 8px;
+    background-color: #222222;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+}
+
+.csv-info-label {
+    width: 90px;
+    min-width: 90px;
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: var(--ue5-text-disabled);
+    -unity-text-align: middle-left;
+}
+
+.csv-info-value {
+    flex-grow: 1;
+    font-size: 11px;
+    color: var(--ue5-text-primary);
+    white-space: normal;
+    overflow: hidden;
+}
+
+/* ===== Separator ===== */
+.csv-separator {
+    height: 1px;
+    background-color: var(--ue5-border-subtle);
+    margin-top: 8px;
+    margin-bottom: 12px;
+}
+
+/* ===== Create Asset Button (full-width override) ===== */
+.csv-create-btn {
+    align-self: stretch;
+    height: 36px;
+    font-size: 13px;
+    margin-top: 0;
+}
+
+/* ===== Asset path label in Existing Assets rows ===== */
+.csv-asset-path {
+    font-size: 10px;
+    color: var(--ue5-text-disabled);
+    -unity-text-align: middle-right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    margin-right: 4px;
+}
+
+/* ===== Fields Section Title ===== */
+.csv-fields-section-title {
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: var(--ue5-text-disabled);
+    letter-spacing: 1px;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    padding-left: 2px;
+}
+
+/* ===== Field Row ===== */
+.csv-field-row {
+    flex-direction: row;
+    align-items: center;
+    background-color: #1e1e1e;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    padding: 4px 8px;
+    margin-bottom: 3px;
+}
+
+.csv-field-row:hover {
+    background-color: #262626;
+    border-color: var(--ue5-border-light);
+}
+
+/* Type keyword (int, string, …) */
+.csv-field-type {
+    font-size: 11px;
+    color: #7ec8e3;         /* blue-ish, like VS Code type color */
+    -unity-font-style: bold;
+    margin-right: 6px;
+    min-width: 48px;
+}
+
+/* Member name */
+.csv-field-name {
+    font-size: 11px;
+    color: var(--ue5-text-primary);
+    flex-grow: 1;
+}
+
+/* Arrow between member name and column name */
+.csv-field-arrow {
+    font-size: 11px;
+    color: var(--ue5-text-disabled);
+    margin-left: 4px;
+    margin-right: 4px;
+}
+
+/* CSV column name string */
+.csv-field-colname {
+    font-size: 11px;
+    color: #c3e88d;         /* green-ish, like VS Code string color */
+    margin-right: 4px;
+}
+
+/* ===== Field Badges ===== */
+.csv-field-badge {
+    font-size: 9px;
+    border-radius: 6px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    margin-left: 3px;
+    -unity-text-align: middle-center;
+}
+
+/* optional badge — warm amber */
+.csv-field-badge--optional {
+    background-color: rgba(255, 193, 7, 0.15);
+    border-width: 1px;
+    border-color: rgba(255, 193, 7, 0.4);
+    color: #ffc107;
+}
+
+/* no-column badge — dim */
+.csv-field-badge--none {
+    background-color: #2a2a2a;
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    color: var(--ue5-text-disabled);
+}
+
+/* FinalParse badge — teal */
+.csv-field-badge--final {
+    background-color: rgba(0, 188, 212, 0.15);
+    border-width: 1px;
+    border-color: rgba(0, 188, 212, 0.4);
+    color: #00bcd4;
+}
