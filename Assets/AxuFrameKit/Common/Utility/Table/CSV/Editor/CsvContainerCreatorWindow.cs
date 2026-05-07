@@ -5,6 +5,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UIElements;
+using AxuFrameKit.Common.CustomAttribute;
 
 namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
 {
@@ -377,6 +378,9 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             content.style.flexGrow = 1;
             container.Add(content);
 
+            // ── InspectorTitle / InspectorIntro meta ──
+            BuildInspectorMeta(content, type);
+
             // ── Info rows ──
             var genericArg = type.BaseType!.GetGenericArguments()[0];
 
@@ -506,6 +510,46 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             return row;
         }
 
+        // ─────────────────── Inspector Meta ─────────────────────────────
+
+        private static void BuildInspectorMeta(VisualElement parent, Type type)
+        {
+            var titleAttr = type.GetCustomAttribute<InspectorTitleAttribute>();
+            var introAttr = type.GetCustomAttribute<InspectorIntroAttribute>();
+
+            if (titleAttr == null && introAttr == null) return;
+
+            var metaBlock = new VisualElement();
+            metaBlock.AddToClassList("csv-meta-block");
+            parent.Add(metaBlock);
+
+            // ── Title ──
+            if (titleAttr != null)
+            {
+                var titleLbl = new Label(titleAttr.Title);
+                titleLbl.AddToClassList("csv-meta-title");
+                // Scale font relative to the attribute's requested size, clamped for the panel
+                titleLbl.style.fontSize = Mathf.Clamp(titleAttr.FontSize / 2, 16, 32);
+                metaBlock.Add(titleLbl);
+
+                var titleDivider = new VisualElement();
+                titleDivider.AddToClassList("csv-meta-divider");
+                metaBlock.Add(titleDivider);
+            }
+
+            // ── Intro ──
+            if (introAttr != null)
+            {
+                var introLbl = new Label(introAttr.Description);
+                introLbl.AddToClassList("csv-meta-intro");
+                metaBlock.Add(introLbl);
+
+                var introDivider = new VisualElement();
+                introDivider.AddToClassList("csv-meta-divider");
+                introDivider.AddToClassList("csv-meta-divider--light");
+                metaBlock.Add(introDivider);
+            }
+        }
 
         private static void AddInfoRow(VisualElement parent, string label, string value)
         {
