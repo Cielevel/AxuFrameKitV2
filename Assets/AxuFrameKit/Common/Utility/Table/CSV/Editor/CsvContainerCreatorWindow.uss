@@ -1,6 +1,305 @@
 /* ==================================================================
-   CsvContainerCreatorWindow — Local Overrides
-   Shared base styles are loaded from CommonWindowStyles.uss
+   CsvContainerCreatorWindow — All-in-one Style
+   ================================================================== */
+
+/* ===== CSS Variables (UE5 Color Palette) ===== */
+:root {
+    /* Primary Background Colors */
+    --ue5-bg-darkest: #1a1a1a;
+    --ue5-bg-dark: #1e1e1e;
+    --ue5-bg-panel: #242424;
+    --ue5-bg-element: #2a2a2a;
+    --ue5-bg-hover: #333333;
+    --ue5-bg-active: #3a3a3a;
+    
+    /* Accent Colors (UE5 Orange) */
+    --ue5-accent-primary: #ff9500;
+    --ue5-accent-secondary: #e68a00;
+    --ue5-accent-glow: rgba(255, 149, 0, 0.15);
+    --ue5-accent-border: rgba(255, 149, 0, 0.4);
+    
+    /* Border Colors */
+    --ue5-border-dark: #0d0d0d;
+    --ue5-border-subtle: #383838;
+    --ue5-border-light: #454545;
+    
+    /* Text Colors */
+    --ue5-text-primary: #e8e8e8;
+    --ue5-text-secondary: #a0a0a0;
+    --ue5-text-disabled: #666666;
+    --ue5-text-highlight: #ffffff;
+    
+    /* Selection Colors */
+    --ue5-selected-bg: #ff9500;
+    --ue5-selected-text: #1a1a1a;
+    --ue5-selected-hover: #ffaa33;
+    
+    /* Button Colors */
+    --ue5-btn-bg: #3d3d3d;
+    --ue5-btn-hover: #4a4a4a;
+    --ue5-btn-active: #555555;
+    --ue5-btn-primary-bg: #ff9500;
+    --ue5-btn-primary-hover: #ffaa33;
+    --ue5-btn-primary-active: #cc7700;
+}
+
+/* ===== Root Container ===== */
+.ue5-root {
+    background-color: #141414;
+    color: var(--ue5-text-primary);
+    font-size: 12px;
+    -unity-font-style: normal;
+    padding: 4px;
+}
+
+/* ===== Window Title ===== */
+.window-title {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: var(--ue5-text-highlight);
+    margin-bottom: 8px;
+    padding-left: 4px;
+}
+
+/* ===== Toolbar Panel ===== */
+.toolbar-panel {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.toolbar-label {
+    font-size: 11px;
+    color: var(--ue5-text-secondary);
+    margin-right: 8px;
+    -unity-font-style: bold;
+}
+
+/* ===== Content ScrollView ===== */
+.content-scroll {
+    flex-grow: 1;
+    background-color: transparent;
+}
+
+/* ===== Group Container ===== */
+.group-container {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-border);
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+/* ===== Group Header ===== */
+.group-header {
+    flex-direction: row;
+    align-items: center;
+    background-color: #262626;
+    padding: 6px 10px;
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ue5-border-dark);
+}
+
+.group-title {
+    flex-grow: 1;
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--ue5-text-highlight);
+}
+
+/* ===== Group Content ===== */
+.group-content {
+    padding: 6px;
+}
+
+/* ===== Item Row ===== */
+.item-row {
+    flex-direction: row;
+    align-items: center;
+    background-color: #242424;
+    border-radius: 4px;
+    padding: 4px 6px;
+    margin-bottom: 4px;
+    border-width: 1px;
+    border-color: transparent;
+}
+
+.item-row:hover {
+    background-color: #2e2e2e;
+    border-color: var(--ue5-border-subtle);
+}
+
+/* ===== Item Icon ===== */
+.item-icon {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    margin-right: 6px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* ===== Item Name ===== */
+.item-name {
+    flex-grow: 1;
+    font-size: 11px;
+    color: var(--ue5-text-primary);
+    -unity-text-align: middle-left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ===== Action Button ===== */
+.action-btn {
+    height: 24px;
+    min-height: 24px;
+    min-width: 28px;
+    font-size: 11px;
+    background-color: var(--ue5-btn-bg);
+    border-width: 1px;
+    border-color: var(--ue5-border-dark);
+    border-radius: 3px;
+    color: var(--ue5-text-primary);
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-left: 2px;
+    flex-shrink: 0;
+}
+
+.action-btn:hover {
+    background-color: var(--ue5-btn-hover);
+    color: var(--ue5-text-highlight);
+}
+
+.action-btn:active {
+    background-color: var(--ue5-btn-active);
+}
+
+/* ===== Primary Button ===== */
+.primary-btn {
+    height: 26px;
+    min-height: 26px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    background-color: var(--ue5-btn-primary-bg);
+    color: var(--ue5-selected-text);
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: var(--ue5-accent-secondary);
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.primary-btn:hover {
+    background-color: var(--ue5-btn-primary-hover);
+}
+
+.primary-btn:active {
+    background-color: var(--ue5-btn-primary-active);
+}
+
+/* ===== Text Field ===== */
+.ue5-text-field {
+    flex-grow: 1;
+    margin-right: 8px;
+}
+
+.ue5-text-field > .unity-text-field__input {
+    background-color: var(--ue5-bg-darkest);
+    border-width: 1px;
+    border-color: var(--ue5-border-subtle);
+    border-radius: 3px;
+    color: var(--ue5-text-primary);
+    padding: 4px 8px;
+    font-size: 11px;
+    min-height: 24px;
+}
+
+.ue5-text-field > .unity-text-field__input:hover {
+    border-color: var(--ue5-border-light);
+}
+
+.ue5-text-field > .unity-text-field__input:focus {
+    border-color: var(--ue5-accent-primary);
+}
+
+/* ===== Help Box ===== */
+.help-box {
+    background-color: rgba(255, 149, 0, 0.1);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(255, 149, 0, 0.3);
+    padding: 10px 12px;
+    margin: 8px 0;
+}
+
+.help-box-text {
+    font-size: 11px;
+    color: var(--ue5-text-secondary);
+    -unity-text-align: middle-center;
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+    padding: 12px;
+    -unity-text-align: middle-center;
+}
+
+.empty-state-text {
+    font-size: 11px;
+    color: #808080;
+    -unity-font-style: italic;
+}
+
+/* ===== Badge ===== */
+.badge {
+    background-color: var(--ue5-accent-primary);
+    color: var(--ue5-selected-text);
+    font-size: 9px;
+    -unity-font-style: bold;
+    padding: 2px 6px;
+    border-radius: 8px;
+    margin-left: 6px;
+}
+
+.badge-build {
+    background-color: #4a9f4a;
+}
+
+/* ===== Scrollbars - UE5 Slim Style ===== */
+.unity-scroller {
+    background-color: transparent;
+}
+
+.unity-scroller--vertical {
+    width: 10px;
+}
+
+.unity-base-slider__dragger {
+    background-color: #4a4a4a;
+    border-radius: 2px;
+    border-width: 0;
+    margin: 2px;
+}
+
+.unity-base-slider__dragger:hover {
+    background-color: #5a5a5a;
+}
+
+.unity-base-slider__dragger:active {
+    background-color: var(--ue5-accent-primary);
+}
+
+/* ==================================================================
+   Local Overrides / Window Specific Styles
    ================================================================== */
 
 /* ===== Main Split Layout ===== */
@@ -12,9 +311,9 @@
 
 /* ===== Left Panel (type list) ===== */
 .csv-left-panel {
-    width: 260px;
-    min-width: 200px;
-    max-width: 320px;
+    width: 320px;
+    min-width: 280px;
+    max-width: 450px;
     display: flex;
     flex-direction: column;
     margin-right: 6px;
@@ -50,6 +349,7 @@
     padding-right: 5px;
     margin-right: 4px;
     -unity-text-align: middle-center;
+    flex-shrink: 0;
 }
 
 /* ===== Detail Info Row ===== */

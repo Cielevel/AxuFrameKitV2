@@ -82,13 +82,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
 
         private void CreateGUI()
         {
-            // Load CommonWindowStyles (shared across all AxuFrameKit windows)
-            var commonStyles = AssetDatabase.LoadAssetAtPath<StyleSheet>(
-                "Assets/AxuFrameKit/Common/Editor/Window/CommonWindowStyles.uss");
-            if (commonStyles != null)
-                rootVisualElement.styleSheets.Add(commonStyles);
-
-            // Also load local overrides / extras
+            // Load local styles (now all-in-one)
             var scriptPath = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(this));
             var dirPath = System.IO.Path.GetDirectoryName(scriptPath);
             var localStyles = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/CsvContainerCreatorWindow.uss");
@@ -384,8 +378,8 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             // ── Info rows ──
             var genericArg = type.BaseType!.GetGenericArguments()[0];
 
-            AddInfoRow(content, "Full Name",    type.FullName ?? type.Name);
-            AddInfoRow(content, "Assembly",     type.Assembly.GetName().Name);
+            AddInfoRow(content, "Full Name", type.FullName ?? type.Name);
+            AddInfoRow(content, "Assembly", type.Assembly.GetName().Name);
             AddInfoRow(content, "Element Type", genericArg.FullName ?? genericArg.Name);
 
             // ── Fields section ──
@@ -417,7 +411,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             foreach (var guid in guids)
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
-                var obj  = AssetDatabase.LoadAssetAtPath(path, type);
+                var obj = AssetDatabase.LoadAssetAtPath(path, type);
                 if (obj != null) assets.Add((path, obj));
             }
 
@@ -485,11 +479,11 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             nameBtn.text = obj.name;
             nameBtn.AddToClassList("item-name");
             nameBtn.style.backgroundColor = Color.clear;
-            nameBtn.style.borderLeftWidth  = 0;
+            nameBtn.style.borderLeftWidth = 0;
             nameBtn.style.borderRightWidth = 0;
-            nameBtn.style.borderTopWidth   = 0;
+            nameBtn.style.borderTopWidth = 0;
             nameBtn.style.borderBottomWidth = 0;
-            nameBtn.style.unityTextAlign   = TextAnchor.MiddleLeft;
+            nameBtn.style.unityTextAlign = TextAnchor.MiddleLeft;
             row.Add(nameBtn);
 
             // Short path label
@@ -502,7 +496,8 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             {
                 Selection.activeObject = obj;
                 EditorGUIUtility.PingObject(obj);
-            }) { text = "📍" };
+            })
+            { text = "📍" };
             locateBtn.AddToClassList("action-btn");
             locateBtn.tooltip = "Locate in Project window";
             row.Add(locateBtn);
@@ -578,7 +573,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
 
             foreach (var field in elementType.GetFields(flags))
             {
-                var csvAttr   = field.GetCustomAttribute<CsvColumnAttribute>();
+                var csvAttr = field.GetCustomAttribute<CsvColumnAttribute>();
                 var finalAttr = field.GetCustomAttribute<FinalParseAttribute>();
                 members.Add((GetCSharpTypeName(field.FieldType), field.Name, csvAttr, finalAttr));
             }
@@ -587,7 +582,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             {
                 // Skip indexers
                 if (prop.GetIndexParameters().Length > 0) continue;
-                var csvAttr   = prop.GetCustomAttribute<CsvColumnAttribute>();
+                var csvAttr = prop.GetCustomAttribute<CsvColumnAttribute>();
                 var finalAttr = prop.GetCustomAttribute<FinalParseAttribute>();
                 members.Add((GetCSharpTypeName(prop.PropertyType), prop.Name, csvAttr, finalAttr));
             }
@@ -667,7 +662,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
         {
             if (t.IsGenericType)
             {
-                var def  = t.GetGenericTypeDefinition();
+                var def = t.GetGenericTypeDefinition();
                 var args = string.Join(", ", t.GetGenericArguments().Select(GetCSharpTypeName));
                 var baseName = def.Name.Split('`')[0];
                 return $"{baseName}<{args}>";
@@ -675,22 +670,22 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
 
             return Type.GetTypeCode(t) switch
             {
-                TypeCode.Boolean  => "bool",
-                TypeCode.Byte     => "byte",
-                TypeCode.SByte    => "sbyte",
-                TypeCode.Char     => "char",
-                TypeCode.Decimal  => "decimal",
-                TypeCode.Double   => "double",
-                TypeCode.Single   => "float",
-                TypeCode.Int16    => "short",
-                TypeCode.UInt16   => "ushort",
-                TypeCode.Int32    => "int",
-                TypeCode.UInt32   => "uint",
-                TypeCode.Int64    => "long",
-                TypeCode.UInt64   => "ulong",
-                TypeCode.String   => "string",
-                TypeCode.Object   => t.Name,
-                _                 => t.Name,
+                TypeCode.Boolean => "bool",
+                TypeCode.Byte => "byte",
+                TypeCode.SByte => "sbyte",
+                TypeCode.Char => "char",
+                TypeCode.Decimal => "decimal",
+                TypeCode.Double => "double",
+                TypeCode.Single => "float",
+                TypeCode.Int16 => "short",
+                TypeCode.UInt16 => "ushort",
+                TypeCode.Int32 => "int",
+                TypeCode.UInt32 => "uint",
+                TypeCode.Int64 => "long",
+                TypeCode.UInt64 => "ulong",
+                TypeCode.String => "string",
+                TypeCode.Object => t.Name,
+                _ => t.Name,
             };
         }
 
@@ -738,7 +733,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             var guids = AssetDatabase.FindAssets($"t:MonoScript {type.Name}");
             foreach (var guid in guids)
             {
-                var path   = AssetDatabase.GUIDToAssetPath(guid);
+                var path = AssetDatabase.GUIDToAssetPath(guid);
                 var script = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
                 if (script == null) continue;
 
