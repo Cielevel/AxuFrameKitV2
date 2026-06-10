@@ -81,11 +81,14 @@ namespace AxuFrameKit.Common.Utility.Multiton
         {
             if (_parent == null)
                 _parent = new GameObject($"[Parent {typeof(T).Name}]").transform;
-            
+
             if (instance != null)
+            {
                 instance.transform.SetParent(_parent);
+                instance.OnThisCreated();
+            }
         }
-        
+
         public static void DestroyInstance(ulong key)
         {
             lock (Lock)
@@ -117,8 +120,9 @@ namespace AxuFrameKit.Common.Utility.Multiton
                         instance.OnThisDestroyed();
                     }
                     Destroy(instance.gameObject);
-                    Instances.Clear();
                 }
+                
+                Instances.Clear();
             }
         }
 

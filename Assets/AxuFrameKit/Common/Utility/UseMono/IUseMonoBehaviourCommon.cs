@@ -22,8 +22,8 @@ namespace AxuFrameKit.Common.Utility.UseMono
 
     public static class IUseMonoBehaviourCommonExtension
     {
-        private static IMonoHandlerCommon MonoHandler => _monoHandler ??= new MonoHandlerCommon();
-        private static IMonoHandlerCommon _monoHandler;
+        private static readonly Lazy<IMonoHandlerCommon> _monoHandler = new(() => new MonoHandlerCommon());
+        private static IMonoHandlerCommon MonoHandler => _monoHandler.Value;
 
         public static Coroutine StartCoroutine(this IUseMonoBehaviourCommon self, IEnumerator enumerator)
         {
@@ -86,8 +86,13 @@ namespace AxuFrameKit.Common.Utility.UseMono
         private const int DefaultCapacity = 8;
 
         // 共享的MonoBehaviour载体，延迟初始化
-        private MonoCommon _monoCommon;
-        private MonoCommon MonoCommon => _monoCommon ? _monoCommon : (_monoCommon = CreateMonoCommon());
+        private readonly Lazy<MonoCommon> _monoCommon;
+        private MonoCommon MonoCommon => _monoCommon.Value;
+
+        public MonoHandlerCommon()
+        {
+            _monoCommon = new Lazy<MonoCommon>(CreateMonoCommon);
+        }
 
         // 存储每个对象关联的协程列表
         private Dictionary<object, List<Coroutine>> _coroutineDict = new(DefaultCapacity);
@@ -109,12 +114,15 @@ namespace AxuFrameKit.Common.Utility.UseMono
         {
             var deltaTime = Time.deltaTime;
 
-            foreach (var kvp in _updateDict)
+            // 快照键值对，避免回调内调用 RegisterUpdate/ClearUpdate/Destroy 导致字典被修改
+            var updatePairs = new List<KeyValuePair<object, Action>>(_updateDict);
+            foreach (var kvp in updatePairs)
             {
                 kvp.Value?.Invoke();
             }
 
-            foreach (var kvp in _updateTimeDict)
+            var updateTimePairs = new List<KeyValuePair<object, Action<float>>>(_updateTimeDict);
+            foreach (var kvp in updateTimePairs)
             {
                 kvp.Value?.Invoke(deltaTime);
             }
@@ -122,6 +130,12 @@ namespace AxuFrameKit.Common.Utility.UseMono
 
         public Coroutine StartCoroutine(IEnumerator enumerator, object obj)
         {
+            if (enumerator == null)
+            {
+                Debug.LogError("StartCoroutine: enumerator cannot be null.");
+                return null;
+            }
+
             if (_coroutineDict.ContainsKey(obj) == false)
             {
                 _coroutineDict.Add(obj, new List<Coroutine>(4));
@@ -137,13 +151,16 @@ namespace AxuFrameKit.Common.Utility.UseMono
             if (_coroutineDict.TryGetValue(obj, out var coroutines) == false)
                 return;
 
-            foreach (var coroutine in coroutines)
+            if (_monoCommon.IsValueCreated)
             {
-                if (coroutine != null)
-                    MonoCommon.StopCoroutine(coroutine);
+                foreach (var coroutine in coroutines)
+                {
+                    if (coroutine != null)
+                        MonoCommon.StopCoroutine(coroutine);
+                }
             }
 
-            coroutines.Clear();
+            _coroutineDict.Remove(obj);
         }
 
         public void StopCoroutine(Coroutine coroutine, object obj)
@@ -152,18 +169,23 @@ namespace AxuFrameKit.Common.Utility.UseMono
                 return;
 
             if (_coroutineDict.TryGetValue(obj, out var coroutines))
-            {
                 coroutines.Remove(coroutine);
-            }
 
-            MonoCommon.StopCoroutine(coroutine);
+            if (_monoCommon.IsValueCreated)
+                MonoCommon.StopCoroutine(coroutine);
         }
 
         public void RegisterUpdate(Action onUpdate, object obj)
         {
+            if (onUpdate == null)
+            {
+                Debug.LogError("RegisterUpdate: onUpdate cannot be null.");
+                return;
+            }
+
             if (obj is not IUseMonoBehaviourCommonUpdate)
             {
-                Debug.Log("注册失败，对象未实现IUseMonoBehaviourCommonUpdate接口");
+                Debug.LogWarning("注册失败，对象未实现IUseMonoBehaviourCommonUpdate接口");
                 return;
             }
 
@@ -175,9 +197,15 @@ namespace AxuFrameKit.Common.Utility.UseMono
 
         public void RegisterUpdate(Action<float> onUpdate, object obj)
         {
+            if (onUpdate == null)
+            {
+                Debug.LogError("RegisterUpdate: onUpdate cannot be null.");
+                return;
+            }
+
             if (obj is not IUseMonoBehaviourCommonUpdate)
             {
-                Debug.Log("注册失败，对象未实现IUseMonoBehaviourCommonUpdate接口");
+                Debug.LogWarning("注册失败，对象未实现IUseMonoBehaviourCommonUpdate接口");
                 return;
             }
 
