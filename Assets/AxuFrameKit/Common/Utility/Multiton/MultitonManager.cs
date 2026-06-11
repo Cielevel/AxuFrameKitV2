@@ -6,7 +6,7 @@ namespace AxuFrameKit.Common.Utility.Multiton
     /// <summary>
     /// Manager 所管理的子项接口
     /// </summary>
-    public interface IManagerItem
+    public interface IMultitonManagerItem
     {
         /// <summary>
         /// 是否已完成，为 true 时 Manager 将在当帧 Tick 后自动移除并调用 OnDispose
@@ -42,9 +42,9 @@ namespace AxuFrameKit.Common.Utility.Multiton
     /// </summary>
     /// <typeparam name="TManager">Manager 自身类型（CRTP）</typeparam>
     /// <typeparam name="TItem">被管理的子项类型，需实现 IManagerItem</typeparam>
-    public abstract class Manager<TManager, TItem> : MonoBehaviour
-        where TManager : Manager<TManager, TItem>
-        where TItem : class, IManagerItem
+    public abstract class MultitonManager<TManager, TItem> : MonoBehaviour
+        where TManager : MultitonManager<TManager, TItem>
+        where TItem : class, IMultitonManagerItem
     {
         // ─────────────────────────────────────────────────────────────
         // 单例
