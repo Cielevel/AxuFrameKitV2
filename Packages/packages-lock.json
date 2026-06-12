@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.cielevel.axu-frame-kit": {
+      "version": "file:com.cielevel.axu-frame-kit",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.termway.ide.antigravity": {
       "version": "https://github.com/TermWay/unity-ide-antigravity.git",
       "depth": 0,

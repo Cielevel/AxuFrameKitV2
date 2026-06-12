@@ -1,57 +1,45 @@
-using TMPro;
 using UnityEngine;
-using AxuFrameKit.Common.Utility.Multiton;
+using TMPro;
 
 namespace AxuFrameKit.Common.UI.Kit.Typewriter
 {
-    // 2026-6-11 
-    // 补充：
-    // 1.实现基于字符的回调（比如显示完成某个char后/到达某一个char后，调用一次回调）
-    // 2.每显示一个字符或者N个字符（按数量），调用一次回调
-    // 效果预览：打字机声音（每一个空格播放一次/每N个字符播放一次）
-    public class TmpTypewriter : MultitonManager<TmpTypewriter, TmpTypewriterItem>
-    {
-        /// <summary>
-        /// 快捷注册：对目标 TMP_Text 启动打字机效果
-        /// </summary>
-        public TmpTypewriterItem Play(TMP_Text label, float charInterval = 0.05f, bool smooth = false)
-        {
-            var item = new TmpTypewriterItem();
-            item.Setup(label, charInterval, smooth);
-            Register(item);
-            return item;
-        }
-    }
-
-    public class TmpTypewriterItem : IMultitonManagerItem
+    /// <summary>
+    /// 打字机效果 MonoBehaviour 组件，可直接挂载到 GameObject 上使用
+    /// 功能与 TmpTypewriterItem 一致，自带 Update 驱动，无需依赖 Manager
+    /// </summary>
+    [RequireComponent(typeof(TMP_Text))]
+    public class TmpTypewriter : MonoBehaviour
     {
         // ─────────────────────────────────────────────────────────────
-        // 配置
+        // 配置（可在 Inspector 预设）
         // ─────────────────────────────────────────────────────────────
 
-        public float CharInterval { get; private set; } = 0.05f;
+        [SerializeField] private TMP_Text _label;
+        [SerializeField] private float _charInterval = 0.05f;
+        [SerializeField] private bool _smooth;
+
+        // ─────────────────────────────────────────────────────────────
+        // 公开属性
+        // ─────────────────────────────────────────────────────────────
+
+        public float CharInterval => _charInterval;
 
         /// <summary>
         /// 字符逐个出现的总时长（估算值，受字符数量与间隔影响）
         /// </summary>
         public float Duration { get; private set; }
 
-        /// <summary>
-        /// 是否启用平滑渐变模式（关闭即逐字跳变）
-        /// </summary>
-        public bool Smooth { get; private set; }
-
-        // ─────────────────────────────────────────────────────────────
-        // 引用
-        // ─────────────────────────────────────────────────────────────
-
-        public TMP_Text Label { get; private set; }
-        private TMP_TextInfo _textInfo;
-        private int _totalCharCount;
+        public bool Smooth => _smooth;
+        public TMP_Text Label => _label;
+        public bool IsComplete { get; private set; }
+        public bool IsPlaying { get; private set; }
 
         // ─────────────────────────────────────────────────────────────
         // 运行时状态
         // ─────────────────────────────────────────────────────────────
+
+        private TMP_TextInfo _textInfo;
+        private int _totalCharCount;
 
         /// <summary>
         /// 当前进度（浮点）
@@ -65,89 +53,121 @@ namespace AxuFrameKit.Common.UI.Kit.Typewriter
         /// </summary>
         private float _timer;
 
-        private bool _isComplete;
-
-        public bool IsComplete => _isComplete;
-
         // ─────────────────────────────────────────────────────────────
-        // 初始化
+        // Play（与 Manager 一致的签名）
         // ─────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// 配置打字机参数（Register 前调用）
+        /// 启动打字机效果（与 TmpTypewriterManager.Play 签名一致）
         /// </summary>
-        public void Setup(TMP_Text label, float charInterval = 0.05f, bool smooth = false)
+        public void Play(float charInterval = 0.05f, bool smooth = false)
         {
-            Label = label;
-            CharInterval = Mathf.Max(0.001f, charInterval);
-            Smooth = smooth;
+            _charInterval = Mathf.Max(0.001f, charInterval);
+            _smooth = smooth;
+            Play();
         }
 
-        public void OnCreate()
+        /// <summary>
+        /// 使用已配置的参数启动打字机效果（Inspector 中预设或代码设置后调用）
+        /// </summary>
+        public void Play()
         {
-            if (Label == null)
+            if (_label == null)
             {
-                _isComplete = true;
+                IsComplete = true;
                 return;
             }
 
             // 强制生成一次完整 mesh，之后不再重构
-            Label.ForceMeshUpdate();
-            _textInfo = Label.textInfo;
+            _label.ForceMeshUpdate();
+            _textInfo = _label.textInfo;
             _totalCharCount = _textInfo.characterCount;
-            Duration = _totalCharCount * CharInterval;
+            Duration = _totalCharCount * _charInterval;
 
             // 初始全部隐藏
             SetAllAlpha(0);
-            Label.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
+            _label.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
 
             _progress = 0f;
             _timer = 0f;
-            _isComplete = false;
+            IsComplete = false;
+            IsPlaying = true;
+        }
+
+        /// <summary>
+        /// 立即完成打字机效果，显示全部字符
+        /// </summary>
+        public void Complete()
+        {
+            if (_label != null && _textInfo != null)
+            {
+                SetAllAlpha(255);
+                _label.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
+            }
+
+            IsComplete = true;
+            IsPlaying = false;
+        }
+
+        /// <summary>
+        /// 停止打字机效果并重置状态
+        /// </summary>
+        public void Stop()
+        {
+            IsPlaying = false;
+            IsComplete = false;
         }
 
         // ─────────────────────────────────────────────────────────────
-        // 每帧驱动
+        // Unity 生命周期
         // ─────────────────────────────────────────────────────────────
 
-        public void Tick(float deltaTime)
+        private void Update()
         {
-            if (_isComplete || _totalCharCount == 0)
+            if (!IsPlaying || IsComplete || _totalCharCount == 0)
                 return;
 
-            if (Smooth)
+            if (_smooth)
             {
-                TickSmooth(deltaTime);
+                TickSmooth(Time.deltaTime);
             }
             else
             {
-                TickNonSmooth(deltaTime);
+                TickNonSmooth(Time.deltaTime);
             }
 
             // 只更新颜色数据，不重建 mesh
-            Label.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
+            _label.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
 
             // 检查是否全部显示完成
             if (_progress >= _totalCharCount)
             {
-                _isComplete = true;
+                IsComplete = true;
+                IsPlaying = false;
             }
         }
 
-        /// <summary>
-        /// 非平滑模式：逐字跳变
-        /// </summary>
+        private void OnDestroy()
+        {
+            _label = null;
+            _textInfo = null;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // 非平滑模式：逐字跳变
+        // ─────────────────────────────────────────────────────────────
+
         private void TickNonSmooth(float deltaTime)
         {
             _timer += deltaTime;
 
             int visibleCount = Mathf.FloorToInt(_progress);
 
-            while (_timer >= CharInterval && visibleCount < _totalCharCount)
+            while (_timer >= _charInterval && visibleCount < _totalCharCount)
             {
                 RevealChar(visibleCount);
                 visibleCount++;
-                _timer -= CharInterval;
+                _timer -= _charInterval;
             }
 
             _progress = visibleCount;
@@ -158,7 +178,7 @@ namespace AxuFrameKit.Common.UI.Kit.Typewriter
         /// </summary>
         private void TickSmooth(float deltaTime)
         {
-            _progress += deltaTime / CharInterval;
+            _progress += deltaTime / _charInterval;
             _progress = Mathf.Min(_progress, _totalCharCount);
 
             RefreshAlpha();
@@ -255,24 +275,10 @@ namespace AxuFrameKit.Common.UI.Kit.Typewriter
             }
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // 生命周期回调
-        // ─────────────────────────────────────────────────────────────
-
-        public void OnComplete()
+        private void OnValidate()
         {
-            // 确保所有字符完全可见
-            if (Label != null && _textInfo != null)
-            {
-                SetAllAlpha(255);
-                Label.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
-            }
-        }
-
-        public void OnDispose()
-        {
-            Label = null;
-            _textInfo = null;
+            if (_label == null)
+                _label = GetComponent<TMP_Text>();
         }
     }
 }

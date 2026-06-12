@@ -14,7 +14,7 @@ namespace TestAndSample.Sample_Common.UI.Kit.Typewriter
 
         private void Start()
         {
-            TmpTypewriter.Instance.Play(text, charInterval, smooth: smooth);
+            TmpTypewriterManager.Instance.Play(text, charInterval, smooth: smooth);
         }
     }
 }
