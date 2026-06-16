@@ -1,5 +1,5 @@
 using UnityEngine;
-using AxuFrameKit.Core.Utility.Computed;
+using AxuFrameKit._Core.Utility.Computed;
 
 namespace AxuFrameKit.TestAndSample.Sample_Core.Utility.Computed
 {

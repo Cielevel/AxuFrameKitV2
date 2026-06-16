@@ -1,0 +1,19 @@
+{
+    "name": "AxuFrameKit.Editor",
+    "rootNamespace": "AxuFrameKit.Common.Editor",
+    "references": [
+        "GUID:1ef81e2a5ad6c8d4aa3bdfd251990b25",
+        "GUID:b9833bc5d409ce241a57462a9231d7c4"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

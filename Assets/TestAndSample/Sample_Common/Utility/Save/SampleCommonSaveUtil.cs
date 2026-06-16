@@ -1,7 +1,7 @@
 using AxuFrameKit.Common.Utility.Save;
 using UnityEngine;
 using AxuFrameKit.Common.Utility.Serializer;
-using AxuFrameKit._Core.Utility.Encrypt.Symmetric;
+using AxuFrameKit._Core.Utility.Encrypt;
 
 namespace TestAndSample.Sample_Common.Utility.Save
 {
