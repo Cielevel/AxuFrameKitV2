@@ -1,4 +1,4 @@
-namespace AxuFrameKit._Core.Utility.Encrypt.Core
+namespace AxuFrameKit._Core.Utility.Encrypt
 {
     /// <summary>
     /// 哈希算法接口

@@ -1,7 +1,6 @@
 using System;
-using AxuFrameKit._Core.Utility.Encrypt.Core;
 
-namespace AxuFrameKit._Core.Utility.Encrypt.Encoding
+namespace AxuFrameKit._Core.Utility.Encrypt
 {
     /// <summary>
     /// 十六进制编码器

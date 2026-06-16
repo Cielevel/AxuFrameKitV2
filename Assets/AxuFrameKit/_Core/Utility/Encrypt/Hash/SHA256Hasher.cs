@@ -1,9 +1,7 @@
 using System;
 using System.IO;
-using System.Security.Cryptography;
-using AxuFrameKit._Core.Utility.Encrypt.Core;
 
-namespace AxuFrameKit._Core.Utility.Encrypt.Hash
+namespace AxuFrameKit._Core.Utility.Encrypt
 {
     /// <summary>
     /// SHA256 哈希算法实现

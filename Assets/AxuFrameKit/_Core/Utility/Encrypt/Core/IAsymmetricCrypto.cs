@@ -1,4 +1,4 @@
-namespace AxuFrameKit._Core.Utility.Encrypt.Core
+namespace AxuFrameKit._Core.Utility.Encrypt
 {
     /// <summary>
     /// 非对称加密接口

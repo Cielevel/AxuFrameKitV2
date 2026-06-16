@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AxuFrameKit.Common.Utility.TaskQ
+namespace AxuFrameKit._Core.Utility.TaskQ
 {
     public interface ITaskQc
     {

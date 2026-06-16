@@ -1,9 +1,7 @@
 using System;
 using System.Security.Cryptography;
-using System.Text;
-using AxuFrameKit._Core.Utility.Encrypt.Core;
 
-namespace AxuFrameKit._Core.Utility.Encrypt.Mac
+namespace AxuFrameKit._Core.Utility.Encrypt
 {
     /// <summary>
     /// HMAC-SHA256 消息认证码实现

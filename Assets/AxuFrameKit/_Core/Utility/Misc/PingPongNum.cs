@@ -1,4 +1,3 @@
-
 using System;
 
 namespace AxuFrameKit._Core.Utility.Misc

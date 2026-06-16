@@ -1,9 +1,7 @@
 using System;
 using System.Security.Cryptography;
-using System.Text;
-using AxuFrameKit._Core.Utility.Encrypt.Core;
 
-namespace AxuFrameKit._Core.Utility.Encrypt.Asymmetric
+namespace AxuFrameKit._Core.Utility.Encrypt
 {
     /// <summary>
     /// RSA 非对称加密实现

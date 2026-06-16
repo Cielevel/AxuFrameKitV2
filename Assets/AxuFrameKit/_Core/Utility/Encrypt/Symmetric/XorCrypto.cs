@@ -1,8 +1,7 @@
 using System;
 using System.Security.Cryptography;
-using AxuFrameKit._Core.Utility.Encrypt.Core;
 
-namespace AxuFrameKit._Core.Utility.Encrypt.Symmetric
+namespace AxuFrameKit._Core.Utility.Encrypt
 {
     /// <summary>
     /// 简单的 XOR 异或加密实现

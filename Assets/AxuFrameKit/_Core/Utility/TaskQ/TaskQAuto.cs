@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using AxuFrameKit._Core.Utility.Multiton;
 using AxuFrameKit._Core.Utility.Common;
 
-namespace AxuFrameKit.Common.Utility.TaskQ
+namespace AxuFrameKit._Core.Utility.TaskQ
 {
     /// <summary>
     /// 任务队列控制（停止时，将在执行完当前任务后停止）（自动ID多例）

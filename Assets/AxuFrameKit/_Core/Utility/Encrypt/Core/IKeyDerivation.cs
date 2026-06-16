@@ -1,4 +1,4 @@
-namespace AxuFrameKit._Core.Utility.Encrypt.Core
+namespace AxuFrameKit._Core.Utility.Encrypt
 {
     /// <summary>
     /// 密钥派生接口

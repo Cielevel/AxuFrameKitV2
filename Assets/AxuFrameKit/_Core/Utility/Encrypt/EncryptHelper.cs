@@ -1,11 +1,4 @@
 using System;
-using AxuFrameKit._Core.Utility.Encrypt.Core;
-using AxuFrameKit._Core.Utility.Encrypt.Hash;
-using AxuFrameKit._Core.Utility.Encrypt.Symmetric;
-using AxuFrameKit._Core.Utility.Encrypt.Asymmetric;
-using AxuFrameKit._Core.Utility.Encrypt.Encoding;
-using AxuFrameKit._Core.Utility.Encrypt.KeyDerivation;
-using AxuFrameKit._Core.Utility.Encrypt.Mac;
 
 namespace AxuFrameKit._Core.Utility.Encrypt
 {
@@ -130,8 +123,7 @@ namespace AxuFrameKit._Core.Utility.Encrypt
         /// </summary>
         /// <param name="keySize">密钥大小（位），默认2048</param>
         /// <returns>公钥和私钥元组</returns>
-        public static (string publicKey, string privateKey) GenerateRsaKeyPair(int keySize = 2048)
-            => RSA.GenerateKeyPair(keySize);
+        public static (string publicKey, string privateKey) GenerateRsaKeyPair(int keySize = 2048) => RSA.GenerateKeyPair(keySize);
 
         /// <summary>
         /// RSA 公钥加密字符串
@@ -139,8 +131,7 @@ namespace AxuFrameKit._Core.Utility.Encrypt
         /// <param name="plainText">明文</param>
         /// <param name="publicKey">公钥</param>
         /// <returns>Base64 编码的密文</returns>
-        public static string RsaEncrypt(string plainText, string publicKey)
-            => RSA.EncryptString(plainText, publicKey);
+        public static string RsaEncrypt(string plainText, string publicKey) => RSA.EncryptString(plainText, publicKey);
 
         /// <summary>
         /// RSA 私钥解密字符串
@@ -148,8 +139,7 @@ namespace AxuFrameKit._Core.Utility.Encrypt
         /// <param name="cipherText">Base64 编码的密文</param>
         /// <param name="privateKey">私钥</param>
         /// <returns>解密后的明文</returns>
-        public static string RsaDecrypt(string cipherText, string privateKey)
-            => RSA.DecryptString(cipherText, privateKey);
+        public static string RsaDecrypt(string cipherText, string privateKey) => RSA.DecryptString(cipherText, privateKey);
 
         #endregion
 

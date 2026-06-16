@@ -1,8 +1,7 @@
 using System;
 using System.Security.Cryptography;
-using AxuFrameKit._Core.Utility.Encrypt.Core;
 
-namespace AxuFrameKit._Core.Utility.Encrypt.KeyDerivation
+namespace AxuFrameKit._Core.Utility.Encrypt
 {
     /// <summary>
     /// PBKDF2 密钥派生实现

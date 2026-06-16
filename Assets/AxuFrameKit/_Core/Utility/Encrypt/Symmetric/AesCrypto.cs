@@ -1,9 +1,7 @@
 using System;
 using System.Security.Cryptography;
-using System.Text;
-using AxuFrameKit._Core.Utility.Encrypt.Core;
 
-namespace AxuFrameKit._Core.Utility.Encrypt.Symmetric
+namespace AxuFrameKit._Core.Utility.Encrypt
 {
     /// <summary>
     /// AES-CBC 模式加密实现

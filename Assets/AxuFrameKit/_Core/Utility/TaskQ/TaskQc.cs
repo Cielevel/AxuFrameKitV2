@@ -5,7 +5,7 @@ using System.Collections.Concurrent;
 using AxuFrameKit._Core.Utility.Multiton;
 using AxuFrameKit._Core.Utility.Common;
 
-namespace AxuFrameKit.Common.Utility.TaskQ
+namespace AxuFrameKit._Core.Utility.TaskQ
 {
     /// <summary>
     /// 任务队列控制（需带参数：CancelToken，并要求在方法内实现Cancel的判断）
