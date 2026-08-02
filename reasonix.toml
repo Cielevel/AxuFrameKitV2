@@ -1,0 +1,2 @@
+[permissions]
+allow = ["Bash=cd /Users/cielevel/ProjectU3D/MyProject/AxuFrameKitV2 && echo \"=== Auto 目录文件 ===\" && find Assets/AxuFrameKit/Common/Utility/Auto -name \"*.cs\" | head -20 && echo \"=== 各组件行数 ===\" && find Assets/AxuFrameKit/Common/Utility/Auto -name \"*.cs\" -exec wc -l {} \\; | sort -n | head -20"]
