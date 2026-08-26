@@ -7,7 +7,7 @@ using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
-namespace AxuFrameKit.Common.Utility.Auto.AutoSequence.Editor
+namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
 {
     /// <summary>
     /// 自定义 Sequence Inspector，用于在不依赖 Odin 的情况下，
