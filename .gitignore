@@ -2,6 +2,32 @@
 #
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
 #
+
+# ==================== OS generated files (Windows / macOS 交叉开发) ====================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+# Windows
+Thumbs.db
+Thumbs.db:encryptable?
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+# Linux
+*~
+
+# ==================== IDE / 工具的每机本地文件 ====================
+# Rider / JetBrains（跨平台切换时持续产生噪音）
+.idea/
+# Reasonix 会话元数据（会话日志，非项目配置；reasonix.toml 保留跟踪）
+.reasonix/
+
+# ==================== Unity 生成目录 ====================
 .utmp/
 /[Ll]ibrary/
 /[Tt]emp/
@@ -13,6 +39,9 @@
 /[Dd]ocs/
 /.[Cc]laude/
 *.log
+
+# 仓库根目录下的 dotnet 构建产物（历史遗留，防止在本机全局 gitignore 缺失的机器上被误提交）
+/[Bb]in/
 
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
