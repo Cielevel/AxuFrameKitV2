@@ -23,6 +23,7 @@
 | [05-editor-modules.md](05-editor-modules.md) | `Editor` 层模块清单（KitBox 工具箱/Hierarchy 增强/独立窗口等） | 查找或扩展编辑器工具 |
 | [06-assets-layout.md](06-assets-layout.md) | Assets 布局、示例场景、独立模块、实验模块、文档目录 | 找示例场景、新增模块 |
 | [07-docs-and-history.md](07-docs-and-history.md) | 全项目文档清单与状态、AGENTS.md 过时条目、git 演进时间线 | 判断文档可信度、了解历史决策 |
+| [08-unity-pipeline-api.md](08-unity-pipeline-api.md) | **Unity Pipeline 本地 API**（HTTP 直连运行中 Editor：142 个命令、鉴权、示例） | **需要编译/测试/读 Console/操作资产时优先用这个** |
 
 ## 重要提醒（信息时效性）
 
