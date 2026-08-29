@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "displayName": "AxuFrameKit",
   "description": "AxuFrameKit by Cielevel",
+  "documentationUrl": "https://github.com/Cielevel/AxuFrameKitV2",
   "unity": "6000.0",
   "dependencies": {
     "com.unity.ugui": "1.0.0",
