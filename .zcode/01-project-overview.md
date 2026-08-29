@@ -60,6 +60,7 @@ packages-lock.json 中解析为 `"source": "embedded", "depth": 0`，依赖 ugui
 | com.unity.inputsystem | 1.11.1 | 输入系统 |
 | com.unity.ai.navigation | 2.0.4 | AI 导航 |
 | com.unity.nuget.newtonsoft-json | 3.2.2 | Newtonsoft JSON（CSV/存档等依赖） |
+| com.unity.pipeline | 0.5.0-exp.1 | Unity CLI/Agent 桥接（实验包，配合 Unity CLI beta 驱动 Editor；2026-08-29 加入） |
 | com.unity.test-framework | 1.4.6 | 测试框架（AGENTS.md 写 1.4.5，已过时） |
 | com.unity.timeline | 1.8.7 | 时间轴 |
 | com.unity.ugui | 2.0.0 | uGUI |
