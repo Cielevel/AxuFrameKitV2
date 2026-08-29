@@ -3,5 +3,9 @@
   "version": "0.1.0",
   "displayName": "AxuIndie - SelectionToCsv",
   "description": "Export selected project assets to CSV (independent module, no dependencies)",
+  "author": {
+    "name": "Cielevel",
+    "url": "https://github.com/Cielevel"
+  },
   "unity": "6000.0"
 }

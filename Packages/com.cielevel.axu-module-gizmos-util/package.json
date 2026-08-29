@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "displayName": "AxuFrameKit Modules - GizmosUtil",
   "description": "Scene-view gizmos drawing library (line/curve/path/ray drawers) with inspector editor. Optional module of AxuFrameKit family; no framework dependency.",
+  "author": {
+    "name": "Cielevel",
+    "url": "https://github.com/Cielevel"
+  },
   "unity": "6000.0",
   "dependencies": {}
 }

@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "displayName": "AxuIndie - StatPipeline",
   "description": "Roguelike-style stat pipeline system (Stat / Modifier / Calculator / Debugger) with editor generators and analysis window. Independent module, no dependencies.",
+  "author": {
+    "name": "Cielevel",
+    "url": "https://github.com/Cielevel"
+  },
   "unity": "6000.0",
   "dependencies": {}
 }

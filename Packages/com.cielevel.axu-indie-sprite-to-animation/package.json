@@ -3,5 +3,9 @@
   "version": "0.1.0",
   "displayName": "AxuIndie - SpriteToAnimation",
   "description": "Generate AnimationClip/Animator from sprite sequences (independent module, no dependencies)",
+  "author": {
+    "name": "Cielevel",
+    "url": "https://github.com/Cielevel"
+  },
   "unity": "6000.0"
 }
