@@ -11,8 +11,6 @@
 [![UPM](https://img.shields.io/badge/UPM_Packages-9-8A2BE2)](#包一览)
 [![Tests](https://img.shields.io/badge/Tests-EditMode_6%2F6-brightgreen)](Assets/Tests/Editor/)
 
-*清晰的架构，让每一次复用都省心。*
-
 </div>
 
 ---
@@ -147,7 +145,5 @@ AxuFrameKitV2/
 <div align="center">
 
 **Cielevel** · 以 Unity 6 构建
-
-如果这个项目对你有帮助，欢迎点一个 ⭐
 
 </div>
