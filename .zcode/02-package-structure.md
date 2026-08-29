@@ -37,7 +37,7 @@ com.cielevel.axu-frame-kit/
 │       ├── KitBoxRevV2/             "AxuKitBox" 主工具箱窗口（纯 UI Toolkit），Core/Groups/UI
 │       ├── UI/Kit/                  UIListView、UIBindParent 自定义 Inspector
 │       ├── Utility/                 AutoSequence 编辑器、CSV 容器创建窗口、TerrainToMesh 转换器、CsvIOUtil、ShapeDrawer/TitleDrawer
-│       └── Window/                  独立 EditorWindow：AssetFavorites、SceneJumper、AvatarDownloader、SpriteToAnimation
+│       └── Window/                  独立 EditorWindow：AssetFavorites、AvatarDownloader（SceneJumper/SpriteToAnimation 已拆为独立模块包）
 └── Runtime/                         [231 cs] 运行时（两个程序集）
     ├── _Core/                       [80 cs] 纯 C# 核心库（详见 03-core-modules.md）
     │   ├── Advanced/                BetterFSM、FSM(泛型)、EventSystem、ObjectPool
@@ -58,7 +58,7 @@ com.cielevel.axu-frame-kit/
 | 范围 | .cs 文件数 |
 |---|---|
 | 包总计 | **262** |
-| Editor（AxuFrameKit.Editor） | 31 |
+| Editor（AxuFrameKit.Editor） | 29（2026-08-29 移除 2 个与独立包重复的窗口后） |
 | Runtime/Common（AxuFrameKit.Runtime） | 151 |
 | Runtime/_Core（AxuFrameKit.Core） | 80 |
 | 包内 Tests | **0**（无任何测试） |
@@ -73,8 +73,10 @@ com.cielevel.axu-frame-kit/
 
 | 目录 | 内容 |
 |---|---|
-| `Assets/AxuFrameKit/_Core/`、`Common/` | **0 个 .cs**，仅剩各子模块文档（ReadMe/HOWTOUSE/ARCHITECTURE 等） |
-| `Assets/AxuFrameKit/KitDoc/` | 统一文档中心（Math/Save/CSV/Encrypt 等，详见 07 号文档） |
-| `Assets/AxuFrameKit/Modules/` | **37 个 .cs 的模块层源码**（AITools、GizmosUtil、LiveStream、Noise），无 asmdef，编译进 Assembly-CSharp，**待包化** |
+| `Assets/AxuFrameKit/`、`Assets/AxuIndieModules/` | **已于 2026-08-29 整体删除**——Modules 与独立模块拆为 8 个独立嵌入式包（见下） |
 
-即当前完整三层：包内 `_Core`（纯 C#）→ 包内 `Common`（Unity 运行时/UI）→ Assets 内 `Modules`（业务模块），Editor 工具层在包内 `Editor/`。
+**模块包清单（2026-08-29 拆包）**：`com.cielevel.axu-module-{aitools,gizmos-util,livestream,noise}`（模块家族，仅 LiveStream 依赖框架包）+
+`com.cielevel.axu-indie-{scene-jumper,selection-to-csv,sprite-to-animation,stat-pipeline}`（零依赖独立工具）；
+各包含 package.json/README/CHANGELOG/独立 asmdef，示例在 `Samples~/`。
+
+即当前完整分层：包内 `_Core`（纯 C#）→ 包内 `Common`（Unity 运行时/UI）→ 8 个模块包，Editor 工具层在框架包内 `Editor/`。

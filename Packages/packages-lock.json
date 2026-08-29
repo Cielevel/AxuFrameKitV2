@@ -10,6 +10,59 @@
         "com.unity.nuget.newtonsoft-json": "3.2.2"
       }
     },
+    "com.cielevel.axu-indie-scene-jumper": {
+      "version": "file:com.cielevel.axu-indie-scene-jumper",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "com.cielevel.axu-indie-selection-to-csv": {
+      "version": "file:com.cielevel.axu-indie-selection-to-csv",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "com.cielevel.axu-indie-sprite-to-animation": {
+      "version": "file:com.cielevel.axu-indie-sprite-to-animation",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "com.cielevel.axu-indie-stat-pipeline": {
+      "version": "file:com.cielevel.axu-indie-stat-pipeline",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "com.cielevel.axu-module-aitools": {
+      "version": "file:com.cielevel.axu-module-aitools",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "com.cielevel.axu-module-gizmos-util": {
+      "version": "file:com.cielevel.axu-module-gizmos-util",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "com.cielevel.axu-module-livestream": {
+      "version": "file:com.cielevel.axu-module-livestream",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.cielevel.axu-frame-kit": "0.1.0",
+        "com.unity.nuget.newtonsoft-json": "3.2.2",
+        "com.unity.textmeshpro": "3.0.0",
+        "com.unity.ugui": "1.0.0"
+      }
+    },
+    "com.cielevel.axu-module-noise": {
+      "version": "file:com.cielevel.axu-module-noise",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.termway.ide.antigravity": {
       "version": "https://github.com/TermWay/unity-ide-antigravity.git",
       "depth": 0,

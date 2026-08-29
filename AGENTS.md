@@ -27,7 +27,7 @@ Modules (功能模块) ──────► Common (通用模块) ────�
 ```
 
 **重要**：`_Core` 与 `Common`（含 Editor 工具层）已于 2026-06 迁入嵌入式包 `Packages/com.cielevel.axu-frame-kit/`；
-仅 `Modules` 仍留在 `Assets/AxuFrameKit/Modules/`（尚未包化，编译进 Assembly-CSharp）。
+模块层也已全部拆分为独立嵌入式包（见第 4 节），Assets 中不再有框架代码。
 
 ### 程序集定义 (asmdef)
 
@@ -158,37 +158,20 @@ Packages/com.cielevel.axu-frame-kit/Editor/Common/
 └── UI/Kit/            # UIListView / UIBindParent 自定义 Inspector
 ```
 
-### 4. Modules (模块层)
+### 4. Modules (模块层，独立 UPM 包)
 
-**定位**: 独立的功能模块，即插即用
+**定位**: 独立的功能模块，即插即用。**2026-08-29 起已全部拆分为独立嵌入式包**（各含 package.json + README/CHANGELOG + 独立 asmdef，示例在各自 `Samples~/`，经 Package Manager → Samples 导入）：
 
-**特点**:
-- 具体业务功能实现
-- 依赖 `_Core` 和 `Common` 层
-- **尚未包化**：位于 Assets，无 asmdef，编译进 Assembly-CSharp（待后续迁移）
+| 包 | 内容 | asmdef | 框架依赖 |
+|---|---|---|---|
+| `com.cielevel.axu-module-aitools` | AI 对话/脚本填充/脚本生成窗口 | `AxuFrameKit.Modules.AITools` + `.Editor` | 无 |
+| `com.cielevel.axu-module-gizmos-util` | Gizmos 绘制库 | `AxuFrameKit.Modules.GizmosUtil` + `.Editor` | 无 |
+| `com.cielevel.axu-module-livestream` | 直播互动模拟 | `AxuFrameKit.Modules.LiveStream` + `.Editor` | **有**（axu-frame-kit + Newtonsoft + TMP/ugui，asmdef 显式引用 Unity.TextMeshPro/UnityEngine.UI） |
+| `com.cielevel.axu-module-noise` | 噪声生成与预览 | `AxuFrameKit.Modules.Noise` + `.Editor` | 无（含 FastNoiseLite MIT 声明） |
 
-**目录结构**:
-```
-Assets/AxuFrameKit/Modules/
-├── AITools/           # AI 辅助工具
-│   ├── Chat/          # AI 对话窗口
-│   ├── Filler/        # 脚本填充工具
-│   └── Generator/     # 脚本生成工具
-├── GizmosUtil/        # Gizmos 辅助工具
-│   ├── Editor/
-│   └── GizmosDrawer.*.cs
-├── LiveStream/        # 直播/交互功能模块
-│   └── Script/
-│       ├── EditorWindow/
-│       ├── System/    # 核心系统
-│       ├── UI/        # UI 面板
-│       └── Utility/   # 工具类
-└── Noise/             # 噪声生成
-    ├── FastNoiseLite/
-    └── SimpleNoise/
-```
+独立工具包（零依赖、互相独立）：`com.cielevel.axu-indie-scene-jumper`、`-selection-to-csv`、`-sprite-to-animation`、`-stat-pipeline`（各自 Editor-only 或 Runtime+Editor asmdef）。
 
-**命名空间规范**: `AxuFrameKit.Modules.{模块名}`
+**命名空间规范**: 模块家族 `AxuFrameKit.Modules.{模块名}`、独立模块 `AxuIndieModules.{模块名}`（均保持不变）。
 
 ---
 
@@ -196,21 +179,22 @@ Assets/AxuFrameKit/Modules/
 
 ```
 Assets/
-├── AxuFrameKit/           # 仅剩 Modules/（模块层源码，尚未包化，见上；原 _Core/Common/KitDoc 文档已于 2026-08-29 迁入包内）
-├── AxuExperimental/       # 实验性模块集 (BehaviorTree, EventSystem, InGameConsole 等 9 个，各带 ReadMe)
-├── AxuIndieModules/       # 独立模块 (StatPipeline 数值管道、SceneJumper、SelectionToCsv、SpriteToAnimation)
+├── AxuExperimental/       # 实验性模块集 (BehaviorTree, EventSystem, InGameConsole 等 9 个，各带 ReadMe；未包化)
 ├── DevDoc/                # 开发过程文档 (Socket 技术设计、纯 C# 剥离分析)
 ├── TestAndSample/         # 测试和示例场景
 │   ├── Sample_Core/           # _Core 层示例
 │   ├── Sample_Common/         # Common 层示例
-│   ├── Sample_Modules/        # Modules 层示例
 │   ├── Sample_Experimental/   # 实验模块示例
 │   ├── Sample_PackageDev/     # 包开发验证示例
-│   └── _Sample_Inner/         # 内部示例
+│   ├── _Sample_Inner/         # 内部示例
+│   └── AITools_Config/        # AIChatConfig 用户配置资产（含 API key，属用户数据不入包）
 ├── TEMP/                  # 临时测试数据 (CSV)
 ├── TextMesh Pro/          # TMP Essential 资源
 └── URP/                   # URP 管线资产 (Settings/PC_RPAsset 为全局管线)
 ```
+
+> 原 `Assets/AxuFrameKit/`（Modules）与 `Assets/AxuIndieModules/` 已于 2026-08-29 全部拆包移除；
+> 原 `Sample_Modules/` 的模块示例在各模块包的 `Samples~/` 内。
 
 另：`Assets/_CommonDoc/`（包迁移评估文档）、`Assets/_DevDoc/`（TaskQ 改进备忘）、根目录 `docs/`（docfx 文档站）。
 
@@ -247,6 +231,14 @@ Assets/
 ```json
 {
   "com.cielevel.axu-frame-kit": "嵌入式包 (embedded) - 框架本体，version 0.1.0",
+  "com.cielevel.axu-module-aitools": "嵌入式包 - AI 工具模块",
+  "com.cielevel.axu-module-gizmos-util": "嵌入式包 - Gizmos 绘制模块",
+  "com.cielevel.axu-module-livestream": "嵌入式包 - 直播互动模块（依赖框架包）",
+  "com.cielevel.axu-module-noise": "嵌入式包 - 噪声模块",
+  "com.cielevel.axu-indie-scene-jumper": "嵌入式包 - 场景快跳（零依赖）",
+  "com.cielevel.axu-indie-selection-to-csv": "嵌入式包 - 选中导出 CSV（零依赖）",
+  "com.cielevel.axu-indie-sprite-to-animation": "嵌入式包 - 序列帧转动画（零依赖）",
+  "com.cielevel.axu-indie-stat-pipeline": "嵌入式包 - 数值管线（零依赖）",
   "com.termway.ide.antigravity": "Git 包 - IDE 增强",
   "com.unity.ai.navigation": "2.0.4",
   "com.unity.collab-proxy": "2.9.3",
@@ -362,6 +354,7 @@ UIBindTextStr.Bind(myTextComponent, () => model.PlayerName);
   - 各模块 ReadMe/HOWTOUSE/ARCHITECTURE 位于对应模块目录旁，如 `Runtime/_Core/Advanced/BetterFSM/ReadMe.md`、
     `Runtime/_Core/Utility/Encrypt/`（3 份）、`Runtime/Common/UI/Kit/ListView/DOC/`（5 份）、`Runtime/Common/Utility/Save/`、
     `Runtime/Common/Utility/{Math,Table/CSV}/Doc_*.md`、`Runtime/Common/UI/Framework/UI框架.md` 等——**查文档先看包 README 的索引**
+- **模块包文档**: 8 个模块包（`Packages/com.cielevel.axu-module-*`、`com.cielevel.axu-indie-*`）各自带 README.md / CHANGELOG.md
 - **开发文档**: `Assets/DevDoc/`（Socket 技术设计等）、`Assets/_CommonDoc/`（包迁移评估）
 - **API 文档站**: 根目录 `docs/`（docfx）
 

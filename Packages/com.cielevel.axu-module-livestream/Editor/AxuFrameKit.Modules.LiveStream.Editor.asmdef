@@ -1,0 +1,20 @@
+{
+    "name": "AxuFrameKit.Modules.LiveStream.Editor",
+    "rootNamespace": "AxuFrameKit.Modules.LiveStream",
+    "references": [
+        "AxuFrameKit.Modules.LiveStream",
+        "AxuFrameKit.Runtime",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

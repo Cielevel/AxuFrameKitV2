@@ -7,7 +7,9 @@
 ### 2026-08-29
 
 - 补充包级 `README.md` 与本 `CHANGELOG.md`，package.json 增加 `documentationUrl`。
-- 将原位于 `Assets/AxuFrameKit/{_Core,Common,KitDoc}` 下的 25 份模块文档迁入包内、随代码放置，并修正文中旧路径；`Assets/AxuFrameKit` 旧文档骨架随之清空（仅余 Modules 待包化）。
+- 将原位于 `Assets/AxuFrameKit/{_Core,Common,KitDoc}` 下的 25 份模块文档迁入包内、随代码放置，并修正文中旧路径；`Assets/AxuFrameKit` 旧文档骨架随之清空。
+- 移除与独立模块包重复的 `Editor/Common/Window/SceneJumperWindow.cs`、`SpriteToAnimationWindow.cs`（两者已拆为 `com.cielevel.axu-indie-scene-jumper` / `com.cielevel.axu-indie-sprite-to-animation` 包，独立包为唯一来源）；`CommonWindowStyles.uss` 保留（AssetFavorites/AvatarDownloader/KitBox SceneJumpRevPage 仍在使用）。
+- 同日框架家族与独立模块整体拆包：`Assets/AxuFrameKit/Modules` 与 `Assets/AxuIndieModules` 拆为 8 个独立嵌入式包（`com.cielevel.axu-module-*` ×4、`com.cielevel.axu-indie-*` ×4），Assets 中不再保留框架/模块代码。
 
 ### 2026-08-26
 

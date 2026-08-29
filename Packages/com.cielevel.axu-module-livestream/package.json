@@ -1,0 +1,13 @@
+{
+  "name": "com.cielevel.axu-module-livestream",
+  "version": "0.1.0",
+  "displayName": "AxuFrameKit Modules - LiveStream",
+  "description": "Live-stream interactive simulation (comment/gift/like triggers, UI panels, simulator & recorder windows). Optional module of AxuFrameKit family; depends on AxuFrameKit.",
+  "unity": "6000.0",
+  "dependencies": {
+    "com.cielevel.axu-frame-kit": "0.1.0",
+    "com.unity.nuget.newtonsoft-json": "3.2.2",
+    "com.unity.textmeshpro": "3.0.0",
+    "com.unity.ugui": "1.0.0"
+  }
+}

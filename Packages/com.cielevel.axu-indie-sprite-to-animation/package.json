@@ -1,0 +1,7 @@
+{
+  "name": "com.cielevel.axu-indie-sprite-to-animation",
+  "version": "0.1.0",
+  "displayName": "AxuIndie - SpriteToAnimation",
+  "description": "Generate AnimationClip/Animator from sprite sequences (independent module, no dependencies)",
+  "unity": "6000.0"
+}

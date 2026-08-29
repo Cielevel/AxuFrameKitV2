@@ -8,8 +8,9 @@
 **AxuFrameKit**（阿修框架工具包，by Cielevel）是面向 **Unity 6（6000.0.23f1 / URP 17.0.3）** 的应用程序框架。
 分层架构：`_Core`（纯 C# 核心库，无 Unity 依赖）→ `Common`（Unity 运行时组件与 UI 框架）→ `Modules`（业务模块，待包化）。
 
-关键现状：**`_Core` 与 `Common` 已于 2026-06-16（提交 5277cdd）迁入嵌入式 UPM 包 `Packages/com.cielevel.axu-frame-kit`**，
-共 3 个 asmdef 程序集、262 个 .cs 文件；`Modules`（37 个 .cs）仍在 `Assets/AxuFrameKit/Modules/` 下，编译进 Assembly-CSharp，尚未包化。
+关键现状：**框架本体（_Core 80 + Common 151 + Editor 29 个 .cs）在嵌入式包 `Packages/com.cielevel.axu-frame-kit`（3 个 asmdef）**；
+2026-08-29 起 8 个可选模块也全部拆分为独立嵌入式包（4 个 `axu-module-*` + 4 个 `axu-indie-*`，其中仅 LiveStream 依赖框架包），
+`Assets/AxuFrameKit/` 与 `Assets/AxuIndieModules/` 已整体移除。
 
 ## 文件导航（建议按编号顺序阅读）
 

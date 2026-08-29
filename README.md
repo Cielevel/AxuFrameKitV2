@@ -106,20 +106,27 @@ AxuFrameKit 是一个 Unity 应用程序框架，旨在提供清晰的架构和�
 
 ---
 
-### 3. `Assets/AxuFrameKit/Modules`
-独立的功能模块，即插即用（尚未包化）。
+### 3. 可选模块（独立 UPM 包，2026-08-29 起全部包化）
 
-*   **AITools**
-    *   AI 辅助工具：对话窗口 (Chat)、脚本填充 (Filler)、脚本生成 (Generator)。
+模块家族（`Packages/com.cielevel.axu-module-*`）：
 
-*   **GizmosUtil**
-    *   编辑器下与运行时的 Gizmos 辅助绘制工具 (`GizmosDrawer.*.cs` + Editor)。
+*   **AITools**（`com.cielevel.axu-module-aitools`）
+    *   AI 辅助工具：对话窗口 (Chat)、脚本填充 (Filler)、脚本生成 (Generator)，AIConfig 可脚本化配置。
+*   **GizmosUtil**（`com.cielevel.axu-module-gizmos-util`）
+    *   Gizmos 辅助绘制库（线/贝塞尔/路径/射线抽屉 + ReorderableList 检视器）。
+*   **LiveStream**（`com.cielevel.axu-module-livestream`，依赖框架包）
+    *   直播互动模拟：评论/礼物/点赞触发器 SO 体系、模拟器与录制窗口、UI 面板、秋恋猫 HTTP 对接。
+*   **Noise**（`com.cielevel.axu-module-noise`，含 FastNoiseLite MIT 第三方声明）
+    *   噪声生成 (FastNoiseLite / SimpleNoise + 编辑器预览窗口)。
 
-*   **LiveStream**
-    *   直播/互动功能模块：触发器（评论/礼物/点赞）、配置资产、UI 面板与演示场景。
+独立工具包（零依赖，`Packages/com.cielevel.axu-indie-*`）：
 
-*   **Noise**
-    *   噪声生成 (FastNoiseLite / SimpleNoise + 编辑器窗口)。
+*   **SceneJumper**：场景收藏/分组/一键跳转窗口。
+*   **SelectionToCsv**：选中资产导出 CSV。
+*   **SpriteToAnimation**：精灵序列帧转 AnimationClip/Animator。
+*   **StatPipeline**：类 roguelike 数值管线（Stat/Modifier/Calculator/Debugger + 编辑器生成器与分析窗口）。
+
+各包示例位于其 `Samples~/` 目录，经 Package Manager → Samples 导入。
 
 ## 依赖关系
 

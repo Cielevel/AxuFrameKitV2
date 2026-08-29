@@ -1,0 +1,14 @@
+{
+    "name": "AxuFrameKit.Modules.AITools",
+    "rootNamespace": "AxuFrameKit.Modules.AITools",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

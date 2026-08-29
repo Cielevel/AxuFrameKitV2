@@ -19,7 +19,7 @@
 ## 三层架构（当前形态）
 
 ```
-Modules (Assets/AxuFrameKit/Modules，37 个 .cs，未包化，编译进 Assembly-CSharp)
+Modules (8 个独立嵌入式包 com.cielevel.axu-module-* / axu-indie-*，各含 asmdef；仅 LiveStream 依赖框架包)
    │  依赖
    ▼
 Common (包内 Runtime/Common，151 个 .cs，asmdef: AxuFrameKit.Runtime)  ── 依赖 ──►
@@ -27,12 +27,13 @@ Common (包内 Runtime/Common，151 个 .cs，asmdef: AxuFrameKit.Runtime)  ─�
    ▼
 _Core (包内 Runtime/_Core，80 个 .cs，asmdef: AxuFrameKit.Core，纯 C# 零 Unity 依赖)
 
-Editor 工具层：包内 Editor/（31 个 .cs，asmdef: AxuFrameKit.Editor，横跨 Core+Common）
+Editor 工具层：包内 Editor/（29 个 .cs，asmdef: AxuFrameKit.Editor，横跨 Core+Common）
 ```
 
 - `_Core`：纯 C# 实现，**不依赖任何 Unity API**，可在非 Unity 环境使用。
 - `Common`：依赖 Unity API 与 `_Core`，提供 UI 框架、网络、存档、对象池等运行时组件。
-- `Modules`：具体业务功能（AITools / GizmosUtil / LiveStream / Noise），**尚未纳入包程序集体系**。
+- `Modules`：具体业务功能（AITools / GizmosUtil / LiveStream / Noise）与独立工具（SceneJumper / SelectionToCsv / SpriteToAnimation / StatPipeline），
+  **2026-08-29 起各自为独立嵌入式包**；其中仅 LiveStream 依赖框架包（package.json 声明 + asmdef 引用），其余零框架依赖。
 
 ## URP 管线资产
 

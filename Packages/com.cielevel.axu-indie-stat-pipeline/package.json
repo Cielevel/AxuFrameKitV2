@@ -1,0 +1,8 @@
+{
+  "name": "com.cielevel.axu-indie-stat-pipeline",
+  "version": "0.1.0",
+  "displayName": "AxuIndie - StatPipeline",
+  "description": "Roguelike-style stat pipeline system (Stat / Modifier / Calculator / Debugger) with editor generators and analysis window. Independent module, no dependencies.",
+  "unity": "6000.0",
+  "dependencies": {}
+}

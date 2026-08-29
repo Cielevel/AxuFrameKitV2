@@ -1,0 +1,19 @@
+{
+    "name": "AxuFrameKit.Modules.LiveStream",
+    "rootNamespace": "AxuFrameKit.Modules.LiveStream",
+    "references": [
+        "AxuFrameKit.Core",
+        "AxuFrameKit.Runtime",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

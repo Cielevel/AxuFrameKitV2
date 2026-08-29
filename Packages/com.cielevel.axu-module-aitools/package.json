@@ -1,0 +1,8 @@
+{
+  "name": "com.cielevel.axu-module-aitools",
+  "version": "0.1.0",
+  "displayName": "AxuFrameKit Modules - AITools",
+  "description": "AI assistant editor windows (dialogue / script filler / script generator) with per-window AIConfig assets. Optional module of AxuFrameKit family; no framework dependency.",
+  "unity": "6000.0",
+  "dependencies": {}
+}

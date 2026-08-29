@@ -1,42 +1,46 @@
 # 06 · Assets 布局（包外内容）
 
-> 勘察时间：2026-08-29。框架代码主体在 `Packages/com.cielevel.axu-frame-kit`（见 02 号文档），本文记录 Assets 内剩余内容。
-> **Assets 内没有任何 .asmdef**，所有 Assets 侧脚本（Modules、TestAndSample 等）均编译进 Assembly-CSharp。
+> 勘察时间：2026-08-29（同日晚些时候完成模块拆包后更新）。框架与模块代码全部在 `Packages/` 下（框架见 02 号文档，模块包清单见下），
+> **Assets 内已无任何框架/模块代码**，也**没有任何 .asmdef**（Assets 侧脚本均编译进 Assembly-CSharp）。
 
 ## 1. Assets 顶层目录树
 
 ```
 Assets/
-├── AxuFrameKit/            # 仅剩 Modules/（原 _Core/Common/KitDoc 文档已于 2026-08-29 迁入包内，旧骨架已删除）
-│   └── Modules/            #   AITools / GizmosUtil / LiveStream / Noise —— 仍含完整代码+资产（37 个 .cs，待包化）
-├── AxuExperimental/        # 实验性模块集（每个子目录多带 ReadMe.md，见第 5 节）
-├── AxuIndieModules/        # 独立可裁剪模块（见第 4 节）
+├── AxuExperimental/        # 实验性模块集（BehaviorTree/EventSystem/InGameConsole/HtmlCommunicate/ModuleConfig/
+│                           #   NewNetFrame/Noise/OllamaModelCall/SceneCurveDraw 共 9 个，各带 ReadMe；未包化）
 ├── DevDoc/                 # 开发过程文档（Socket 技术设计、Common 纯 C# 剥离分析）
 ├── TEMP/                   # 临时测试 CSV（Test_SampleData*.csv）
-├── TestAndSample/          # 示例与测试（见第 3 节）
+├── TestAndSample/          # 示例与测试（见第 2 节）
 ├── TextMesh Pro/           # TMP Essential 默认资源
-├── URP/                    # URP 管线资产（PC/Mobile RPAsset + Renderer，全局用 PC_RPAsset）
+├── URP/                    # URP 管线资产（PC/Mobile RPAsset + Renderer，全局用 PC_RPAsset；TutorialInfo 模板遗留）
 ├── _CommonDoc/             # AxuFrameKit_Core_Common_移植评估.md（包迁移评估文档）
 └── _DevDoc/                # 关于TaskQ系列代码的改进.txt
 ```
 
-> 注意：旧 AGENTS.md 提到的 `Assets/Doc/`、`Assets/PreTestFunc/`、`Assets/Scripts/Generated/` **已不存在**。
+> **2026-08-29 拆包移除**：`Assets/AxuFrameKit/`（先迁文档后迁 Modules，已整体删除）、`Assets/AxuIndieModules/`（拆包删除）、
+> `Assets/TestAndSample/Sample_Modules/`（示例随包迁入各包 `Samples~/`）。
 
-## 2. Assets/AxuFrameKit 残留状态（重要）
+## 2. 模块包清单（2026-08-29 拆包结果）
 
-- **纯文档残留（已于 2026-08-29 迁出）**：原 `_Core/`（3 份）与 `Common/`（16 份）的模块文档已迁入包内、随代码放置（如 `Runtime/_Core/Advanced/BetterFSM/ReadMe.md`、`Runtime/Common/UI/Kit/ListView/DOC/`、`Runtime/Common/Utility/Save/` 等），文中旧路径已修正，旧目录骨架已删除。
-- **仍保留完整代码+资产的 Modules（37 个 .cs，无 asmdef，未包化）**：
-  | 模块 | 内容 |
-  |---|---|
-  | AITools | AI 对话窗口、AI 脚本填充、AI 脚本生成（UI Toolkit uxml/uss + AIChatConfig-gemini/glm4.7flashx 配置资产） |
-  | LiveStream | 直播互动模拟：LiveTriggerComment/Gift/Like 基类、各 ConfigSo、UIPanel 系列、场景 `SC LiveStreamUtil UI.unity`、美术资源、TODO.txt |
-  | GizmosUtil | GizmosDrawer 系列（partial 分文件）+ Editor |
-  | Noise | FastNoiseLite + 编辑器窗口 |
-- `KitDoc/`（已于 2026-08-29 迁出并删除）：原 6 份文档迁入包内对应模块目录——Math/Save/CSV 3 份 → `Runtime/Common/Utility/{Math,Save,Table/CSV}/`，Encrypt 3 份 → `Runtime/_Core/Utility/Encrypt/`。
+| 包 | 来源 | 内容 | asmdef | 框架依赖 |
+|---|---|---|---|---|
+| `com.cielevel.axu-module-aitools` | Assets/AxuFrameKit/Modules/AITools | AI 对话/填充/生成窗口（UXML 定位已改脚本相对式；Editor-only 隔离修复） | AITools + .Editor | 无 |
+| `com.cielevel.axu-module-gizmos-util` | …/GizmosUtil | Gizmos 绘制库（partial 抽屉 + 检视器） | GizmosUtil + .Editor | 无 |
+| `com.cielevel.axu-module-livestream` | …/LiveStream | 直播互动模拟（触发器 SO/UI 面板/模拟与录制窗口） | LiveStream + .Editor | **axu-frame-kit + Newtonsoft + TMP/ugui** |
+| `com.cielevel.axu-module-noise` | …/Noise | 噪声生成（FastNoiseLite MIT 声明在 `Third Party Notices.md`） | Noise + .Editor | 无 |
+| `com.cielevel.axu-indie-scene-jumper` | Assets/AxuIndieModules/SceneJumper | 场景收藏/快跳窗口 | Editor-only | 无 |
+| `com.cielevel.axu-indie-selection-to-csv` | …/SelectionToCsv | 选中导出 CSV 窗口 | Editor-only | 无 |
+| `com.cielevel.axu-indie-sprite-to-animation` | …/SpriteToAnimation | 序列帧转动画窗口 | Editor-only | 无 |
+| `com.cielevel.axu-indie-stat-pipeline` | …/StatPipeline | 数值管线（31 cs；Resources 计算器资产 GUID 链完整） | StatPipeline + .Editor | 无 |
+
+- 各包含 package.json（0.1.0）/README/CHANGELOG；示例（场景/Prefab/测试脚本/SO 实例）在各自 `Samples~/`，经 Package Manager → Samples 导入。
+- 框架包内与独立包重复的 `SceneJumperWindow`/`SpriteToAnimationWindow` 已删除（独立包为唯一来源）；KitBox 的 `SelectionToCsvRevPage` 为重写版，保留。
+- AIChatConfig 配置资产（**含明文 API key，属用户数据不入包**）迁至 `Assets/TestAndSample/AITools_Config/`。
 
 ## 3. Assets/TestAndSample/ 示例组织
 
-按框架分层镜像组织；场景统一以 `SC Sample ...` 命名。**无 asmdef，编入 Assembly-CSharp**（根目录旧 `AxuFrameKit.TestAndSample.csproj` 为历史生成物）。
+按框架分层镜像组织；场景统一以 `SC Sample ...` 命名。**无 asmdef，编入 Assembly-CSharp**。
 
 | 目录 | 代表场景 | 示例脚本主题 |
 |---|---|---|
@@ -46,43 +50,17 @@ Assets/
 | Sample_Core/Utility | SC Sample Core Computed、SC SampleEncrypt、SC Sample Core RandomAvatar | Sample_Computed、SampleEncrypt、RandomAvatarDownload |
 | Sample_Common/CustomAttribute | SC Sample ListDrawer | SampleCustomAttribute |
 | Sample_Common/UI/Kit | SC Sample Common UIBindData / ListView / Opt Scroll / Toggle Group / Typewriter | SampleUIBindData、ListViewDemo(+Controller)、SampleOptScroll、SampleCommonToggleGroup、SampleCommonTypewriter |
-| Sample_Common/Utility | SC Sample Debugger / Auto Timeline / EventChannel / EventSystem / AxuTween / Socket / GameObjectPools / Common Save / Common Csv / TimerSeries / Common Trigger / UseMono | SampleDebugger、SampleAutoSnapshot、EventChannel 收发、SampleCommonEventSystem、SampleAxuTween 系列（Sequence/UI/Toast）、HttpClientExample、SocketExample、SampleGameObjectPools、SampleCommonSaveUtil(UserProfile)/SampleCommonSimpleSave、SampleCsv、SampleTimerSeries、SampleTrigger、SampleUseMono |
+| Sample_Common/Utility | SC Sample Debugger / Auto Timeline / EventChannel / EventSystem / AxuTween / Socket / GameObjectPools / Common Save / Common Csv / TimerSeries / Common Trigger / UseMono | SampleDebugger、SampleAutoSnapshot、EventChannel 收发、SampleCommonEventSystem、SampleAxuTween 系列、HttpClientExample、SocketExample、SampleGameObjectPools、Save/Csv/Timer/Trigger/UseMono 示例 |
 | Sample_Experimental | SC Sample Modules BehaviorTree、SC Sample Common InGameConsole | SampleBehaviorTree、SampleInGameConsole |
-| Sample_Modules | SC Sample Modules AI Generators、SC Sample Module Gizmos、SC Sample Modules LiveStream | UIController、LiveTriggerComment/Gift/Like + TestPanelGift/User + SO 配置 |
-| Sample_PackageDev | SC Sample PackageDev | TestPackageInfo（包开发验证，引用嵌入式包 API）——迁移后关键目录 |
-| _Sample_Inner | SC Sample Animation State、SC Sample ListIdTitle | SampleAnimationState{Bigger,Smaller}（StateMachineBehaviour，附说明.md）、SampleListIdTitle |
-| 根 | — | Test.cs |
+| Sample_PackageDev | SC Sample PackageDev | TestPackageInfo（包开发验证） |
+| _Sample_Inner | SC Sample Animation State、SC Sample ListIdTitle | SampleAnimationState{Bigger,Smaller}、SampleListIdTitle |
+| AITools_Config | — | AIChatConfig-gemini / glm4.7flashx（含明文 key，勿提交到公开仓库/勿随包分发） |
 
+（原 `Sample_Modules/` 已删除——AI/Gizmos/LiveStream 示例迁入各模块包 `Samples~/`。）
 EditorBuildSettings 唯一构建场景：`SC Sample UseMono.unity`。
 
-## 4. Assets/AxuIndieModules/ 独立模块
+## 4. 文档目录与根目录杂项
 
-根 ReadMe 声明："每一个文件夹都提供一个独立模块，可按需选择性导入"。
-
-| 模块 | 结构 | 职责 |
-|---|---|---|
-| **StatPipeline** | `Script/`（Stat: StatCore/StatDouble/StatFloat/StatInt/StatLong/StatPipelineStages；Modifier: StatModifier/StatModifierCore/StatModifierLink + 编辑器 StatCalculatorGeneratorWindow；Calculator: 13 种 CommonCalculator + 2 种 LinkCalculator + 基类；Analysis: StatDebugger）+ `Resources/Calculator` 预置资产 + `Temp/` 示例场景 `SC Sample StatPipeline.unity` | 数值管线/属性修改器系统（类 roguelike 数值计算，依赖 Unity） |
-| SceneJumper | SceneJumperWindow.cs（UI Toolkit） | 编辑器场景跳转（包内 Editor/Common/Window 另有纳入版） |
-| SelectionToCsv | SelectionToCsvWindow.cs | 选中对象导出 CSV |
-| SpriteToAnimation | SpriteToAnimationWindow.cs | 精灵序列转动画 |
-
-## 5. Assets/AxuExperimental/ 实验模块（9 个，多带 ReadMe）
-
-| 模块 | 说明 |
-|---|---|
-| AI | （空目录） |
-| BehaviorTree | Editor + Runtime，行为树（docfx API 已收录） |
-| EventSystem | EventBus / EventListener / GameEventChannel_T |
-| HtmlCommunicate | LocalWebServer + test html + 场景 |
-| InGameConsole | 运行时控制台（含 Resources） |
-| ModuleConfig | 模块化实体 ModuleEntity/Modules + "SC PreTest Module" 场景 |
-| NewNetFrame | NetInterface / NetProvider / NetUtilTester |
-| Noise | 噪声可视化（SC Noise 场景） |
-| OllamaModelCall | OllamaClient + OllamaScriptFillerWindow |
-| SceneCurveDraw | PathController + Editor |
-
-## 6. 文档目录与根目录杂项
-
-- 文档目录：`Assets/DevDoc/`（Socket TechnicalDesign、Common_To_PureCS_Analysis）、`Assets/_CommonDoc/`（移植评估 = trans doc）、`Assets/_DevDoc/`（TaskQ 改进备忘）、根 `docs/`（**docfx 文档站**：docfx.json、api/ 生成 YAML、_site/ 产物；index.md 为占位 stub）。
-- 根杂项：十余个旧版 `AxuFrameKit.*.csproj` 与 `AxuFrameKitV2.sln`（Unity 生成物）；`build.log/build_error.log`（UTF-16，早期 dotnet 编译尝试的报错日志）；`bin/`、`obj/`（dotnet 产物）；`AxuLogo.jpeg`；`reasonix.toml`（权限白名单，内嵌**已失效的 macOS 旧路径**）；`.vsconfig`（VS 的 Unity 工作负载）。
-- AI 工具配置：`.agent/skills/`（2 个 UI Toolkit 相关技能）、`.claude/settings.local.json`（1 条 find 权限白名单）、`.reasonix/`（会话元数据）、`.vscode/`（隐藏 Unity 产物等设置）、`.antigravity/`（含命名空间批量重构脚本 refactor_namespace.ps1，迁移配套产物）、`.zcode/`（本知识库）。
+- 文档目录：`Assets/DevDoc/`（Socket TechnicalDesign、Common_To_PureCS_Analysis）、`Assets/_CommonDoc/`（移植评估 = trans doc）、`Assets/_DevDoc/`（TaskQ 改进备忘）、根 `docs/`（**docfx 文档站**：docfx.json、api/ 生成 YAML、_site/ 产物；index.md 为占位 stub；该目录被 .gitignore 忽略）。
+- 根杂项：旧版 `AxuFrameKit.*.csproj` 与 `AxuFrameKitV2.sln`（Unity 生成物，被 gitignore）；`LiveUtil.csproj/LiveUtil.Editor.csproj`（LiveUtil→LiveStream 更名前的遗迹，仅存在于磁盘）；`build.log/build_error.log`（被 *.log 忽略）；`AxuLogo.jpeg`；`reasonix.toml`；`.vsconfig`。
+- AI 工具配置：`.agent/skills/`（2 个 UI Toolkit 相关技能）、`.claude/`（ignored）、`.reasonix/`（ignored）、`.vscode/`、`.antigravity/`（含 refactor_namespace.ps1）、`.zcode/`（本知识库 + reports/）。

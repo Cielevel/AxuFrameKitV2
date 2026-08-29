@@ -16,6 +16,7 @@
 | **06-16** | **5277cdd "trans core and common to package"** | **核心迁移节点**：_Core（80 文件）→ 包内 `Runtime/_Core`（新建 AxuFrameKit.Core.asmdef）；Common（147 Runtime + 30 Editor）→ `Runtime/Common`（AxuFrameKit.Runtime.asmdef）与 `Editor/Common`（AxuFrameKit.Editor.asmdef）；package.json 补依赖 |
 | 08-02 | 3a65756 "save only" | 存档相关改动 |
 | 08-26 | **3231a6e "add converter -- terrain to mesh"** | 最新功能：包内 `Editor/Common/Utility/Converter/TerrainToMeshConverter.cs`（466 行） |
+| 08-29 | c53ff4c / c00267f / fa5b847 / 15b9e8a | 文档迁入包、跨平台 gitignore/eol=lf、UI-Toolkit 警告修复；同日**模块层拆包**：Assets/AxuFrameKit/Modules 与 AxuIndieModules 拆为 8 个独立嵌入式包（`axu-module-*` ×4 + `axu-indie-*` ×4），框架包内重复窗口移除，Assets 中不再有框架/模块代码 |
 
 另有陈旧未合并远端分支 `origin/expiremental-node-system-...`。包版本号自建立以来保持 0.1.0，无 CHANGELOG、无发布节奏记录。
 
@@ -72,7 +73,7 @@
 1. ~~包内无 README / CHANGELOG / 文档~~ → 已解决：包根新增 README.md（含文档索引表）与 CHANGELOG.md；25 份模块文档（19 散落 + 6 KitDoc）迁入包内随代码放置，package.json 补 documentationUrl。
 2. ~~根 AGENTS.md、README.md 未随包迁移更新~~ → 已解决：两份文档已重写同步至包化现状。
 3. ~~散落文档位置悬空~~ → 已解决：文档迁入包内并修正文中旧路径，`Assets/AxuFrameKit/{_Core,Common,KitDoc}` 旧骨架已删除（仅余 Modules）。
-4. **剩余待办**：Modules 层（37 个 .cs + 39 个资产）尚未包化（原计划第 3 步）；Modules 子模块自身无文档（原 `KitDoc/Modules/` 为空，该目录已随迁移删除，待包化时补）。
+4. ~~剩余待办：Modules 层尚未包化~~ → **已于 2026-08-29 完成**：8 个模块包（含各自 README/CHANGELOG/asmdef/Samples~）；Modules 子模块的独立文档仍缺（可在后续按需补写）。当前文档面剩余事项：AxuExperimental（未包化、文档散在各自 ReadMe）与根 `docs/` docfx 站内容单薄。
 
 ## 5. AI 工具配置概况
 
