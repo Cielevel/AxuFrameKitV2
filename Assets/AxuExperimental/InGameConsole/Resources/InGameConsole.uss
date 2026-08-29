@@ -59,7 +59,7 @@
     height: 8px;
     min-height: 8px;
     background-color: var(--igc-bg-dark);
-    cursor: ns-resize;
+    cursor: resize-vertical;
     flex-shrink: 0;
     border-bottom-width: 1px;
     border-bottom-color: var(--igc-border-dark);

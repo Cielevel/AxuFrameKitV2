@@ -61,7 +61,6 @@
     font-size: 11px;
     -unity-font-style: bold;
     letter-spacing: 1px;
-    text-transform: uppercase;
     padding-left: 12px;
     padding-right: 12px;
     padding-top: 1px;
@@ -92,7 +91,7 @@
 
 .main-vertical-split > .unity-two-pane-split-view__dragline-anchor > .unity-two-pane-split-view__dragline:hover {
     background-color: rgba(255, 149, 0, 0.3);
-    cursor: ns-resize;
+    cursor: resize-vertical;
 }
 
 /* ===== Panel Containers ===== */
@@ -644,7 +643,6 @@
     color: var(--ue5-text-secondary);
     -unity-font-style: bold;
     letter-spacing: 0.5px;
-    text-transform: uppercase;
 }
 
 /* ===== Like Button (Pink) ===== */

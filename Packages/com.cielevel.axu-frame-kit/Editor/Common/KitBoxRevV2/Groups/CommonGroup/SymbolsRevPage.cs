@@ -147,6 +147,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             var buttonRow = new VisualElement();
             buttonRow.AddToClassList("button-row");
             _actionButton = new Button();
+            _actionButton.AddToClassList("button-row-first");
             _actionButton.style.height = 36;
             _actionButton.style.minWidth = 140;
             _actionButton.clicked += OnActionClicked;
@@ -229,6 +230,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             var customButtonRow = new VisualElement();
             customButtonRow.AddToClassList("button-row");
             _customActionButton = new Button();
+            _customActionButton.AddToClassList("button-row-first");
             _customActionButton.text = "添加/移除";
             _customActionButton.style.height = 36;
             _customActionButton.style.minWidth = 140;

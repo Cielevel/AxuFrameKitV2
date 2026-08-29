@@ -881,7 +881,7 @@ namespace AxuIndieModules.SpriteToAnimation
             preview.style.height = 24;
             preview.style.marginRight = 8;
             preview.style.backgroundImage = new StyleBackground(sprite);
-            preview.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+            preview.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
             row.Add(preview);
 
             // Name label

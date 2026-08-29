@@ -1,0 +1,63 @@
+Packages\com.cielevel.axu-frame-kit\Editor\Common\Window\SpriteToAnimationWindow.cs(883,13): warning CS0618: 'IStyle.unityBackgroundScaleMode' is obsolete: 'unityBackgroundScaleMode is deprecated. Use background-* properties instead.'
+
+Assets\AxuIndieModules\SpriteToAnimation\SpriteToAnimationWindow.cs(884,13): warning CS0618: 'IStyle.unityBackgroundScaleMode' is obsolete: 'unityBackgroundScaleMode is deprecated. Use background-* properties instead.'
+
+Assets/AxuExperimental/InGameConsole/Resources/InGameConsole.uss (line 62): warning: Expected ([ [ <resource> | <url> ] [ <integer> <integer> ]? ] | [ arrow | text | resize-vertical | resize-horizontal | link | slide-arrow | resize-up-right | resize-up-left | move-arrow | rotate-arrow | scale-arrow | arrow-plus | arrow-minus | pan | orbit | zoom | fps | split-resize-up-down | split-resize-left-right | not-allowed ]) but found 'ns-resize'
+    cursor: ns-resize
+
+Assets/AxuExperimental/OllamaModelCall/OllamaScriptFillerWindow.uss (line 66): warning: Unknown property 'text-transform' (did you mean 'text-shadow'?)
+    text-transform: uppercase
+
+Assets/AxuExperimental/OllamaModelCall/OllamaScriptFillerWindow.uss (line 82): warning: Unknown property 'text-transform' (did you mean 'text-shadow'?)
+    text-transform: uppercase
+
+Assets/AxuFrameKit/Modules/Noise/UI/NoiseWindowStyles.uss (line 329): warning: Expected (flex-start | flex-end | center | space-between | space-around | space-evenly) but found 'stretch'
+    justify-content: stretch
+
+Packages/com.cielevel.axu-frame-kit/Editor/Common/KitBoxRevV2/UI/AxuKitBoxV2_UE5Theme.uss (line 257): warning: Unknown property 'font-style' (did you mean '-unity-font-style'?)
+    font-style: italic
+
+Packages/com.cielevel.axu-frame-kit/Editor/Common/KitBoxRevV2/UI/AxuKitBoxV2_UE5Theme.uss (line 639): warning: Unknown property 'line-height' (did you mean 'min-height'?)
+    line-height: 16px
+
+Packages/com.cielevel.axu-frame-kit/Editor/Common/KitBoxRevV2/UI/AxuKitBoxV2_UE5Theme.uss (line 697): warning: Unknown property 'line-height' (did you mean 'min-height'?)
+    line-height: 20px
+
+Assets/AxuFrameKit/Modules/AITools/Generator/AIScriptGeneratorWindow.uss (line 66): warning: Unknown property 'text-transform' (did you mean 'text-shadow'?)
+    text-transform: uppercase
+
+Assets/AxuFrameKit/Modules/AITools/Generator/AIScriptGeneratorWindow.uss (line 82): warning: Unknown property 'text-transform' (did you mean 'text-shadow'?)
+    text-transform: uppercase
+
+Assets/AxuFrameKit/Modules/LiveStream/Script/EditorWindow/LiveStreamSimulatorWindow.uss (line 64): warning: Unknown property 'text-transform' (did you mean 'text-shadow'?)
+    text-transform: uppercase
+
+Assets/AxuFrameKit/Modules/LiveStream/Script/EditorWindow/LiveStreamSimulatorWindow.uss (line 95): warning: Expected ([ [ <resource> | <url> ] [ <integer> <integer> ]? ] | [ arrow | text | resize-vertical | resize-horizontal | link | slide-arrow | resize-up-right | resize-up-left | move-arrow | rotate-arrow | scale-arrow | arrow-plus | arrow-minus | pan | orbit | zoom | fps | split-resize-up-down | split-resize-left-right | not-allowed ]) but found 'ns-resize'
+    cursor: ns-resize
+
+Assets/AxuFrameKit/Modules/LiveStream/Script/EditorWindow/LiveStreamSimulatorWindow.uss (line 647): warning: Unknown property 'text-transform' (did you mean 'text-shadow'?)
+    text-transform: uppercase
+
+Assets/AxuFrameKit/Modules/AITools/Filler/AIScriptFillerWindow.uss (line 66): warning: Unknown property 'text-transform' (did you mean 'text-shadow'?)
+    text-transform: uppercase
+
+Assets/AxuFrameKit/Modules/AITools/Filler/AIScriptFillerWindow.uss (line 82): warning: Unknown property 'text-transform' (did you mean 'text-shadow'?)
+    text-transform: uppercase
+
+Assets/AxuFrameKit/Modules/AITools/Chat/AIDialogueWindow.uss (line 60): warning: Unknown property 'text-transform' (did you mean 'text-shadow'?)
+    text-transform: uppercase
+
+Assets/AxuFrameKit/Modules/AITools/Chat/AIDialogueWindow.uss (line 179): warning: Unknown property '-unity-enable-rich-text' (did you mean '-unity-slice-left'?)
+    -unity-enable-rich-text: true
+
+Unknown pseudo class "first-child"
+UnityEditor.AssetImporters.ScriptedImporter:GenerateAssetData (UnityEditor.AssetImporters.AssetImportContext)
+
+Packages/com.cielevel.axu-frame-kit/Editor/Common/KitBoxRevV2/UI/AxuKitBoxV2.uss (line 712): warning: Unknown property 'font-style' (did you mean '-unity-font-style'?)
+    font-style: italic
+
+Packages/com.cielevel.axu-frame-kit/Editor/Common/KitBoxRevV2/UI/AxuKitBoxV2.uss (line 1176): warning: Unknown property 'text-transform' (did you mean 'text-shadow'?)
+    text-transform: uppercase
+
+Unknown pseudo class "first-child"
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)

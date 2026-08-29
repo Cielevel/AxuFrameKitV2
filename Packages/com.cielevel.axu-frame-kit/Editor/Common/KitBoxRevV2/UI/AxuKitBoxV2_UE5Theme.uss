@@ -254,7 +254,7 @@
     margin-bottom: 20px;
     white-space: normal;
     font-size: 13px;
-    font-style: italic;
+    -unity-font-style: italic;
 }
 
 .section-header {
@@ -636,7 +636,6 @@
     font-size: 12px;
     color: var(--ue-text-secondary);
     white-space: normal;
-    line-height: 16px;
 }
 
 /* ========================================
@@ -694,7 +693,6 @@
     color: var(--ue-text-secondary);
     font-size: 14px;
     margin-bottom: 32px;
-    line-height: 20px;
 }
 
 .symbol-status-row {
