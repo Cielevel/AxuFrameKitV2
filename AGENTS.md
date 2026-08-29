@@ -189,6 +189,7 @@ Assets/
 │   ├── _Sample_Inner/         # 内部示例
 │   └── AITools_Config/        # AIChatConfig 用户配置资产（含 API key，属用户数据不入包）
 ├── TEMP/                  # 临时测试数据 (CSV)
+├── Tests/                 # 单元测试 (AxuFrameKitV2.Tests.Editor：_Core 冒烟测试，EditMode)
 ├── TextMesh Pro/          # TMP Essential 资源
 └── URP/                   # URP 管线资产 (Settings/PC_RPAsset 为全局管线)
 ```
@@ -247,6 +248,7 @@ Assets/
   "com.unity.inputsystem": "1.11.1",
   "com.unity.multiplayer.center": "1.0.0",
   "com.unity.nuget.newtonsoft-json": "3.2.2",
+  "com.unity.pipeline": "0.5.0-exp.1",
   "com.unity.render-pipelines.universal": "17.0.3",
   "com.unity.test-framework": "1.4.6",
   "com.unity.timeline": "1.8.7",
@@ -356,7 +358,6 @@ UIBindTextStr.Bind(myTextComponent, () => model.PlayerName);
     `Runtime/Common/Utility/{Math,Table/CSV}/Doc_*.md`、`Runtime/Common/UI/Framework/UI框架.md` 等——**查文档先看包 README 的索引**
 - **模块包文档**: 8 个模块包（`Packages/com.cielevel.axu-module-*`、`com.cielevel.axu-indie-*`）各自带 README.md / CHANGELOG.md
 - **开发文档**: `Assets/DevDoc/`（Socket 技术设计等）、`Assets/_CommonDoc/`（包迁移评估）
-- **API 文档站**: 根目录 `docs/`（docfx）
 
 ---
 
@@ -395,7 +396,9 @@ UIBindTextStr.Bind(myTextComponent, () => model.PlayerName);
 ## 测试
 
 - 使用 Unity Test Framework (com.unity.test-framework 1.4.6)
-- **包内暂无 Tests**；示例与测试代码位于 `Assets/TestAndSample/`（编译进 Assembly-CSharp）
+- **框架包内暂无 Tests**；工程测试位于 `Assets/Tests/Editor/`（AxuFrameKitV2.Tests.Editor，EditMode 冒烟测试）；
+  也可通过 Unity Pipeline API 的 `run_tests` 命令远程运行（见 `.zcode/08`）
+- 示例场景位于 `Assets/TestAndSample/`
 - 每个主要功能都应有对应的 Sample 场景
 
 ---

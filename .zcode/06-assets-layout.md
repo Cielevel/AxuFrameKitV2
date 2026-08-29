@@ -1,7 +1,7 @@
 # 06 · Assets 布局（包外内容）
 
 > 勘察时间：2026-08-29（同日晚些时候完成模块拆包后更新）。框架与模块代码全部在 `Packages/` 下（框架见 02 号文档，模块包清单见下），
-> **Assets 内已无任何框架/模块代码**，也**没有任何 .asmdef**（Assets 侧脚本均编译进 Assembly-CSharp）。
+> **Assets 内已无任何框架/模块代码**；唯一的 asmdef 是测试程序集 `Assets/Tests/Editor/AxuFrameKitV2.Tests.Editor.asmdef`（其余 Assets 侧脚本编译进 Assembly-CSharp）。
 
 ## 1. Assets 顶层目录树
 

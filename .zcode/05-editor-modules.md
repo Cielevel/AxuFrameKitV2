@@ -1,4 +1,4 @@
-# 05 · Editor 层模块清单（AxuFrameKit.Editor 程序集，31 个 .cs）
+# 05 · Editor 层模块清单（AxuFrameKit.Editor 程序集，29 个 .cs）
 
 > 路径：`Packages/com.cielevel.axu-frame-kit/Editor/`。命名空间：`AxuFrameKit.Common.Editor.*`。
 > asmdef 限 Editor 平台（includePlatforms: Editor），`autoReferenced: false`（使用方需手动引用程序集/using）。

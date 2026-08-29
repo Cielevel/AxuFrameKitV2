@@ -1,145 +1,153 @@
+<div align="center">
+
+<img src="AxuLogo.jpeg" width="260" alt="AxuFrameKit"/>
+
 # AxuFrameKit
 
-<div align = "center">
-<img  src="https://github.com/Cielevel/AxuFrameKitV2/blob/main/AxuLogo.jpeg" width="300" />
+**Unity 6 应用程序框架 · 清晰分层架构 · 可复用组件 · 全量 UPM 包化**
+
+[![Unity](https://img.shields.io/badge/Unity-6000.0.23f1-black?logo=unity)](https://unity.com/releases/editor/whats-new/6000.0.23)
+[![URP](https://img.shields.io/badge/URP-17.0.3-blue)](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@17.0)
+[![UPM](https://img.shields.io/badge/UPM_Packages-9-8A2BE2)](#包一览)
+[![Tests](https://img.shields.io/badge/Tests-EditMode_6%2F6-brightgreen)](Assets/Tests/Editor/)
+
+*清晰的架构，让每一次复用都省心。*
+
 </div>
 
-AxuFrameKit 是一个 Unity 应用程序框架，旨在提供清晰的架构和可复用的组件。基于 Unity 6 (6000.0.23f1) 与 URP 开发。
-
-框架本体以 **Unity Package Manager 嵌入式包**形式提供：`Packages/com.cielevel.axu-frame-kit`（含 3 个程序集定义：`AxuFrameKit.Core` ← `AxuFrameKit.Runtime` ← `AxuFrameKit.Editor`），可直接拷贝 Packages 目录集成到其他 Unity 6 项目。
-
-## 架构概览
-
-本项目采用分层架构设计，确保模块间的低耦合与高内聚：
-
-1.  **_Core (核心层)**
-    *   **定位**：框架的核心基础模块。
-    *   **特点**：纯 C# 实现，**无任何 Unity 引擎依赖**。包含通用的工具类、数据结构、设计模式实现以及高级架构组件。
-    *   **依赖**：无。
-    *   **位置**：`Packages/com.cielevel.axu-frame-kit/Runtime/_Core`（程序集 `AxuFrameKit.Core`）。
-
-2.  **Common (通用层)**
-    *   **定位**：通用功能模块。
-    *   **特点**：提供基于 Unity 环境的通用功能、UI 框架与工具类；编辑器工具层亦在本包内（`Editor/`，程序集 `AxuFrameKit.Editor`）。
-    *   **依赖**：Core。
-    *   **位置**：`Packages/com.cielevel.axu-frame-kit/Runtime/Common`（程序集 `AxuFrameKit.Runtime`）。
-
-3.  **Modules (模块层)**
-    *   **定位**：具体功能模块，即插即用。
-    *   **特点**：包含独立的功能特性。**尚未包化**，位于 `Assets/AxuFrameKit/Modules/`，编译进 Assembly-CSharp。
-    *   **依赖**：Core, Common。
-
-## 目录结构与功能详解
-
-### 1. `Packages/com.cielevel.axu-frame-kit/Runtime/_Core`
-核心代码库，基于 Generic C#，不依赖 Unity API。命名空间：`AxuFrameKit._Core.*`
-
-*   **Advanced** (高级架构组件)
-    *   `BetterFSM`: 改进版有限状态机（委托/谓词驱动）；另含泛型版 `FSM`。
-    *   `EventSystem`: 类型安全的事件中心 (`EventCenter`)，用于模块间解耦通信。
-    *   `ObjectPool`: 通用 C# 对象池 (`SimpleObjPool`, `TypeObjPools`)。
-
-*   **DesignPattern** (设计模式)
-    *   `ChainOfResponsibility`: 责任链模式。
-    *   `Command`: 命令模式。
-    *   `Memento`: 备忘录模式。
-    *   `Singleton`: 单例模式基类。
-
-*   **Structure** (数据结构)
-    *   `BiDictionary`: 双向字典。
-    *   `CircularBuffer`: 环形缓冲区。
-    *   `IndexedList` / `IndexedMultiList`: 索引列表。
-    *   `PriorityQueue`: 优先级队列。
-    *   `ReactiveProperty`: 响应式属性。
-
-*   **Utility** (实用工具)
-    *   `Common`: 通用工具 (Logger, Number)。
-    *   `Computed`: 响应式派生值 (`Computed<T>`，惰性求值 + 依赖追踪)。
-    *   `Encrypt`: 完整加密工具集 (AES / RSA / MD5 / SHA / PBKDF2 / HMAC / Base64 / Hex)。
-    *   `Math`: 数学与缓动基座 (`AxuTweener` + Linear~Bounce 全套 Ease，引擎无关)。
-    *   `RandomX`: 随机数工具增强 (别名法加权抽样 `AliasSampler`、`RandomId` 等)。
-    *   `TaskQ`: 无 MonoBehaviour 依赖的异步任务队列。
-
-*   **Extension** (扩展方法)
-    *   涵盖 `String`, `Int`, `Float`, `DateTime`, `Collection`, `Enum`, `Task`, `Type`, `Reflection` 等常用类型的扩展。
-
 ---
 
-### 2. `Packages/com.cielevel.axu-frame-kit/Runtime/Common`
-基于 Unity 引擎的通用组件与工具。命名空间：`AxuFrameKit.Common.*`
+## ✨ 特性
 
-*   **UI** (UI 框架)
-    *   `Framework`: UI 页面框架 (`UIBaseManager` → `UIBaseArea` → `UIBasePanel` → `UIBasePage`)。
-    *   `Kit/DataBind`: UI 数据绑定组件 (`UIBind*` 系列，约 19 个：Text/TMP/Image/Slider/Dropdown/InputField 等)。
-    *   `Kit/ListView`: 虚拟化列表 (`UIListView`，数据绑定 + 对象池 + 可插拔布局引擎)。
-    *   `Kit/Scroll`: 循环滚动视图 (`UILoopVerticalScrollRect`)。
-    *   `Kit/Toast`: 消息提示组件（边缘推入式 Toast）。
-    *   `Kit/ToggleBtnGroup`: 互斥切换按钮组。
-    *   `Kit/Typewriter`: TMP 打字机效果。
-    *   `Kit/Video`: 视频播放套件。
+- 🧩 **三层架构**：`_Core`（纯 C#，零 Unity 依赖）→ `Common`（Unity 运行时组件）→ `Editor`（编辑器工具），依赖方向永不逆转
+- 📦 **全量 UPM 包化**：框架本体 + 8 个可选模块均为独立嵌入式包，按需取用、拷走即用
+- 🖥 **成套编辑器工具**：AxuKitBox 多页签工具箱、Hierarchy 规则着色/图标、TerrainToMesh 转换器、CSV 工作流……
+- 🌐 **生产级网络**：静态 HTTP 工具 → 可配置 HttpClient → 带长度前缀分包协议的 TCP SocketClient 三层递进
+- 🗄 **开箱即用**：UI 页面框架、19 个数据绑定组件、虚拟化列表、存档系统、补间动画、加密套件
+- 🤖 **AI Agent 友好**：内置 `com.unity.pipeline`，本地 API 可直接驱动运行中的 Editor 完成编译 / 测试 / 资产操作
 
-*   **Utility** (通用工具)
-    *   `TaskQ`: 任务队列系统 (`CoroutineQ` 协程队列)。
-    *   `Timer`: 倒计时与定时器管理 (`CountdownManager`, `StopwatchManager`)。
-    *   `Singleton`: Unity 单例族 (`SingletonLazy`, `SingletonMono`, `SingletonMonoCr`, `SingletonMonoCrDs`)。
-    *   `Multiton`: 多例模式实现 (Mono 侧，含 `MultitonManager`)。
-    *   `Net`: 网络工具三层 (静态 `HttpUtil`/`Downloader`、可配置 `HttpClient`、生产级 TCP `SocketClient` 长度前缀分包协议)。
-    *   `Save`: 存档系统 (`SaveUtil` + 策略化存储后端：本地文件 / JSON / 二进制 / PlayerPrefs)。
-    *   `ObjectPool`: GameObject 对象池 (ScriptableObject 配置，Int/Str 键特化)。
-    *   `Event`: 事件中心 (`EventCentral` 字符串事件 + `EventChannel<T>` ScriptableObject 事件通道)。
-    *   `Auto`: 自动化组件 (AutoSequence 序列播放器、AutoSnapshot 快照录制/回放、AutoCamera、AutoDestroy 等)。
-    *   `Math`: Unity 补间系统 (`AxuTween` 运行器 + Move/Scale/Anchor/Fade 等 Tweener，基于 Core 层 Ease)。
-    *   `2D`: 2D 相关工具 (EdgeColliderCircleShape)。
-    *   `UseMono`: 非 Mono 类代理挂接 Update 等生命周期。
-
-*   **CustomAttribute** (自定义属性)
-    *   `CustomMonoBehaviour` / `CustomScriptableObject` 基类与 Inspector 增强属性 (`InsButton`, `InspectorIntro`, `InspectorTitle`)，绘制器在包内 `Editor/`。
-
-*   **Extension** (Unity 扩展)
-    *   `Transform`, `Vector`, `Color`, `GameObject`, `RectTransform`, `AsyncOperation` 等 Unity 类型的扩展方法。
-
-*   **Editor 工具** (`Packages/com.cielevel.axu-frame-kit/Editor/`)
-    *   `KitBoxRevV2`: 多页签工具箱窗口 "AxuKitBox"（纯 UI Toolkit，页面插件化）。
-    *   `Hierarchy`: Hierarchy 窗口增强（规则着色 / 规则图标）。
-    *   `Window`: AssetFavorites / SceneJumper / AvatarDownloader / SpriteToAnimation。
-    *   `Utility`: TerrainToMesh 转换器、CSV 容器创建窗口、宏定义批量设置等。
-
----
-
-### 3. 可选模块（独立 UPM 包，2026-08-29 起全部包化）
-
-模块家族（`Packages/com.cielevel.axu-module-*`）：
-
-*   **AITools**（`com.cielevel.axu-module-aitools`）
-    *   AI 辅助工具：对话窗口 (Chat)、脚本填充 (Filler)、脚本生成 (Generator)，AIConfig 可脚本化配置。
-*   **GizmosUtil**（`com.cielevel.axu-module-gizmos-util`）
-    *   Gizmos 辅助绘制库（线/贝塞尔/路径/射线抽屉 + ReorderableList 检视器）。
-*   **LiveStream**（`com.cielevel.axu-module-livestream`，依赖框架包）
-    *   直播互动模拟：评论/礼物/点赞触发器 SO 体系、模拟器与录制窗口、UI 面板、秋恋猫 HTTP 对接。
-*   **Noise**（`com.cielevel.axu-module-noise`，含 FastNoiseLite MIT 第三方声明）
-    *   噪声生成 (FastNoiseLite / SimpleNoise + 编辑器预览窗口)。
-
-独立工具包（零依赖，`Packages/com.cielevel.axu-indie-*`）：
-
-*   **SceneJumper**：场景收藏/分组/一键跳转窗口。
-*   **SelectionToCsv**：选中资产导出 CSV。
-*   **SpriteToAnimation**：精灵序列帧转 AnimationClip/Animator。
-*   **StatPipeline**：类 roguelike 数值管线（Stat/Modifier/Calculator/Debugger + 编辑器生成器与分析窗口）。
-
-各包示例位于其 `Samples~/` 目录，经 Package Manager → Samples 导入。
-
-## 依赖关系
+## 🏗 架构
 
 ```mermaid
 graph LR
-    A[_Core]
-    B[Common]
-    C[Modules]
-    D[Editor]
+    A["Core<br/>纯 C# 零依赖"]
+    B["Common<br/>Unity 运行时"]
+    E["Editor<br/>编辑器工具"]
+    M["可选模块包 ×8"]
 
-    B ==依赖核心==> A
-    C ==依赖核心==> A
-    C --依赖Common--> B
-    D --依赖--> B
-    D -.依赖.-> A
+    B --> A
+    E --> B
+    M --> B
+    M -.仅 LiveStream.-> A
 ```
+
+> 8 个可选模块包中，仅 **LiveStream** 依赖框架包，其余全部零依赖、互相独立。
+
+## 📦 包一览
+
+| 包 | 说明 | 文档 |
+|---|---|---|
+| [`com.cielevel.axu-frame-kit`](Packages/com.cielevel.axu-frame-kit) | **框架本体**：核心库 + 运行时组件 + 编辑器工具（3 个程序集） | [README](Packages/com.cielevel.axu-frame-kit/README.md) · [CHANGELOG](Packages/com.cielevel.axu-frame-kit/CHANGELOG.md) |
+| [`com.cielevel.axu-module-aitools`](Packages/com.cielevel.axu-module-aitools) | AI 对话 / 脚本填充 / 脚本生成窗口 | [README](Packages/com.cielevel.axu-module-aitools/README.md) |
+| [`com.cielevel.axu-module-gizmos-util`](Packages/com.cielevel.axu-module-gizmos-util) | Gizmos 绘制库（线/贝塞尔/路径/射线） | [README](Packages/com.cielevel.axu-module-gizmos-util/README.md) |
+| [`com.cielevel.axu-module-livestream`](Packages/com.cielevel.axu-module-livestream) | 直播互动模拟（依赖框架包） | [README](Packages/com.cielevel.axu-module-livestream/README.md) |
+| [`com.cielevel.axu-module-noise`](Packages/com.cielevel.axu-module-noise) | 噪声生成与预览（含 FastNoiseLite） | [README](Packages/com.cielevel.axu-module-noise/README.md) |
+| [`com.cielevel.axu-indie-scene-jumper`](Packages/com.cielevel.axu-indie-scene-jumper) | 场景收藏 / 分组 / 快跳窗口 | [README](Packages/com.cielevel.axu-indie-scene-jumper/README.md) |
+| [`com.cielevel.axu-indie-selection-to-csv`](Packages/com.cielevel.axu-indie-selection-to-csv) | 选中资产导出 CSV | [README](Packages/com.cielevel.axu-indie-selection-to-csv/README.md) |
+| [`com.cielevel.axu-indie-sprite-to-animation`](Packages/com.cielevel.axu-indie-sprite-to-animation) | 精灵序列帧转 AnimationClip / Animator | [README](Packages/com.cielevel.axu-indie-sprite-to-animation/README.md) |
+| [`com.cielevel.axu-indie-stat-pipeline`](Packages/com.cielevel.axu-indie-stat-pipeline) | Roguelike 式数值管线 + 编辑器生成器 | [README](Packages/com.cielevel.axu-indie-stat-pipeline/README.md) |
+
+## 📥 安装
+
+目标工程要求 **Unity 6000.0 LTS+**；`com.cielevel.axu-frame-kit` 位于本仓库 `Packages/` 子目录。
+
+**方式一 · Git URL（推荐）** —— 在目标工程的 `Packages/manifest.json` 中添加：
+
+```json
+{
+  "dependencies": {
+    "com.cielevel.axu-frame-kit": "https://github.com/Cielevel/AxuFrameKitV2.git?path=Packages/com.cielevel.axu-frame-kit"
+  }
+}
+```
+
+可追加 `#v0.1.0` 锚定 tag / commit；也可通过 Package Manager → **＋ → Add package from git URL** 粘贴同样的地址。
+
+**方式二 · 嵌入式拷贝** —— 将 `Packages/com.cielevel.axu-frame-kit` 文件夹整体复制到目标工程的 `Packages/` 下，随源码修改即时生效。
+
+**方式三 · 本地路径** —— `"com.cielevel.axu-frame-kit": "file:../LocalPackages/com.cielevel.axu-frame-kit"`（相对路径以目标工程 `Packages/` 目录为基准）。
+
+> 可选模块包同理，把 URL 的 `?path=` 换成对应包目录即可；**LiveStream 需与框架包同时安装**，其余模块零依赖可单独导入。
+
+## 🚀 快速上手
+
+```csharp
+using AxuFrameKit._Core.Advanced.EventSystem;
+using AxuFrameKit.Common.Utility.Singleton;
+
+// 1. 延迟初始化单例（支持编辑器自动清理）
+public class GameConfig : SingletonLazy<GameConfig>
+{
+    public int MaxLevel = 99;
+}
+
+// 2. 类型安全事件
+public struct PlayerDiedEvent { public int Level; }
+
+EventCenter.Subscribe<PlayerDiedEvent>(e => UnityEngine.Debug.Log($"亡于第 {e.Level} 关"));
+EventCenter.Publish(new PlayerDiedEvent { Level = GameConfig.Instance.MaxLevel });
+```
+
+更多用法见下方文档导航；完整可运行示例位于 [`Assets/TestAndSample/`](Assets/TestAndSample)。
+
+## 📚 文档导航
+
+文档随代码放置在各包内，以下是高频入口（框架包根 [README](Packages/com.cielevel.axu-frame-kit/README.md) 有全量索引）：
+
+| 主题 | 文档 |
+|---|---|
+| 框架全量文档索引 | [框架包 README](Packages/com.cielevel.axu-frame-kit/README.md) |
+| BetterFSM 状态机 | [ReadMe](Packages/com.cielevel.axu-frame-kit/Runtime/_Core/Advanced/BetterFSM/ReadMe.md) |
+| 设计模式（命令/备忘录/责任链） | [README](Packages/com.cielevel.axu-frame-kit/Runtime/_Core/DesignPattern/README.md) |
+| 加密套件（AES/RSA/PBKDF2…） | [总览](Packages/com.cielevel.axu-frame-kit/Runtime/_Core/Utility/Encrypt/EncryptUtility.md) · [API](Packages/com.cielevel.axu-frame-kit/Runtime/_Core/Utility/Encrypt/APIReference.md) |
+| 数学与插值（Tween 基座） | [Doc_MathUtility](Packages/com.cielevel.axu-frame-kit/Runtime/Common/Utility/Math/Doc_MathUtility.md) |
+| UI 页面框架 | [UI框架.md](Packages/com.cielevel.axu-frame-kit/Runtime/Common/UI/Framework/UI框架.md) |
+| 数据绑定 DataBind | [HOWTOUSE](Packages/com.cielevel.axu-frame-kit/Runtime/Common/UI/Kit/DataBind/DOC/HOWTOUSE.md) |
+| UIListView 虚拟化列表 | [DOC 全套](Packages/com.cielevel.axu-frame-kit/Runtime/Common/UI/Kit/ListView/DOC/README.md) |
+| Socket 网络（生产级） | [README](Packages/com.cielevel.axu-frame-kit/Runtime/Common/Utility/Net/Socket/README.md) · [技术设计](Assets/DevDoc/AxuFrameKit/Common/Utility/Net/Socket/TechnicalDesign.md) |
+| 存档系统 | [ReadMe](Packages/com.cielevel.axu-frame-kit/Runtime/Common/Utility/Save/ReadMe.md) · [Usage](Packages/com.cielevel.axu-frame-kit/Runtime/Common/Utility/Save/Usage.md) |
+| CSV 表格 | [Doc_TableCsvUtility](Packages/com.cielevel.axu-frame-kit/Runtime/Common/Utility/Table/CSV/Doc_TableCsvUtility.md) |
+| 快照录制/回放 | [README](Packages/com.cielevel.axu-frame-kit/Runtime/Common/Utility/Auto/AutoSnapshot/README.md) |
+
+## 🗂 仓库结构
+
+```
+AxuFrameKitV2/
+├── Packages/
+│   ├── com.cielevel.axu-frame-kit        # 框架本体（Core / Common / Editor）
+│   ├── com.cielevel.axu-module-aitools   # ┐
+│   ├── com.cielevel.axu-module-gizmos-util│ │ 可选模块 ×4
+│   ├── com.cielevel.axu-module-livestream│ │
+│   ├── com.cielevel.axu-module-noise     # ┘
+│   └── com.cielevel.axu-indie-*          # 独立工具 ×4（零依赖）
+├── Assets/
+│   ├── Tests/Editor/                     # 单元测试（EditMode）
+│   ├── TestAndSample/                    # 可运行示例（框架全层覆盖）
+│   └── AxuExperimental/                  # 实验性模块
+└── docs → 见各包 README
+```
+
+## 🧪 开发
+
+- 测试：`Assets/Tests/Editor/`（EditMode），Unity Test Runner 或 Pipeline API 的 `run_tests` 运行
+- 各包变更记录见各自 `CHANGELOG.md`
+
+---
+
+<div align="center">
+
+**Cielevel** · 以 Unity 6 构建
+
+如果这个项目对你有帮助，欢迎点一个 ⭐
+
+</div>

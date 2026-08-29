@@ -61,7 +61,7 @@ packages-lock.json 中解析为 `"source": "embedded", "depth": 0`，依赖 ugui
 | com.unity.ai.navigation | 2.0.4 | AI 导航 |
 | com.unity.nuget.newtonsoft-json | 3.2.2 | Newtonsoft JSON（CSV/存档等依赖） |
 | com.unity.pipeline | 0.5.0-exp.1 | Unity CLI/Agent 桥接（实验包，配合 Unity CLI beta 驱动 Editor；2026-08-29 加入） |
-| com.unity.test-framework | 1.4.6 | 测试框架（AGENTS.md 写 1.4.5，已过时） |
+| com.unity.test-framework | 1.4.6 | 测试框架 |
 | com.unity.timeline | 1.8.7 | 时间轴 |
 | com.unity.ugui | 2.0.0 | uGUI |
 | com.unity.visualscripting | 1.9.4 | 可视化脚本 |
@@ -72,8 +72,9 @@ packages-lock.json 中解析为 `"source": "embedded", "depth": 0`，依赖 ugui
 
 ## 根目录 README.md 现状
 
-面向 GitHub 的框架介绍（配 AxuLogo.jpeg）：定义 AxuFrameKit 为"Unity 应用程序框架，清晰架构 + 可复用组件"，
-附三层架构 mermaid 依赖图与各层模块例举。**注意：其目录说明仍按 Assets 时代布局（`Assets/AxuFrameKit/_Core` 等路径）描述，未反映包迁移现状。**
+面向 GitHub 的门面文档（2026-08-29 二次改版）：居中 Logo + shields 徽章、特性列表、mermaid 架构图、
+9 包一览表（链接各包 README）、三种安装方式、快速上手代码、**文档导航表（相对链接指向各包内文档，不在根 README 重复内容）**、
+仓库结构树。改版原则：细节留在对应目录的文档里，根 README 只做导流。
 
 ## 命名与代码规范速记（详见根 AGENTS.md，部分已过时）
 

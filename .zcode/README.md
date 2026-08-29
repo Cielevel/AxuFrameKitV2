@@ -27,8 +27,7 @@
 
 ## 重要提醒（信息时效性）
 
-- 根目录 `AGENTS.md` 与 `README.md` 仍描述 2026-06 包迁移**之前**的 `Assets/AxuFrameKit/...` 布局，**已过时**；
-  以后者为准会找错位置，应以本知识库与包内实际代码为准（过时明细见 07 号文档）。
+- 根目录 `AGENTS.md` 与 `README.md` 已于 2026-08-29 重写，与包化现状同步；若发现二者与本库描述冲突，以更新时间较新者为准并回报修正。
 - 框架文档已于 2026-08-29 迁入包内、随代码放置（19 份散落 + 6 份 KitDoc），包根新增 README.md（含文档索引）/ CHANGELOG.md；
   `Assets/AxuFrameKit/` 下仅剩 `Modules/`（待包化）。07 号文档的文档清单为迁移前快照，仅供历史对照。
 - 命名空间规范：`AxuFrameKit._Core.*`（Core 层）、`AxuFrameKit.Common.*`（Common 层）、`AxuFrameKit.Common.Editor.*`（Editor 层）。

@@ -24,14 +24,14 @@ allowed-tools: Read, Write, Glob
 ## 核心样式文件
 
 ### 主要USS文件
-1. **KitBox主题**: `Assets/AxuFrameKit/Common/Editor/KitBoxRevV2/UI/AxuKitBoxV2.uss`
-2. **通用窗口样式**: `Assets/AxuFrameKit/Common/Editor/Window/CommonWindowStyles.uss`
+1. **KitBox主题**: `Packages/com.cielevel.axu-frame-kit/Editor/Common/KitBoxRevV2/UI/AxuKitBoxV2.uss`
+2. **通用窗口样式**: `Packages/com.cielevel.axu-frame-kit/Editor/Common/Window/CommonWindowStyles.uss`
 
 ### 引用方式
 ```csharp
 // 在CreateGUI()或构造函数中加载样式
 var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(
-    "Assets/AxuFrameKit/Common/Editor/Window/CommonWindowStyles.uss");
+    "Packages/com.cielevel.axu-frame-kit/Editor/Common/Window/CommonWindowStyles.uss");
 rootVisualElement.styleSheets.Add(styleSheet);
 ```
 
@@ -494,7 +494,7 @@ public class MyEditorWindow : EditorWindow
     {
         // 加载通用样式
         var commonStyles = AssetDatabase.LoadAssetAtPath<StyleSheet>(
-            "Assets/AxuFrameKit/Common/Editor/Window/CommonWindowStyles.uss");
+            "Packages/com.cielevel.axu-frame-kit/Editor/Common/Window/CommonWindowStyles.uss");
         rootVisualElement.styleSheets.Add(commonStyles);
         
         // 添加根容器样式
@@ -626,9 +626,9 @@ UXML结构:
 
 ## 相关文件参考
 
-- `Assets/AxuFrameKit/Common/Editor/KitBoxRevV2/UI/AxuKitBoxV2.uss` - 完整样式参考
-- `Assets/AxuFrameKit/Common/Editor/Window/CommonWindowStyles.uss` - 通用窗口样式
-- `Assets/AxuFrameKit/Common/Editor/KitBoxRevV2/` - KitBox实现参考
+- `Packages/com.cielevel.axu-frame-kit/Editor/Common/KitBoxRevV2/UI/AxuKitBoxV2.uss` - 完整样式参考
+- `Packages/com.cielevel.axu-frame-kit/Editor/Common/Window/CommonWindowStyles.uss` - 通用窗口样式
+- `Packages/com.cielevel.axu-frame-kit/Editor/Common/KitBoxRevV2/` - KitBox实现参考
 
 ## 相关Skills
 

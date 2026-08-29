@@ -49,14 +49,14 @@
 
 | 路径 | 主题 | 状态 |
 |---|---|---|
-| `README.md`（根） | 框架简介 + 分层架构 | **过时**（仍按 Assets 目录描述，未提包） |
-| `AGENTS.md`（根） | AI 项目指南 | **过时**（详见第 3 节） |
-| `docs/`（根） | docfx 文档站（api/ 已收录 AxuExperimental.BehaviorTree 等） | 可用；index.md 为占位 stub |
+| `README.md`（根） | 框架简介 + 分层架构 | **已同步**（2026-08-29 重写，含可选模块包清单） |
+| `AGENTS.md`（根） | AI 项目指南 | **已同步**（2026-08-29 重写，含 asmdef/依赖表/Tests） |
+| `docs/`（根） | docfx 文档站 | **已删除**（2026-08-29 清理：87MB 的 2026-03 迁移前快照，gitignored，index 为 stub；如需 API 站可重建 docfx 配置） |
 | `Assets/AxuExperimental/` 9 份 ReadMe | 实验模块说明 | 有效 |
 | `Assets/AxuIndieModules/ReadMe.md` | 独立模块说明 | 有效 |
 | `Packages/com.cielevel.axu-frame-kit/` 内 | **无任何 .md / README / CHANGELOG** | 文档缺口 |
 
-## 3. 根 AGENTS.md 过时条目（对照当前实际）
+## 3. 根 AGENTS.md 过时条目（历史记录：所列 7 条已于 2026-08-29 重写 AGENTS.md/README.md 时全部解决，仅存档备查）
 
 1. **目录结构整体过时（核心问题）**：AGENTS.md 将三层代码定位在 `Assets/AxuFrameKit/{_Core,Common,Modules}` 并给出完整目录树。实际 `_Core`（80 文件）与 `Common`（177 文件）已于 06-16 迁入包；`Assets/AxuFrameKit/_Core`、`Common` 现存 **0 个 .cs**。仅 `Modules`（37 文件）仍在 Assets。
 2. **完全未提及 UPM 包**：`com.cielevel.axu-frame-kit` 及 3 个 asmdef 零记载，旧的"无程序集定义"描述失效。
