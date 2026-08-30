@@ -59,7 +59,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             toolbarPanel.AddToClassList("toolbar-panel");
             _root.Add(toolbarPanel);
 
-            var createLabel = new Label("Create Group:");
+            var createLabel = new Label("新建分组");
             createLabel.AddToClassList("toolbar-label");
             toolbarPanel.Add(createLabel);
 
@@ -67,7 +67,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             _newGroupNameField.AddToClassList("ue5-text-field");
             toolbarPanel.Add(_newGroupNameField);
 
-            var createBtn = new Button(OnCreateGroupClicked) { text = "Create" };
+            var createBtn = new Button(OnCreateGroupClicked) { text = "创建" };
             createBtn.AddToClassList("primary-btn");
             toolbarPanel.Add(createBtn);
 
@@ -128,18 +128,18 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             foreach (var group in customGroups.ToList())
             {
                 var scenesInGroup = allScenes.Where(s => group.SceneGuids.Contains(s.Guid)).ToList();
-                var groupContainer = CreateSceneCategory($"📂 分组: {group.Name}", scenesInGroup, group);
+                var groupContainer = CreateSceneCategory($"分组：{group.Name}", scenesInGroup, group);
                 _contentScrollView.Add(groupContainer);
             }
 
             // 2. In Build Scenes
             var buildScenes = allScenes.Where(s => s.IsInBuild).ToList();
-            var buildContainer = CreateSceneCategory("🏗 构建场景", buildScenes, null, true);
+            var buildContainer = CreateSceneCategory("构建场景", buildScenes, null, true);
             _contentScrollView.Add(buildContainer);
 
             // 3. Other Scenes
             var otherScenes = allScenes.Where(s => !s.IsInBuild).ToList();
-            var otherContainer = CreateSceneCategory("📁 其他场景资源", otherScenes, null);
+            var otherContainer = CreateSceneCategory("其他场景资源", otherScenes, null);
             _contentScrollView.Add(otherContainer);
         }
 
@@ -181,7 +181,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             {
                 var emptyState = new VisualElement();
                 emptyState.AddToClassList("empty-state");
-                var emptyText = new Label(group != null ? "Group is empty. Click [Group] on a scene to add." : "No scenes found.");
+                var emptyText = new Label(group != null ? "分组为空：在场景行点击「分组」添加。" : "未找到场景。");
                 emptyText.AddToClassList("empty-state-text");
                 emptyState.Add(emptyText);
                 content.Add(emptyState);
@@ -243,7 +243,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             // Current badge
             if (isCurrent)
             {
-                var currentBadge = new Label("CURRENT");
+                var currentBadge = new Label("当前");
                 currentBadge.AddToClassList("badge");
                 currentBadge.AddToClassList("badge-current");
                 row.Add(currentBadge);
@@ -252,19 +252,19 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             // In Build badge
             if (scene.IsInBuild && !isCurrent)
             {
-                var buildBadge = new Label("BUILD");
+                var buildBadge = new Label("构建");
                 buildBadge.AddToClassList("badge");
                 buildBadge.AddToClassList("badge-build");
                 row.Add(buildBadge);
             }
 
             // Group button
-            var groupBtn = new Button(() => ShowGroupMenu(scene)) { text = "Group" };
+            var groupBtn = new Button(() => ShowGroupMenu(scene)) { text = "分组" };
             groupBtn.AddToClassList("action-btn");
             row.Add(groupBtn);
 
             // Locate button
-            var locateBtn = new Button(() => OnLocateScene(scene)) { text = "📍" };
+            var locateBtn = new Button(() => OnLocateScene(scene)) { text = "定位" };
             locateBtn.AddToClassList("action-btn");
             row.Add(locateBtn);
 
@@ -338,7 +338,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             GenericMenu menu = new GenericMenu();
             if (customGroups.Count == 0)
             {
-                menu.AddDisabledItem(new GUIContent("No Groups Found. Create one first."));
+                menu.AddDisabledItem(new GUIContent("暂无分组，请先创建"));
             }
             else
             {

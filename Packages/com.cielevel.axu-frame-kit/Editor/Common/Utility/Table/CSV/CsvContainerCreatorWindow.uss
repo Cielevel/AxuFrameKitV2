@@ -1,143 +1,97 @@
 /* ==================================================================
-   CsvContainerCreatorWindow — All-in-one Style
+   CsvContainerCreatorWindow — Component Layer (AxuKit Design System)
+   ------------------------------------------------------------------
+   只引用 var(--kb-*) token（定义见 Editor/Common/UI/AxuKitTokens.uss）。
+   加载本样式表的窗口须同时加载 AxuKitTokens.uss，并在根元素挂 .theme-* 类。
+   保留全部既有类名。
    ================================================================== */
 
-/* ===== CSS Variables (UE5 Color Palette) ===== */
-:root {
-    /* Primary Background Colors */
-    --ue5-bg-darkest: #1a1a1a;
-    --ue5-bg-dark: #1e1e1e;
-    --ue5-bg-panel: #242424;
-    --ue5-bg-element: #2a2a2a;
-    --ue5-bg-hover: #333333;
-    --ue5-bg-active: #3a3a3a;
-    
-    /* Accent Colors (UE5 Orange) */
-    --ue5-accent-primary: #ff9500;
-    --ue5-accent-secondary: #e68a00;
-    --ue5-accent-glow: rgba(255, 149, 0, 0.15);
-    --ue5-accent-border: rgba(255, 149, 0, 0.4);
-    
-    /* Border Colors */
-    --ue5-border-dark: #0d0d0d;
-    --ue5-border-subtle: #383838;
-    --ue5-border-light: #454545;
-    
-    /* Text Colors */
-    --ue5-text-primary: #e8e8e8;
-    --ue5-text-secondary: #a0a0a0;
-    --ue5-text-disabled: #666666;
-    --ue5-text-highlight: #ffffff;
-    
-    /* Selection Colors */
-    --ue5-selected-bg: #ff9500;
-    --ue5-selected-text: #1a1a1a;
-    --ue5-selected-hover: #ffaa33;
-    
-    /* Button Colors */
-    --ue5-btn-bg: #3d3d3d;
-    --ue5-btn-hover: #4a4a4a;
-    --ue5-btn-active: #555555;
-    --ue5-btn-primary-bg: #ff9500;
-    --ue5-btn-primary-hover: #ffaa33;
-    --ue5-btn-primary-active: #cc7700;
-}
-
-/* ===== Root Container ===== */
+/* ===== Shared component styles (window loads tokens + this file only) ===== */
 .ue5-root {
-    background-color: #141414;
-    color: var(--ue5-text-primary);
-    font-size: 12px;
+    background-color: var(--kb-bg);
+    color: var(--kb-text);
+    font-size: var(--kb-f-body);
     -unity-font-style: normal;
-    padding: 4px;
+    padding: var(--kb-s1);
 }
 
-/* ===== Window Title ===== */
 .window-title {
-    font-size: 16px;
+    font-size: var(--kb-f-head);
     -unity-font-style: bold;
-    color: var(--ue5-text-highlight);
-    margin-bottom: 8px;
-    padding-left: 4px;
+    color: var(--kb-text);
+    margin-bottom: var(--kb-s2);
+    padding-left: var(--kb-s1);
 }
 
-/* ===== Toolbar Panel ===== */
 .toolbar-panel {
-    background-color: #1e1e1e;
-    border-radius: 8px;
+    background-color: var(--kb-surface);
+    border-radius: var(--kb-r-l);
     border-width: 1px;
-    border-color: var(--ue5-accent-border);
-    padding: 8px 12px;
-    margin-bottom: 8px;
+    border-color: var(--kb-line);
+    padding: var(--kb-s2) var(--kb-s3);
+    margin-bottom: var(--kb-s2);
     flex-direction: row;
     align-items: center;
 }
 
 .toolbar-label {
-    font-size: 11px;
-    color: var(--ue5-text-secondary);
-    margin-right: 8px;
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text-2);
+    margin-right: var(--kb-s2);
     -unity-font-style: bold;
 }
 
-/* ===== Content ScrollView ===== */
 .content-scroll {
     flex-grow: 1;
     background-color: transparent;
 }
 
-/* ===== Group Container ===== */
 .group-container {
-    background-color: #1e1e1e;
-    border-radius: 8px;
+    background-color: var(--kb-surface);
+    border-radius: var(--kb-r-l);
     border-width: 1px;
-    border-color: var(--ue5-accent-border);
+    border-color: var(--kb-line);
     margin-bottom: 10px;
     overflow: hidden;
 }
 
-/* ===== Group Header ===== */
 .group-header {
     flex-direction: row;
     align-items: center;
-    background-color: #262626;
+    background-color: var(--kb-surface-2);
     padding: 6px 10px;
-    border-top-left-radius: 7px;
-    border-top-right-radius: 7px;
     border-bottom-width: 1px;
-    border-bottom-color: var(--ue5-border-dark);
+    border-bottom-color: var(--kb-line);
 }
 
 .group-title {
     flex-grow: 1;
-    font-size: 12px;
+    font-size: var(--kb-f-body);
     -unity-font-style: bold;
-    color: var(--ue5-text-highlight);
+    color: var(--kb-text);
 }
 
-/* ===== Group Content ===== */
 .group-content {
     padding: 6px;
 }
 
-/* ===== Item Row ===== */
 .item-row {
     flex-direction: row;
     align-items: center;
-    background-color: #242424;
-    border-radius: 4px;
+    background-color: var(--kb-surface-2);
+    border-radius: var(--kb-r-m);
     padding: 4px 6px;
     margin-bottom: 4px;
     border-width: 1px;
     border-color: transparent;
+    transition-duration: 0.1s;
 }
 
 .item-row:hover {
-    background-color: #2e2e2e;
-    border-color: var(--ue5-border-subtle);
+    background-color: var(--kb-hover);
+    border-color: transparent;
 }
 
-/* ===== Item Icon ===== */
 .item-icon {
     width: 24px;
     height: 24px;
@@ -147,122 +101,115 @@
     -unity-background-scale-mode: scale-to-fit;
 }
 
-/* ===== Item Name ===== */
 .item-name {
     flex-grow: 1;
-    font-size: 11px;
-    color: var(--ue5-text-primary);
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text);
     -unity-text-align: middle-left;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* ===== Action Button ===== */
 .action-btn {
     height: 24px;
     min-height: 24px;
     min-width: 28px;
-    font-size: 11px;
-    background-color: var(--ue5-btn-bg);
-    border-width: 1px;
-    border-color: var(--ue5-border-dark);
-    border-radius: 3px;
-    color: var(--ue5-text-primary);
+    font-size: var(--kb-f-caption);
+    background-color: var(--kb-surface-2);
+    border-width: 0;
+    border-radius: var(--kb-r-s);
+    color: var(--kb-text);
     padding-left: 6px;
     padding-right: 6px;
     margin-left: 2px;
     flex-shrink: 0;
+    transition-duration: 0.1s;
 }
 
 .action-btn:hover {
-    background-color: var(--ue5-btn-hover);
-    color: var(--ue5-text-highlight);
+    background-color: var(--kb-hover);
 }
 
 .action-btn:active {
-    background-color: var(--ue5-btn-active);
+    background-color: var(--kb-active);
 }
 
-/* ===== Primary Button ===== */
 .primary-btn {
-    height: 26px;
-    min-height: 26px;
-    font-size: 11px;
+    height: 28px;
+    min-height: 28px;
+    font-size: var(--kb-f-caption);
     -unity-font-style: bold;
-    background-color: var(--ue5-btn-primary-bg);
-    color: var(--ue5-selected-text);
-    border-radius: 3px;
-    border-width: 1px;
-    border-color: var(--ue5-accent-secondary);
-    padding-left: 12px;
-    padding-right: 12px;
+    background-color: var(--kb-accent);
+    color: var(--kb-on-accent);
+    border-radius: var(--kb-r-m);
+    border-width: 0;
+    padding-left: var(--kb-s3);
+    padding-right: var(--kb-s3);
+    transition-duration: 0.1s;
 }
 
 .primary-btn:hover {
-    background-color: var(--ue5-btn-primary-hover);
+    background-color: var(--kb-accent-2);
 }
 
 .primary-btn:active {
-    background-color: var(--ue5-btn-primary-active);
+    background-color: var(--kb-accent-2);
 }
 
-/* ===== Text Field ===== */
 .ue5-text-field {
     flex-grow: 1;
-    margin-right: 8px;
+    margin-right: var(--kb-s2);
 }
 
 .ue5-text-field > .unity-text-field__input {
-    background-color: var(--ue5-bg-darkest);
+    background-color: var(--kb-surface-2);
     border-width: 1px;
-    border-color: var(--ue5-border-subtle);
-    border-radius: 3px;
-    color: var(--ue5-text-primary);
-    padding: 4px 8px;
-    font-size: 11px;
+    border-color: var(--kb-line);
+    border-radius: var(--kb-r-s);
+    color: var(--kb-text);
+    padding: 4px var(--kb-s2);
+    font-size: var(--kb-f-caption);
     min-height: 24px;
 }
 
 .ue5-text-field > .unity-text-field__input:hover {
-    border-color: var(--ue5-border-light);
+    border-color: var(--kb-line-2);
 }
 
 .ue5-text-field > .unity-text-field__input:focus {
-    border-color: var(--ue5-accent-primary);
+    border-color: var(--kb-accent);
+    background-color: var(--kb-bg);
 }
 
-/* ===== Help Box ===== */
 .help-box {
-    background-color: rgba(255, 149, 0, 0.1);
-    border-radius: 4px;
-    border-width: 1px;
-    border-color: rgba(255, 149, 0, 0.3);
-    padding: 10px 12px;
-    margin: 8px 0;
+    background-color: var(--kb-accent-soft);
+    border-radius: var(--kb-r-m);
+    border-width: 0;
+    padding: 10px var(--kb-s3);
+    margin: var(--kb-s2) 0;
 }
 
 .help-box-text {
-    font-size: 11px;
-    color: var(--ue5-text-secondary);
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text-2);
     -unity-text-align: middle-center;
+    white-space: normal;
 }
 
-/* ===== Empty State ===== */
 .empty-state {
-    padding: 12px;
+    padding: var(--kb-s3);
     -unity-text-align: middle-center;
 }
 
 .empty-state-text {
-    font-size: 11px;
-    color: #808080;
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text-3);
     -unity-font-style: italic;
 }
 
-/* ===== Badge ===== */
 .badge {
-    background-color: var(--ue5-accent-primary);
-    color: var(--ue5-selected-text);
+    background-color: var(--kb-accent);
+    color: var(--kb-on-accent);
     font-size: 9px;
     -unity-font-style: bold;
     padding: 2px 6px;
@@ -271,35 +218,50 @@
 }
 
 .badge-build {
-    background-color: #4a9f4a;
+    background-color: var(--kb-ok);
+    color: var(--kb-on-accent);
 }
 
-/* ===== Scrollbars - UE5 Slim Style ===== */
+.bare-btn {
+    background-color: transparent;
+    border-width: 0;
+    border-radius: var(--kb-r-s);
+    padding: 0;
+}
+
+.bare-btn:hover {
+    background-color: var(--kb-hover);
+}
+
+.text-accent {
+    color: var(--kb-accent);
+}
+
 .unity-scroller {
     background-color: transparent;
 }
 
 .unity-scroller--vertical {
-    width: 10px;
+    width: 8px;
 }
 
 .unity-base-slider__dragger {
-    background-color: #4a4a4a;
-    border-radius: 2px;
+    background-color: var(--kb-dragger);
+    border-radius: 4px;
     border-width: 0;
     margin: 2px;
 }
 
 .unity-base-slider__dragger:hover {
-    background-color: #5a5a5a;
+    background-color: var(--kb-dragger-hover);
 }
 
 .unity-base-slider__dragger:active {
-    background-color: var(--ue5-accent-primary);
+    background-color: var(--kb-accent);
 }
 
 /* ==================================================================
-   Local Overrides / Window Specific Styles
+   Window Specific Styles
    ================================================================== */
 
 /* ===== Main Split Layout ===== */
@@ -329,21 +291,20 @@
 
 /* ===== Selected Item Highlight ===== */
 .csv-item-selected {
-    background-color: rgba(255, 149, 0, 0.15);
-    border-color: var(--ue5-accent-border);
+    background-color: var(--kb-accent-soft);
+    border-color: var(--kb-accent-line);
 }
 
 .csv-item-selected:hover {
-    background-color: rgba(255, 149, 0, 0.22);
+    background-color: var(--kb-accent-soft);
 }
 
 /* ===== Namespace Badge (small pill) ===== */
 .csv-ns-badge {
     font-size: 9px;
-    color: var(--ue5-text-disabled);
-    background-color: #2a2a2a;
-    border-width: 1px;
-    border-color: var(--ue5-border-subtle);
+    color: var(--kb-text-3);
+    background-color: var(--kb-surface-2);
+    border-width: 0;
     border-radius: 6px;
     padding-left: 5px;
     padding-right: 5px;
@@ -358,10 +319,9 @@
     align-items: flex-start;
     margin-bottom: 6px;
     padding: 6px 8px;
-    background-color: #222222;
-    border-radius: 4px;
-    border-width: 1px;
-    border-color: var(--ue5-border-subtle);
+    background-color: var(--kb-surface-2);
+    border-radius: var(--kb-r-s);
+    border-width: 0;
 }
 
 .csv-info-label {
@@ -369,14 +329,14 @@
     min-width: 90px;
     font-size: 10px;
     -unity-font-style: bold;
-    color: var(--ue5-text-disabled);
+    color: var(--kb-text-3);
     -unity-text-align: middle-left;
 }
 
 .csv-info-value {
     flex-grow: 1;
-    font-size: 11px;
-    color: var(--ue5-text-primary);
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text);
     white-space: normal;
     overflow: hidden;
 }
@@ -384,9 +344,9 @@
 /* ===== Separator ===== */
 .csv-separator {
     height: 1px;
-    background-color: var(--ue5-border-subtle);
-    margin-top: 8px;
-    margin-bottom: 12px;
+    background-color: var(--kb-line);
+    margin-top: var(--kb-s2);
+    margin-bottom: var(--kb-s3);
 }
 
 /* ===== Create Asset Button (full-width override) ===== */
@@ -400,7 +360,7 @@
 /* ===== Asset path label in Existing Assets rows ===== */
 .csv-asset-path {
     font-size: 10px;
-    color: var(--ue5-text-disabled);
+    color: var(--kb-text-3);
     -unity-text-align: middle-right;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -412,7 +372,7 @@
 .csv-fields-section-title {
     font-size: 10px;
     -unity-font-style: bold;
-    color: var(--ue5-text-disabled);
+    color: var(--kb-text-3);
     letter-spacing: 1px;
     margin-top: 10px;
     margin-bottom: 4px;
@@ -423,23 +383,21 @@
 .csv-field-row {
     flex-direction: row;
     align-items: center;
-    background-color: #1e1e1e;
-    border-radius: 4px;
-    border-width: 1px;
-    border-color: var(--ue5-border-subtle);
+    background-color: var(--kb-surface-2);
+    border-radius: var(--kb-r-s);
+    border-width: 0;
     padding: 4px 8px;
     margin-bottom: 3px;
 }
 
 .csv-field-row:hover {
-    background-color: #262626;
-    border-color: var(--ue5-border-light);
+    background-color: var(--kb-hover);
 }
 
 /* Type keyword (int, string, …) */
 .csv-field-type {
-    font-size: 11px;
-    color: #7ec8e3;         /* blue-ish, like VS Code type color */
+    font-size: var(--kb-f-caption);
+    color: var(--kb-accent);
     -unity-font-style: bold;
     margin-right: 6px;
     min-width: 48px;
@@ -447,23 +405,23 @@
 
 /* Member name */
 .csv-field-name {
-    font-size: 11px;
-    color: var(--ue5-text-primary);
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text);
     flex-grow: 1;
 }
 
 /* Arrow between member name and column name */
 .csv-field-arrow {
-    font-size: 11px;
-    color: var(--ue5-text-disabled);
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text-3);
     margin-left: 4px;
     margin-right: 4px;
 }
 
 /* CSV column name string */
 .csv-field-colname {
-    font-size: 11px;
-    color: #c3e88d;         /* green-ish, like VS Code string color */
+    font-size: var(--kb-f-caption);
+    color: var(--kb-ok);
     margin-right: 4px;
 }
 
@@ -479,28 +437,25 @@
     -unity-text-align: middle-center;
 }
 
-/* optional badge — warm amber */
+/* optional badge */
 .csv-field-badge--optional {
-    background-color: rgba(255, 193, 7, 0.15);
-    border-width: 1px;
-    border-color: rgba(255, 193, 7, 0.4);
-    color: #ffc107;
+    background-color: var(--kb-warn-soft);
+    border-width: 0;
+    color: var(--kb-warn);
 }
 
 /* no-column badge — dim */
 .csv-field-badge--none {
-    background-color: #2a2a2a;
-    border-width: 1px;
-    border-color: var(--ue5-border-subtle);
-    color: var(--ue5-text-disabled);
+    background-color: var(--kb-surface-2);
+    border-width: 0;
+    color: var(--kb-text-3);
 }
 
-/* FinalParse badge — teal */
+/* FinalParse badge */
 .csv-field-badge--final {
-    background-color: rgba(0, 188, 212, 0.15);
-    border-width: 1px;
-    border-color: rgba(0, 188, 212, 0.4);
-    color: #00bcd4;
+    background-color: var(--kb-accent-soft);
+    border-width: 0;
+    color: var(--kb-accent);
 }
 
 /* ===== Inspector Meta Block (InspectorTitle + InspectorIntro) ===== */
@@ -513,28 +468,28 @@
 .csv-meta-title {
     -unity-text-align: middle-center;
     -unity-font-style: bold;
-    color: var(--ue5-accent-primary);
+    color: var(--kb-text);
     /* font-size is set inline from titleAttr.FontSize / 2 */
     margin-bottom: 6px;
 }
 
 /* Intro / description text (mirrors InspectorIntroAttribute) */
 .csv-meta-intro {
-    font-size: 11px;
-    color: var(--ue5-text-secondary);
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text-2);
     white-space: normal;
     padding: 4px 2px;
     margin-bottom: 6px;
 }
 
-/* Divider after title — solid gray */
+/* Divider after title */
 .csv-meta-divider {
     height: 1px;
-    background-color: #707070;
-    margin-bottom: 8px;
+    background-color: var(--kb-line-2);
+    margin-bottom: var(--kb-s2);
 }
 
 /* Divider after intro — lighter */
 .csv-meta-divider--light {
-    background-color: #444444;
+    background-color: var(--kb-line);
 }

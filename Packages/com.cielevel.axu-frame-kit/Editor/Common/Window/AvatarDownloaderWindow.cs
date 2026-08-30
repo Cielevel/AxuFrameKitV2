@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UIElements;
+using AxuFrameKit.Common.Editor.UI;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -77,6 +78,9 @@ namespace AxuFrameKit.Common.Editor.Window
             var scriptPath = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(this));
             var dirPath = System.IO.Path.GetDirectoryName(scriptPath);
 
+            // 主题 token 表由 AxuKitTheme 集中加载（规范化路径，勿用脚本目录拼 "../"）
+            AxuKitTheme.AttachTokens(rootVisualElement);
+
             var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/CommonWindowStyles.uss");
             if (styleSheet != null)
             {
@@ -84,11 +88,7 @@ namespace AxuFrameKit.Common.Editor.Window
             }
 
             rootVisualElement.AddToClassList("ue5-root");
-
-            // Window Title
-            var titleLabel = new Label("🖼️ Avatar Batch Downloader");
-            titleLabel.AddToClassList("window-title");
-            rootVisualElement.Add(titleLabel);
+            AxuKitTheme.Apply(rootVisualElement, AxuKitTheme.ResolveSavedClass());
 
             // Style Selection Panel
             CreateStyleSelectionPanel();
@@ -117,7 +117,7 @@ namespace AxuFrameKit.Common.Editor.Window
             header.AddToClassList("group-header");
             container.Add(header);
 
-            var title = new Label("🎨 头像风格选择");
+            var title = new Label("头像风格");
             title.AddToClassList("group-title");
             header.Add(title);
 
@@ -135,17 +135,17 @@ namespace AxuFrameKit.Common.Editor.Window
             content.Add(toggleRow);
 
             // Robot Toggle Button
-            _robotBtn = CreateStyleToggleButton("🤖 Robot", "机器人风格头像 (robohash.org)", _enableRobot);
+            _robotBtn = CreateStyleToggleButton("Robot", "机器人风格头像 (robohash.org)", _enableRobot);
             _robotBtn.clicked += () => ToggleStyle(ref _enableRobot, _robotBtn);
             toggleRow.Add(_robotBtn);
 
             // Pixel Toggle Button
-            _pixelBtn = CreateStyleToggleButton("👾 Pixel", "像素艺术风格头像 (dicebear.com)", _enablePixel);
+            _pixelBtn = CreateStyleToggleButton("Pixel", "像素艺术风格头像 (dicebear.com)", _enablePixel);
             _pixelBtn.clicked += () => ToggleStyle(ref _enablePixel, _pixelBtn);
             toggleRow.Add(_pixelBtn);
 
             // Human Toggle Button
-            _humanBtn = CreateStyleToggleButton("👤 Human", "真人风格头像 (xsgames.co)", _enableHuman);
+            _humanBtn = CreateStyleToggleButton("Human", "真人风格头像 (xsgames.co)", _enableHuman);
             _humanBtn.clicked += () => ToggleStyle(ref _enableHuman, _humanBtn);
             toggleRow.Add(_humanBtn);
 
@@ -168,7 +168,7 @@ namespace AxuFrameKit.Common.Editor.Window
             helpBox.style.marginTop = 8;
             content.Add(helpBox);
 
-            var helpText = new Label("💡 选择一种或多种头像风格，下载数量将均匀分配到各风格中");
+            var helpText = new Label("选择一种或多种风格，下载数量将均匀分配");
             helpText.AddToClassList("help-box-text");
             helpBox.Add(helpText);
         }
@@ -235,7 +235,7 @@ namespace AxuFrameKit.Common.Editor.Window
             header.AddToClassList("group-header");
             container.Add(header);
 
-            var title = new Label("⚙️ 下载设置");
+            var title = new Label("下载设置");
             title.AddToClassList("group-title");
             header.Add(title);
 
@@ -265,8 +265,8 @@ namespace AxuFrameKit.Common.Editor.Window
             });
             countRow.Add(_countField);
 
-            var countHint = new Label("张头像");
-            countHint.style.color = new Color(0.6f, 0.6f, 0.6f, 1f);
+            var countHint = new Label("张");
+            countHint.AddToClassList("text-muted");
             countHint.style.marginLeft = 8;
             countRow.Add(countHint);
 
@@ -299,50 +299,22 @@ namespace AxuFrameKit.Common.Editor.Window
             dropZone.Add(_savePathField);
 
             // Drag hint label (hidden by default)
-            var dragHint = new Label("📂 拖放文件夹到此处");
+            var dragHint = new Label("拖放文件夹到此处");
             dragHint.style.position = Position.Absolute;
             dragHint.style.left = 0;
             dragHint.style.right = 0;
             dragHint.style.top = 0;
             dragHint.style.bottom = 0;
             dragHint.style.unityTextAlign = TextAnchor.MiddleCenter;
-            dragHint.style.backgroundColor = new Color(1f, 0.58f, 0f, 0.2f);
-            dragHint.style.color = new Color(1f, 0.58f, 0f, 1f);
-            dragHint.style.unityFontStyleAndWeight = FontStyle.Bold;
-            dragHint.style.borderTopLeftRadius = 4;
-            dragHint.style.borderTopRightRadius = 4;
-            dragHint.style.borderBottomLeftRadius = 4;
-            dragHint.style.borderBottomRightRadius = 4;
-            dragHint.style.borderTopWidth = 2;
-            dragHint.style.borderBottomWidth = 2;
-            dragHint.style.borderLeftWidth = 2;
-            dragHint.style.borderRightWidth = 2;
-            dragHint.style.borderTopColor = new Color(1f, 0.58f, 0f, 0.6f);
-            dragHint.style.borderBottomColor = new Color(1f, 0.58f, 0f, 0.6f);
-            dragHint.style.borderLeftColor = new Color(1f, 0.58f, 0f, 0.6f);
-            dragHint.style.borderRightColor = new Color(1f, 0.58f, 0f, 0.6f);
-            dragHint.style.display = DisplayStyle.None;
+            dragHint.AddToClassList("drag-hint");
             dropZone.Add(dragHint);
 
             // Setup drag-and-drop events
             SetupDragAndDrop(dropZone, dragHint);
 
-            _browseBtn = new Button(OnBrowseClicked) { text = "📂" };
+            _browseBtn = new Button(OnBrowseClicked) { text = "选择" };
             _browseBtn.AddToClassList("action-btn");
             pathRow.Add(_browseBtn);
-
-            // Drag hint for path row
-            var pathHelpBox = new VisualElement();
-            pathHelpBox.AddToClassList("help-box");
-            pathHelpBox.style.marginTop = 8;
-            pathHelpBox.style.paddingTop = 6;
-            pathHelpBox.style.paddingBottom = 6;
-            content.Add(pathHelpBox);
-
-            var pathHelpText = new Label("💡 支持直接拖放 Project 中的文件夹到输入框");
-            pathHelpText.AddToClassList("help-box-text");
-            pathHelpText.style.fontSize = 10;
-            pathHelpBox.Add(pathHelpText);
 
             // Download Button Row
             var buttonRow = new VisualElement();
@@ -352,7 +324,7 @@ namespace AxuFrameKit.Common.Editor.Window
             buttonRow.style.marginBottom = 8;
             content.Add(buttonRow);
 
-            _downloadBtn = new Button(OnDownloadClicked) { text = "🚀 开始下载" };
+            _downloadBtn = new Button(OnDownloadClicked) { text = "开始下载" };
             _downloadBtn.AddToClassList("primary-btn");
             _downloadBtn.style.minWidth = 150;
             _downloadBtn.style.height = 32;
@@ -447,7 +419,7 @@ namespace AxuFrameKit.Common.Editor.Window
             header.AddToClassList("group-header");
             container.Add(header);
 
-            var title = new Label("📊 下载进度");
+            var title = new Label("下载进度");
             title.AddToClassList("group-title");
             header.Add(title);
 
@@ -462,7 +434,6 @@ namespace AxuFrameKit.Common.Editor.Window
             _statusLabel = new Label("准备就绪");
             _statusLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
             _statusLabel.style.marginBottom = 8;
-            _statusLabel.style.color = new Color(0.7f, 0.7f, 0.7f, 1f);
             content.Add(_statusLabel);
 
             // Progress Bar
@@ -488,7 +459,7 @@ namespace AxuFrameKit.Common.Editor.Window
             header.AddToClassList("group-header");
             container.Add(header);
 
-            var title = new Label("📁 已下载文件");
+            var title = new Label("已下载文件");
             title.AddToClassList("group-title");
             header.Add(title);
 
@@ -523,12 +494,12 @@ namespace AxuFrameKit.Common.Editor.Window
                     row.AddToClassList("item-row");
 
                     var fileName = Path.GetFileName(filePath);
-                    var nameLabel = new Label($"✅ {fileName}");
+                    var nameLabel = new Label(fileName);
                     nameLabel.AddToClassList("item-name");
-                    nameLabel.style.color = new Color(0.5f, 0.9f, 0.5f, 1f);
+                    nameLabel.AddToClassList("text-ok");
                     row.Add(nameLabel);
 
-                    var locateBtn = new Button(() => OnLocateFile(filePath)) { text = "📍" };
+                    var locateBtn = new Button(() => OnLocateFile(filePath)) { text = "定位" };
                     locateBtn.AddToClassList("action-btn");
                     row.Add(locateBtn);
 
@@ -548,15 +519,15 @@ namespace AxuFrameKit.Common.Editor.Window
 
             if (!anyEnabled)
             {
-                _downloadBtn.text = "⚠️ 请至少选择一种风格";
+                _downloadBtn.text = "请先选择风格";
             }
             else if (_isDownloading)
             {
-                _downloadBtn.text = "⏳ 下载中...";
+                _downloadBtn.text = "下载中...";
             }
             else
             {
-                _downloadBtn.text = "🚀 开始下载";
+                _downloadBtn.text = "开始下载";
             }
         }
 
@@ -612,7 +583,7 @@ namespace AxuFrameKit.Common.Editor.Window
             catch (Exception ex)
             {
                 Debug.LogError($"下载出错: {ex.Message}");
-                _statusLabel.text = $"❌ 下载出错: {ex.Message}";
+                _statusLabel.text = $"下载出错: {ex.Message}";
             }
             finally
             {
@@ -629,7 +600,7 @@ namespace AxuFrameKit.Common.Editor.Window
         {
             if (_downloadedFiles.Count == 0) return;
 
-            _statusLabel.text = "⚙️ 正在设置纹理导入参数...";
+            _statusLabel.text = "正在设置纹理导入参数...";
 
             int processedCount = 0;
             foreach (var assetPath in _downloadedFiles)
@@ -653,7 +624,7 @@ namespace AxuFrameKit.Common.Editor.Window
                 }
             }
 
-            _statusLabel.text = $"🎉 下载完成！成功 {_downloadedFiles.Count}/{_totalCount} 张头像，已设置为 Sprite 类型";
+            _statusLabel.text = $"下载完成：{_downloadedFiles.Count}/{_totalCount} 张头像已设为 Sprite";
         }
 
         private async Task StartBatchDownload(string savePath)
@@ -711,11 +682,11 @@ namespace AxuFrameKit.Common.Editor.Window
                         relativePath = "Assets" + filePath.Substring(filePath.IndexOf("Assets") + 6);
                     }
                     _downloadedFiles.Add(relativePath);
-                    _statusLabel.text = $"✅ 已下载 {_completedCount}/{_totalCount}: {fileName}";
+                    _statusLabel.text = $"已下载 {_completedCount}/{_totalCount}: {fileName}";
                 }
                 else
                 {
-                    _statusLabel.text = $"⚠️ 下载失败 {_completedCount}/{_totalCount}: {fileName}";
+                    _statusLabel.text = $"下载失败 {_completedCount}/{_totalCount}: {fileName}";
                 }
 
                 UpdatePreviewList();
@@ -724,7 +695,7 @@ namespace AxuFrameKit.Common.Editor.Window
                 await Task.Delay(100);
             }
 
-            _statusLabel.text = $"🎉 下载完成！成功 {_downloadedFiles.Count}/{_totalCount} 张头像";
+            _statusLabel.text = $"下载完成：成功 {_downloadedFiles.Count}/{_totalCount} 张头像";
         }
 
         private string GenerateAvatarUrl(string style)

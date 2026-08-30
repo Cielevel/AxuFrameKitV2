@@ -6,6 +6,14 @@
 
 ### 2026-08-30
 
+- **修复**：KitBox 标题栏主题下拉框（`#theme-dropdown`）横向溢出窗口右缘、"UE5 经典"文字与下拉箭头被截断——Unity 默认主题给 BaseField label 预留的 `min-width: 120px` 挤占了固定宽 168px 中输入框的可用空间。USS 为字段补 `min-width: 0`/`flex-shrink`，label 改为自适应宽，input 填充剩余宽并 `overflow: hidden`，窗口变窄时随头部行收缩而非顶出边界。
+- **修复**：主题变量表 `AxuKitTokens.uss` 改由 `AxuKitTheme` 集中加载（新增 `GetTokens`/`AttachTokens`：规范化工程相对路径 `Packages/.../Editor/Common/UI/AxuKitTokens.uss` + 缓存 + 失败告警）。原先 KitBoxV2、AssetFavorites、AvatarDownloader、CsvContainerCreator 四个窗口用脚本目录拼 `../` 相对路径调用 `AssetDatabase.LoadAssetAtPath`，该 API 对含 `..` 的路径恒返回 null 且被静默吞掉，token 表缺失导致组件样式表所有 `var(--kb-*)` 变量失效、窗口深底黑字不可见。
+- **AxuKit 编辑器界面体系重构**：样式拆为 token 层（新增 `Editor/Common/UI/AxuKitTokens.uss`，语义化 `--kb-*` 变量 + 圆角/间距/字号 token，USS 能力边界内参考 macOS 视觉标准）与组件层（`AxuKitBoxV2.uss`/`CommonWindowStyles.uss`/`CsvContainerCreatorWindow.uss` 全部重写、只引用 token）。主题增至 5 套（UE5 经典 / **macOS Light（新增）** / Tokyo Night / Dracula / Nord），由新 `AxuKitTheme`（`Editor/Common/UI/AxuKitTheme.cs`）统一管理：全部 AxuKit 窗口共享主题选择（EditorPrefs `AxuKit.Theme`，兼容迁移旧键 `AxuKitBoxRevV2.Theme`）。
+- **信息清理**：移除窗口内与标题栏重复的大标题、装饰性 emoji、英文开发用语（CURRENT/BUILD/Select 等）、调试信息（缺失资源 GUID 片段）；Welcome 页特性卡从纯装饰改为可点击导航。
+- **去硬编码**：全部页面/窗口 C# 内联色值（橙色高亮 ×7、灰阶、hex 日志色等）改为主题感知 USS 类（`text-ok/warn/bad/accent`、`log-*`、`drag-hint`、`bare-btn`、`mode-toggle`、`col-divider`）；删除死文件 `AxuKitBoxV2_UE5Theme.uss`。
+
+### 2026-08-29
+
 - AxuKitBox（KitBoxRevV2）接入主题系统：`AxuKitBoxV2.uss` 颜色变量由 `:root` 重构为 `.theme-*` 主题作用域（`--ue5-*` 更名 `--kb-*`，并补齐滚动条滑块、按钮禁用态变量），内置 UE5 经典 / Tokyo Night / Dracula / Nord 四套主题；窗口标题栏新增主题下拉切换（EditorPrefs 持久化，键 `AxuKitBoxRevV2.Theme`）。`SymbolsRevPage` 状态文本由 C# 内联硬编码色改为主题感知 USS 类（`status-added` / `status-removed` / `text-secondary`）。
 
 ### 2026-08-29

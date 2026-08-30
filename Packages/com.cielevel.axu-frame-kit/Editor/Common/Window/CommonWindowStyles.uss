@@ -1,144 +1,92 @@
 /* ==================================================================
-   AxuFrameKit Common Window Styles - UE5 Style Theme
-   Inspired by Unreal Engine 5 Editor Interface
+   AxuFrameKit Common Window Styles — Component Layer (AxuKit Design System)
+   ------------------------------------------------------------------
+   只引用 var(--kb-*) token（定义见 Editor/Common/UI/AxuKitTokens.uss）。
+   加载本样式表的窗口须同时加载 AxuKitTokens.uss，并在根元素挂 .theme-* 类
+   （见 AxuKitTheme）。保留全部既有类名。
    ================================================================== */
 
-/* ===== CSS Variables (UE5 Color Palette) ===== */
-:root {
-    /* Primary Background Colors */
-    --ue5-bg-darkest: #1a1a1a;
-    --ue5-bg-dark: #1e1e1e;
-    --ue5-bg-panel: #242424;
-    --ue5-bg-element: #2a2a2a;
-    --ue5-bg-hover: #333333;
-    --ue5-bg-active: #3a3a3a;
-    
-    /* Accent Colors (UE5 Orange) */
-    --ue5-accent-primary: #ff9500;
-    --ue5-accent-secondary: #e68a00;
-    --ue5-accent-glow: rgba(255, 149, 0, 0.15);
-    --ue5-accent-border: rgba(255, 149, 0, 0.4);
-    
-    /* Border Colors */
-    --ue5-border-dark: #0d0d0d;
-    --ue5-border-subtle: #383838;
-    --ue5-border-light: #454545;
-    
-    /* Text Colors */
-    --ue5-text-primary: #e8e8e8;
-    --ue5-text-secondary: #a0a0a0;
-    --ue5-text-disabled: #666666;
-    --ue5-text-highlight: #ffffff;
-    
-    /* Selection Colors */
-    --ue5-selected-bg: #ff9500;
-    --ue5-selected-text: #1a1a1a;
-    --ue5-selected-hover: #ffaa33;
-    
-    /* Button Colors */
-    --ue5-btn-bg: #3d3d3d;
-    --ue5-btn-hover: #4a4a4a;
-    --ue5-btn-active: #555555;
-    --ue5-btn-primary-bg: #ff9500;
-    --ue5-btn-primary-hover: #ffaa33;
-    --ue5-btn-primary-active: #cc7700;
-}
-
-/* ===== Root Container ===== */
+/* ===== Root ===== */
 .ue5-root {
-    background-color: #141414;
-    color: var(--ue5-text-primary);
-    font-size: 12px;
+    background-color: var(--kb-bg);
+    color: var(--kb-text);
+    font-size: var(--kb-f-body);
     -unity-font-style: normal;
-    padding: 4px;
+    padding: var(--kb-s1);
 }
 
-/* ===== Header Labels ===== */
+/* ===== Window Title (in-page big title; 独立窗口如已无标题栏重复可不用) ===== */
+.window-title {
+    font-size: var(--kb-f-head);
+    -unity-font-style: bold;
+    color: var(--kb-text);
+    margin-bottom: var(--kb-s2);
+    padding-left: var(--kb-s1);
+}
+
+/* ===== Header Label ===== */
 .header-label {
     height: 28px;
     min-height: 28px;
-    background-color: var(--ue5-bg-dark);
-    color: var(--ue5-text-secondary);
-    font-size: 11px;
+    background-color: var(--kb-surface);
+    color: var(--kb-text-2);
+    font-size: var(--kb-f-caption);
     -unity-font-style: bold;
     letter-spacing: 1px;
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-left: var(--kb-s3);
+    padding-right: var(--kb-s3);
     padding-top: 1px;
     -unity-text-align: middle-left;
     border-bottom-width: 1px;
-    border-bottom-color: var(--ue5-border-dark);
-    border-top-left-radius: 7px;
-    border-top-right-radius: 7px;
+    border-bottom-color: var(--kb-line);
+    border-top-left-radius: var(--kb-r-m);
+    border-top-right-radius: var(--kb-r-m);
 }
 
-/* ===== Window Title ===== */
-.window-title {
-    font-size: 16px;
-    -unity-font-style: bold;
-    color: var(--ue5-text-highlight);
-    margin-bottom: 8px;
-    padding-left: 4px;
-}
-
-/* ===== Rounded Panel ===== */
-.rounded-panel {
-    background-color: #1e1e1e;
-    border-radius: 8px;
+/* ===== Panels (card) ===== */
+.rounded-panel,
+.toolbar-panel,
+.group-container {
+    background-color: var(--kb-surface);
+    border-radius: var(--kb-r-l);
     border-width: 1px;
-    border-color: var(--ue5-accent-border);
-    margin-bottom: 8px;
-    overflow: hidden;
+    border-color: var(--kb-line);
 }
 
-/* ===== Toolbar Panel ===== */
 .toolbar-panel {
-    background-color: #1e1e1e;
-    border-radius: 8px;
-    border-width: 1px;
-    border-color: var(--ue5-accent-border);
-    padding: 8px 12px;
-    margin-bottom: 8px;
+    padding: var(--kb-s2) var(--kb-s3);
+    margin-bottom: var(--kb-s2);
     flex-direction: row;
     align-items: center;
 }
 
-/* ===== Content ScrollView ===== */
 .content-scroll {
     flex-grow: 1;
     background-color: transparent;
 }
 
-/* ===== Group Container ===== */
+/* ===== Group ===== */
 .group-container {
-    background-color: #1e1e1e;
-    border-radius: 8px;
-    border-width: 1px;
-    border-color: var(--ue5-accent-border);
     margin-bottom: 10px;
     overflow: hidden;
 }
 
-/* ===== Group Header ===== */
 .group-header {
     flex-direction: row;
     align-items: center;
-    background-color: #262626;
+    background-color: var(--kb-surface-2);
     padding: 6px 10px;
-    border-top-left-radius: 7px;
-    border-top-right-radius: 7px;
     border-bottom-width: 1px;
-    border-bottom-color: var(--ue5-border-dark);
+    border-bottom-color: var(--kb-line);
 }
 
 .group-title {
     flex-grow: 1;
-    font-size: 12px;
+    font-size: var(--kb-f-body);
     -unity-font-style: bold;
-    color: var(--ue5-text-highlight);
+    color: var(--kb-text);
 }
 
-/* ===== Group Content ===== */
 .group-content {
     padding: 6px;
 }
@@ -147,20 +95,25 @@
 .item-row {
     flex-direction: row;
     align-items: center;
-    background-color: #242424;
-    border-radius: 4px;
+    background-color: var(--kb-surface-2);
+    border-radius: var(--kb-r-m);
     padding: 4px 6px;
     margin-bottom: 4px;
     border-width: 1px;
     border-color: transparent;
+    transition-duration: 0.1s;
 }
 
 .item-row:hover {
-    background-color: #2e2e2e;
-    border-color: var(--ue5-border-subtle);
+    background-color: var(--kb-hover);
+    border-color: transparent;
 }
 
-/* ===== Item Icon ===== */
+.item-row-current {
+    background-color: var(--kb-ok-soft);
+    border-color: transparent;
+}
+
 .item-icon {
     width: 24px;
     height: 24px;
@@ -170,92 +123,59 @@
     -unity-background-scale-mode: scale-to-fit;
 }
 
-/* ===== Item Name ===== */
 .item-name {
     flex-grow: 1;
-    font-size: 11px;
-    color: var(--ue5-text-primary);
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text);
     -unity-text-align: middle-left;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .item-name-starred {
-    color: #ffcc00;
+    color: var(--kb-warn);
 }
 
-/* ===== Star Button ===== */
+/* ===== Star / Remove / Delete Buttons ===== */
 .star-btn {
     width: 28px;
     height: 24px;
     min-width: 28px;
     font-size: 14px;
     background-color: transparent;
-    border-width: 1px;
-    border-color: var(--ue5-border-subtle);
-    border-radius: 3px;
-    color: #808080;
+    border-width: 0;
+    border-radius: var(--kb-r-s);
+    color: var(--kb-text-3);
     margin-right: 4px;
     padding: 0;
 }
 
 .star-btn:hover {
-    background-color: var(--ue5-bg-hover);
-    border-color: var(--ue5-border-light);
+    background-color: var(--kb-hover);
 }
 
 .star-btn-active {
-    color: #ffcc00;
-    background-color: rgba(255, 204, 0, 0.15);
-    border-color: rgba(255, 204, 0, 0.4);
+    color: var(--kb-warn);
+    background-color: var(--kb-warn-soft);
 }
 
-/* ===== Action Button ===== */
-.action-btn {
-    height: 24px;
-    min-height: 24px;
-    min-width: 28px;
-    font-size: 11px;
-    background-color: var(--ue5-btn-bg);
-    border-width: 1px;
-    border-color: var(--ue5-border-dark);
-    border-radius: 3px;
-    color: var(--ue5-text-primary);
-    padding-left: 6px;
-    padding-right: 6px;
-    margin-left: 2px;
-}
-
-.action-btn:hover {
-    background-color: var(--ue5-btn-hover);
-    color: var(--ue5-text-highlight);
-}
-
-.action-btn:active {
-    background-color: var(--ue5-btn-active);
-}
-
-/* ===== Remove Button ===== */
 .remove-btn {
     width: 28px;
     height: 24px;
     min-width: 28px;
     font-size: 12px;
     background-color: transparent;
-    border-width: 1px;
-    border-color: var(--ue5-border-subtle);
-    border-radius: 3px;
-    color: #cc6666;
+    border-width: 0;
+    border-radius: var(--kb-r-s);
+    color: var(--kb-bad);
     margin-right: 4px;
     padding: 0;
 }
 
 .remove-btn:hover {
-    background-color: rgba(204, 102, 102, 0.2);
-    border-color: #cc6666;
+    background-color: var(--kb-bad-soft);
 }
 
-/* ===== Delete Group Button ===== */
 .delete-group-btn {
     width: 22px;
     height: 22px;
@@ -263,94 +183,159 @@
     font-size: 12px;
     background-color: transparent;
     border-width: 0;
-    color: #999999;
+    color: var(--kb-text-3);
     padding: 0;
+    border-radius: var(--kb-r-s);
 }
 
 .delete-group-btn:hover {
-    color: #ff6666;
+    color: var(--kb-bad);
+    background-color: var(--kb-bad-soft);
 }
 
-/* ===== Primary Button ===== */
+/* ===== Buttons ===== */
+.action-btn {
+    height: 24px;
+    min-height: 24px;
+    min-width: 28px;
+    font-size: var(--kb-f-caption);
+    background-color: var(--kb-surface-2);
+    border-width: 0;
+    border-radius: var(--kb-r-s);
+    color: var(--kb-text);
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-left: 2px;
+    transition-duration: 0.1s;
+}
+
+.action-btn:hover {
+    background-color: var(--kb-hover);
+}
+
+.action-btn:active {
+    background-color: var(--kb-active);
+}
+
 .primary-btn {
-    height: 26px;
-    min-height: 26px;
-    font-size: 11px;
+    height: 28px;
+    min-height: 28px;
+    font-size: var(--kb-f-caption);
     -unity-font-style: bold;
-    background-color: var(--ue5-btn-primary-bg);
-    color: var(--ue5-selected-text);
-    border-radius: 3px;
-    border-width: 1px;
-    border-color: var(--ue5-accent-secondary);
-    padding-left: 12px;
-    padding-right: 12px;
+    background-color: var(--kb-accent);
+    color: var(--kb-on-accent);
+    border-radius: var(--kb-r-m);
+    border-width: 0;
+    padding-left: var(--kb-s3);
+    padding-right: var(--kb-s3);
+    transition-duration: 0.1s;
 }
 
 .primary-btn:hover {
-    background-color: var(--ue5-btn-primary-hover);
+    background-color: var(--kb-accent-2);
 }
 
 .primary-btn:active {
-    background-color: var(--ue5-btn-primary-active);
+    background-color: var(--kb-accent-2);
+}
+
+.danger-btn {
+    height: 26px;
+    min-height: 26px;
+    font-size: var(--kb-f-caption);
+    background-color: var(--kb-bad-soft);
+    border-width: 0;
+    border-radius: var(--kb-r-m);
+    color: var(--kb-bad);
+    padding-left: var(--kb-s2);
+    padding-right: var(--kb-s2);
+    transition-duration: 0.1s;
+}
+
+.danger-btn:hover {
+    background-color: var(--kb-bad-soft);
+    color: var(--kb-bad);
+}
+
+/* 无边框纯文本按钮（图标/文字按钮通用），替代 C# 内联的
+   backgroundColor=Color.clear + 4x border=0 样板 */
+.bare-btn {
+    background-color: transparent;
+    border-width: 0;
+    border-radius: var(--kb-r-s);
+    padding: 0;
+}
+
+.bare-btn:hover {
+    background-color: var(--kb-hover);
 }
 
 /* ===== Text Field ===== */
 .ue5-text-field {
     flex-grow: 1;
-    margin-right: 8px;
+    margin-right: var(--kb-s2);
 }
 
 .ue5-text-field > .unity-text-field__input {
-    background-color: var(--ue5-bg-darkest);
+    background-color: var(--kb-surface-2);
     border-width: 1px;
-    border-color: var(--ue5-border-subtle);
-    border-radius: 3px;
-    color: var(--ue5-text-primary);
-    padding: 4px 8px;
-    font-size: 11px;
+    border-color: var(--kb-line);
+    border-radius: var(--kb-r-s);
+    color: var(--kb-text);
+    padding: 4px var(--kb-s2);
+    font-size: var(--kb-f-caption);
     min-height: 24px;
 }
 
 .ue5-text-field > .unity-text-field__input:hover {
-    border-color: var(--ue5-border-light);
+    border-color: var(--kb-line-2);
 }
 
 .ue5-text-field > .unity-text-field__input:focus {
-    border-color: var(--ue5-accent-primary);
+    border-color: var(--kb-accent);
+    background-color: var(--kb-bg);
+}
+
+/* ===== Toolbar Label ===== */
+.toolbar-label {
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text-2);
+    margin-right: var(--kb-s2);
+    -unity-font-style: bold;
 }
 
 /* ===== Help Box ===== */
 .help-box {
-    background-color: rgba(255, 149, 0, 0.1);
-    border-radius: 4px;
-    border-width: 1px;
-    border-color: rgba(255, 149, 0, 0.3);
-    padding: 10px 12px;
-    margin: 8px 0;
+    background-color: var(--kb-accent-soft);
+    border-radius: var(--kb-r-m);
+    border-width: 0;
+    padding: 10px var(--kb-s3);
+    margin: var(--kb-s2) 0;
 }
 
 .help-box-text {
-    font-size: 11px;
-    color: var(--ue5-text-secondary);
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text-2);
     -unity-text-align: middle-center;
+    white-space: normal;
 }
 
 /* ===== Empty State ===== */
 .empty-state {
-    padding: 12px;
+    padding: var(--kb-s3);
     -unity-text-align: middle-center;
 }
 
 .empty-state-text {
-    font-size: 11px;
-    color: #808080;
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text-3);
     -unity-font-style: italic;
 }
 
 /* ===== Badge ===== */
 .badge {
-    background-color: var(--ue5-accent-primary);
-    color: var(--ue5-selected-text);
+    background-color: var(--kb-accent);
+    color: var(--kb-on-accent);
     font-size: 9px;
     -unity-font-style: bold;
     padding: 2px 6px;
@@ -359,124 +344,138 @@
 }
 
 .badge-build {
-    background-color: #4a9f4a;
+    background-color: var(--kb-ok);
+    color: var(--kb-on-accent);
 }
 
 .badge-current {
-    background-color: #66bb66;
+    background-color: var(--kb-ok-soft);
+    color: var(--kb-ok);
 }
 
-/* ===== Current Scene Highlight ===== */
-.item-row-current {
-    background-color: rgba(102, 187, 102, 0.15);
-    border-color: rgba(102, 187, 102, 0.4);
-}
-
-/* ===== Scrollbars - UE5 Slim Style ===== */
-.unity-scroller {
-    background-color: transparent;
-}
-
-.unity-scroller--vertical {
-    width: 10px;
-}
-
-.unity-base-slider__dragger {
-    background-color: #4a4a4a;
-    border-radius: 2px;
-    border-width: 0;
-    margin: 2px;
-}
-
-.unity-base-slider__dragger:hover {
-    background-color: #5a5a5a;
-}
-
-.unity-base-slider__dragger:active {
-    background-color: var(--ue5-accent-primary);
-}
-
-/* ===== Label in Toolbar ===== */
-.toolbar-label {
-    font-size: 11px;
-    color: var(--ue5-text-secondary);
-    margin-right: 8px;
-    -unity-font-style: bold;
-}
-
-/* ===== Danger Button ===== */
-.danger-btn {
-    height: 24px;
-    min-height: 24px;
-    font-size: 10px;
-    background-color: #4a2a2a;
-    border-width: 1px;
-    border-color: #6a3a3a;
-    border-radius: 3px;
-    color: #cc9999;
-    padding-left: 8px;
-    padding-right: 8px;
-}
-
-.danger-btn:hover {
-    background-color: #5a3a3a;
-    border-color: #8a4a4a;
-    color: #ffaaaa;
-}
-
-/* ===== Column Toggle Button (for multi-select style buttons) ===== */
+/* ===== Column Toggle Button (pill multi-select) ===== */
 .column-toggle-btn {
     margin-right: 6px;
     margin-bottom: 6px;
-    height: 28px;
-    border-radius: 14px;
-    background-color: var(--ue5-btn-bg);
-    border-width: 1px;
-    border-color: var(--ue5-border-subtle);
-    color: var(--ue5-text-secondary);
-    padding-left: 12px;
-    padding-right: 12px;
-    transition-duration: 0.12s;
+    height: 26px;
+    border-radius: 13px;
+    background-color: var(--kb-surface-2);
+    border-width: 0;
+    color: var(--kb-text-2);
+    padding-left: var(--kb-s3);
+    padding-right: var(--kb-s3);
+    transition-duration: 0.1s;
 }
 
 .column-toggle-btn:hover {
-    background-color: var(--ue5-btn-hover);
-    color: var(--ue5-text-highlight);
+    background-color: var(--kb-hover);
+    color: var(--kb-text);
 }
 
 .column-toggle-btn.active {
-    background-color: var(--ue5-accent-primary);
-    border-color: var(--ue5-accent-secondary);
-    color: var(--ue5-selected-text);
+    background-color: var(--kb-accent);
+    color: var(--kb-on-accent);
     -unity-font-style: bold;
 }
 
 .column-toggle-btn.active:hover {
-    background-color: var(--ue5-selected-hover);
+    background-color: var(--kb-accent-2);
+    color: var(--kb-on-accent);
 }
 
 /* ===== Helper Button Row ===== */
 .helper-btn-row {
     flex-direction: row;
-    margin-top: 8px;
+    margin-top: var(--kb-s2);
     border-top-width: 1px;
-    border-top-color: var(--ue5-border-subtle);
-    padding-top: 8px;
+    border-top-color: var(--kb-line);
+    padding-top: var(--kb-s2);
 }
 
 .helper-text-btn {
     background-color: transparent;
     border-width: 0;
-    color: var(--ue5-accent-primary);
+    color: var(--kb-accent);
     margin-right: 10px;
     padding-left: 5px;
     padding-right: 5px;
     padding-top: 2px;
     padding-bottom: 2px;
+    border-radius: var(--kb-r-s);
 }
 
 .helper-text-btn:hover {
-    color: var(--ue5-selected-hover);
-    background-color: var(--ue5-bg-hover);
+    color: var(--kb-accent);
+    background-color: var(--kb-hover);
+}
+
+/* ===== Drag & Drop Hint Overlay ===== */
+.drag-hint {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--kb-accent-soft);
+    border-width: 2px;
+    border-radius: var(--kb-r-l);
+    border-color: var(--kb-accent);
+    align-items: center;
+    justify-content: center;
+    display: none;
+}
+
+.drag-hint-text {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: var(--kb-text);
+}
+
+/* ===== Semantic Text ===== */
+.text-secondary {
+    color: var(--kb-text-2);
+}
+
+.text-muted {
+    color: var(--kb-text-3);
+}
+
+.text-ok {
+    color: var(--kb-ok);
+}
+
+.text-warn {
+    color: var(--kb-warn);
+}
+
+.text-bad {
+    color: var(--kb-bad);
+}
+
+.text-accent {
+    color: var(--kb-accent);
+}
+
+/* ===== Scrollbars (slim pill) ===== */
+.unity-scroller {
+    background-color: transparent;
+}
+
+.unity-scroller--vertical {
+    width: 8px;
+}
+
+.unity-base-slider__dragger {
+    background-color: var(--kb-dragger);
     border-radius: 4px;
+    border-width: 0;
+    margin: 2px;
+}
+
+.unity-base-slider__dragger:hover {
+    background-color: var(--kb-dragger-hover);
+}
+
+.unity-base-slider__dragger:active {
+    background-color: var(--kb-accent);
 }

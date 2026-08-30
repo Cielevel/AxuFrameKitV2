@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UIElements;
+using AxuFrameKit.Common.Editor.UI;
 
 namespace AxuFrameKit.Common.Editor.Window
 {
@@ -65,6 +66,9 @@ namespace AxuFrameKit.Common.Editor.Window
             var scriptPath = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(this));
             var dirPath = System.IO.Path.GetDirectoryName(scriptPath);
 
+            // 主题 token 表由 AxuKitTheme 集中加载（规范化路径，勿用脚本目录拼 "../"）
+            AxuKitTheme.AttachTokens(rootVisualElement);
+
             var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/CommonWindowStyles.uss");
             if (styleSheet != null)
             {
@@ -72,18 +76,14 @@ namespace AxuFrameKit.Common.Editor.Window
             }
 
             rootVisualElement.AddToClassList("ue5-root");
-
-            // Window Title
-            var titleLabel = new Label("Asset Favorites");
-            titleLabel.AddToClassList("window-title");
-            rootVisualElement.Add(titleLabel);
+            AxuKitTheme.Apply(rootVisualElement, AxuKitTheme.ResolveSavedClass());
 
             // Toolbar Panel
             var toolbarPanel = new VisualElement();
             toolbarPanel.AddToClassList("toolbar-panel");
             rootVisualElement.Add(toolbarPanel);
 
-            var createLabel = new Label("Create Group:");
+            var createLabel = new Label("新建分组");
             createLabel.AddToClassList("toolbar-label");
             toolbarPanel.Add(createLabel);
 
@@ -91,11 +91,11 @@ namespace AxuFrameKit.Common.Editor.Window
             _newGroupNameField.AddToClassList("ue5-text-field");
             toolbarPanel.Add(_newGroupNameField);
 
-            var createBtn = new Button(OnCreateGroupClicked) { text = "Create" };
+            var createBtn = new Button(OnCreateGroupClicked) { text = "创建" };
             createBtn.AddToClassList("primary-btn");
             toolbarPanel.Add(createBtn);
 
-            var clearAllBtn = new Button(OnClearAllClicked) { text = "Clear All" };
+            var clearAllBtn = new Button(OnClearAllClicked) { text = "清空" };
             clearAllBtn.AddToClassList("danger-btn");
             clearAllBtn.style.marginLeft = 10;
             toolbarPanel.Add(clearAllBtn);
@@ -183,7 +183,7 @@ namespace AxuFrameKit.Common.Editor.Window
             header.AddToClassList("group-header");
             container.Add(header);
 
-            var title = new Label($"📂 分组: {group.groupName}");
+            var title = new Label($"分组：{group.groupName}");
             title.AddToClassList("group-title");
             header.Add(title);
 
@@ -200,7 +200,7 @@ namespace AxuFrameKit.Common.Editor.Window
             {
                 var emptyState = new VisualElement();
                 emptyState.AddToClassList("empty-state");
-                var emptyText = new Label("Drag assets here or click [Group] to add.");
+                var emptyText = new Label("拖入资产，或点击「分组」添加");
                 emptyText.AddToClassList("empty-state-text");
                 emptyState.Add(emptyText);
                 content.Add(emptyState);
@@ -230,7 +230,7 @@ namespace AxuFrameKit.Common.Editor.Window
             header.AddToClassList("group-header");
             container.Add(header);
 
-            var title = new Label("📦 未分组资源 (Ungrouped)");
+            var title = new Label("未分组资产");
             title.AddToClassList("group-title");
             header.Add(title);
 
@@ -252,7 +252,7 @@ namespace AxuFrameKit.Common.Editor.Window
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
             UnityEngine.Object obj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
-            string name = obj != null ? obj.name : $"(Missing: {guid.Substring(0, 8)}...)";
+            string name = obj != null ? obj.name : "（资源缺失）";
             Texture icon = obj != null ? AssetDatabase.GetCachedIcon(path) : EditorGUIUtility.IconContent("console.erroricon").image;
 
             bool isStarred = _data.starredGuids.Contains(guid);
@@ -285,21 +285,16 @@ namespace AxuFrameKit.Common.Editor.Window
             var nameBtn = new Button(() => OnAssetClicked(obj)) { text = name };
             nameBtn.AddToClassList("item-name");
             if (isStarred) nameBtn.AddToClassList("item-name-starred");
-            nameBtn.style.unityTextAlign = TextAnchor.MiddleLeft;
-            nameBtn.style.backgroundColor = Color.clear;
-            nameBtn.style.borderLeftWidth = 0;
-            nameBtn.style.borderRightWidth = 0;
-            nameBtn.style.borderTopWidth = 0;
-            nameBtn.style.borderBottomWidth = 0;
+            nameBtn.AddToClassList("bare-btn");
             row.Add(nameBtn);
 
             // Group button
-            var groupBtn = new Button(() => ShowGroupMenu(guid, currentGroup, row)) { text = "Group" };
+            var groupBtn = new Button(() => ShowGroupMenu(guid, currentGroup, row)) { text = "分组" };
             groupBtn.AddToClassList("action-btn");
             row.Add(groupBtn);
 
             // Locate button
-            var locateBtn = new Button(() => OnAssetClicked(obj)) { text = "📍" };
+            var locateBtn = new Button(() => OnAssetClicked(obj)) { text = "定位" };
             locateBtn.AddToClassList("action-btn");
             row.Add(locateBtn);
 

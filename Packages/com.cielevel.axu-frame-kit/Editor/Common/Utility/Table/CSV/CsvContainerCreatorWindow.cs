@@ -5,6 +5,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UIElements;
+using AxuFrameKit.Common.Editor.UI;
 using AxuFrameKit.Common.CustomAttribute;
 
 namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
@@ -82,19 +83,17 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
 
         private void CreateGUI()
         {
-            // Load local styles (now all-in-one)
+            // Load tokens (AxuKit theme) + local component styles;
+            // token 表由 AxuKitTheme 集中加载（规范化路径，勿用脚本目录拼 "../"）
             var scriptPath = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(this));
             var dirPath = System.IO.Path.GetDirectoryName(scriptPath);
+            AxuKitTheme.AttachTokens(rootVisualElement);
             var localStyles = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/CsvContainerCreatorWindow.uss");
             if (localStyles != null)
                 rootVisualElement.styleSheets.Add(localStyles);
 
             rootVisualElement.AddToClassList("ue5-root");
-
-            // ── Window Title ──
-            var titleLabel = new Label("CSV Container Creator");
-            titleLabel.AddToClassList("window-title");
-            rootVisualElement.Add(titleLabel);
+            AxuKitTheme.Apply(rootVisualElement, AxuKitTheme.ResolveSavedClass());
 
             // ── Toolbar ──
             BuildToolbar();
@@ -118,7 +117,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             rootVisualElement.Add(toolbar);
 
             // Search field
-            var searchLabel = new Label("Filter:");
+            var searchLabel = new Label("筛选");
             searchLabel.AddToClassList("toolbar-label");
             toolbar.Add(searchLabel);
 
@@ -133,7 +132,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             toolbar.Add(spacer);
 
             // Refresh button
-            var refreshBtn = new Button(OnRefreshClicked) { text = "↺  Refresh" };
+            var refreshBtn = new Button(OnRefreshClicked) { text = "刷新" };
             refreshBtn.AddToClassList("action-btn");
             toolbar.Add(refreshBtn);
         }
@@ -154,7 +153,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             header.AddToClassList("group-header");
             container.Add(header);
 
-            var title = new Label("AVAILABLE TYPES");
+            var title = new Label("可用类型");
             title.AddToClassList("group-title");
             header.Add(title);
 
@@ -247,15 +246,13 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
                 row.Add(nsBadge);
             }
 
-            // Select button
-            var selectBtn = new Button(() => OnTypeSelected(type)) { text = "Select" };
-            selectBtn.AddToClassList("action-btn");
-            row.Add(selectBtn);
+            // 整行可点：选中类型查看详情
+            row.AddManipulator(new Clickable(() => OnTypeSelected(type)));
 
             // Locate button
-            var locateBtn = new Button(() => LocateScript(type)) { text = "📍" };
+            var locateBtn = new Button(() => LocateScript(type)) { text = "定位" };
             locateBtn.AddToClassList("action-btn");
-            locateBtn.tooltip = "Locate script in Project window";
+            locateBtn.tooltip = "在 Project 窗口中定位脚本";
             row.Add(locateBtn);
 
             return row;
@@ -313,7 +310,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
 
             var header = new VisualElement();
             header.AddToClassList("group-header");
-            var headerTitle = new Label("TYPE DETAILS");
+            var headerTitle = new Label("类型详情");
             headerTitle.AddToClassList("group-title");
             header.Add(headerTitle);
             container.Add(header);
@@ -326,7 +323,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             var helpBox = new VisualElement();
             helpBox.AddToClassList("help-box");
 
-            var helpText = new Label("← Select a type from the list\nto view details and create an asset.");
+            var helpText = new Label("从左侧选择一个类型，\n即可查看详情并创建资产。");
             helpText.AddToClassList("help-box-text");
             helpBox.Add(helpText);
             content.Add(helpBox);
@@ -355,11 +352,11 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
 
             var headerTitle = new Label(type.Name);
             headerTitle.AddToClassList("group-title");
-            headerTitle.style.color = new StyleColor(new Color(1f, 0.58f, 0f)); // UE5 orange
+            headerTitle.AddToClassList("text-accent");
             header.Add(headerTitle);
 
             // Locate button in detail header
-            var detailLocateBtn = new Button(() => LocateScript(type)) { text = "📍  Locate" };
+            var detailLocateBtn = new Button(() => LocateScript(type)) { text = "定位" };
             detailLocateBtn.AddToClassList("action-btn");
             detailLocateBtn.tooltip = "Ping and select this script in the Project window";
             header.Add(detailLocateBtn);
@@ -391,7 +388,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             content.Add(sep);
 
             // Create button (full width, prominent)
-            var createBtn = new Button(OnCreateInstance) { text = "✦  Create Asset" };
+            var createBtn = new Button(OnCreateInstance) { text = "创建资产" };
             createBtn.AddToClassList("primary-btn");
             createBtn.AddToClassList("csv-create-btn");
             content.Add(createBtn);
@@ -425,7 +422,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             header.AddToClassList("group-header");
             card.Add(header);
 
-            var title = new Label("EXISTING ASSETS");
+            var title = new Label("现有资产");
             title.AddToClassList("group-title");
             header.Add(title);
 
@@ -478,12 +475,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             });
             nameBtn.text = obj.name;
             nameBtn.AddToClassList("item-name");
-            nameBtn.style.backgroundColor = Color.clear;
-            nameBtn.style.borderLeftWidth = 0;
-            nameBtn.style.borderRightWidth = 0;
-            nameBtn.style.borderTopWidth = 0;
-            nameBtn.style.borderBottomWidth = 0;
-            nameBtn.style.unityTextAlign = TextAnchor.MiddleLeft;
+            nameBtn.AddToClassList("bare-btn");
             row.Add(nameBtn);
 
             // Short path label
@@ -497,9 +489,9 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
                 Selection.activeObject = obj;
                 EditorGUIUtility.PingObject(obj);
             })
-            { text = "📍" };
+            { text = "定位" };
             locateBtn.AddToClassList("action-btn");
-            locateBtn.tooltip = "Locate in Project window";
+            locateBtn.tooltip = "在 Project 窗口中定位";
             row.Add(locateBtn);
 
             return row;
@@ -590,7 +582,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             if (members.Count == 0) return;
 
             // Section separator label
-            var sectionLabel = new Label($"FIELDS  ({members.Count})");
+            var sectionLabel = new Label($"字段（{members.Count}）");
             sectionLabel.AddToClassList("csv-fields-section-title");
             parent.Add(sectionLabel);
 
@@ -630,7 +622,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
 
                 if (csvAttr.IsOptional)
                 {
-                    var optBadge = new Label("optional");
+                    var optBadge = new Label("可选");
                     optBadge.AddToClassList("csv-field-badge");
                     optBadge.AddToClassList("csv-field-badge--optional");
                     row.Add(optBadge);
@@ -639,7 +631,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             else
             {
                 // No CsvColumn — show a dim indicator
-                var noBadge = new Label("no column");
+                var noBadge = new Label("无列");
                 noBadge.AddToClassList("csv-field-badge");
                 noBadge.AddToClassList("csv-field-badge--none");
                 row.Add(noBadge);
@@ -648,7 +640,7 @@ namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
             // FinalParse badge
             if (finalAttr != null)
             {
-                var fpBadge = new Label($"⚙ {finalAttr.ParseMethod}");
+                var fpBadge = new Label($"{finalAttr.ParseMethod}");
                 fpBadge.AddToClassList("csv-field-badge");
                 fpBadge.AddToClassList("csv-field-badge--final");
                 row.Add(fpBadge);

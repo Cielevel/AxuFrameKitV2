@@ -34,21 +34,21 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             toolbar.AddToClassList("toolbar");
             root.Add(toolbar);
 
-            var openBtn = new Button(LoadCsvFile) { text = "📂 打开" };
+            var openBtn = new Button(LoadCsvFile) { text = "打开" };
             toolbar.Add(openBtn);
 
-            var saveBtn = new Button(SaveCsv) { text = "💾 保存" };
+            var saveBtn = new Button(SaveCsv) { text = "保存" };
             toolbar.Add(saveBtn);
 
             toolbar.Add(new ToolbarSpacer());
 
-            var addRowBtn = new Button(AddRow) { text = "+行" };
+            var addRowBtn = new Button(AddRow) { text = "添加行" };
             toolbar.Add(addRowBtn);
 
-            var addColBtn = new Button(AddColumn) { text = "+列" };
+            var addColBtn = new Button(AddColumn) { text = "添加列" };
             toolbar.Add(addColBtn);
 
-            _pathLabel = new Label("未加载文件 - 可拖拽单个 CSV 文件到此处");
+            _pathLabel = new Label("未加载文件，可拖拽单个 CSV 文件到窗口内");
             _pathLabel.AddToClassList("text-secondary");
             _pathLabel.style.marginLeft = 10;
             _pathLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
@@ -67,7 +67,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             _dragOverlay = new VisualElement();
             _dragOverlay.AddToClassList("drag-overlay");
 
-            var dragHint = new Label("📄 释放以加载 CSV 文件");
+            var dragHint = new Label("释放以加载 CSV");
             dragHint.AddToClassList("drag-hint-text");
             _dragOverlay.Add(dragHint);
 

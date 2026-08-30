@@ -8,6 +8,7 @@ using AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup;
 using AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CopierGroup;
 using AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup;
 using AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup;
+using AxuFrameKit.Common.Editor.UI;
 
 namespace AxuFrameKit.Common.Editor.KitBoxRevV2
 {
@@ -27,27 +28,11 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
         private int _currentPageIndex = -1;
         private IKitPageRevV2 _currentPage;
 
-        /// <summary>主题持久化键（EditorPrefs，存主题类名）</summary>
-        private const string ThemePrefsKey = "AxuKitBoxRevV2.Theme";
-
-        /// <summary>
-        /// 主题注册表：新增主题时在 AxuKitBoxV2.uss 里加一个 .theme-* 变量块，再在此登记即可
-        /// </summary>
-        private static readonly (string DisplayName, string Class)[] Themes =
-        {
-            ("UE5 经典", "theme-ue5"),
-            ("Tokyo Night", "theme-tokyo-night"),
-            ("Dracula", "theme-dracula"),
-            ("Nord", "theme-nord"),
-        };
-
-        private string _currentThemeClass;
-
         [MenuItem("AxuFrameKit/AxuEditor工具集V2-Rev %#m")]
         public static void Open()
         {
             var window = GetWindow<AxuKitBoxRevV2Window>();
-            window.titleContent = new GUIContent("Axu工具集V2-Rev");
+            window.titleContent = new GUIContent("AxuKitBox");
             window.minSize = new Vector2(1000, 650);
             window.Show();
         }
@@ -69,11 +54,13 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
             var uxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>($"{dirPath}/UI/AxuKitBoxV2.uxml");
             if (uxml != null) uxml.CloneTree(_root);
 
-            // Theme System - 主题类挂载在根元素上，决定 --kb-* 变量值
+            // Theme System - token 层（AxuKitTokens.uss）+ 组件层（AxuKitBoxV2.uss），
+            // 主题类挂在根元素上，所有 AxuKit 窗口共享同一主题选择；
+            // token 表由 AxuKitTheme 集中加载（规范化路径，勿用脚本目录拼 "../"）
+            AxuKitTheme.AttachTokens(_root);
             var uss = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/UI/AxuKitBoxV2.uss");
             if (uss != null) _root.styleSheets.Add(uss);
-            var savedTheme = EditorPrefs.GetString(ThemePrefsKey, Themes[0].Class);
-            ApplyTheme(System.Array.Exists(Themes, t => t.Class == savedTheme) ? savedTheme : Themes[0].Class);
+            AxuKitTheme.Apply(_root, AxuKitTheme.ResolveSavedClass());
             BuildThemeDropdown();
 
             // References
@@ -106,34 +93,24 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
 
             var choices = new List<string>();
             var defaultIndex = 0;
-            for (int i = 0; i < Themes.Length; i++)
+            var saved = AxuKitTheme.ResolveSavedClass();
+            for (int i = 0; i < AxuKitTheme.Themes.Length; i++)
             {
-                choices.Add(Themes[i].DisplayName);
-                if (Themes[i].Class == _currentThemeClass) defaultIndex = i;
+                choices.Add(AxuKitTheme.Themes[i].DisplayName);
+                if (AxuKitTheme.Themes[i].Class == saved) defaultIndex = i;
             }
 
             var dropdown = new DropdownField("主题", choices, defaultIndex) { name = "theme-dropdown" };
             dropdown.RegisterValueChangedCallback(evt =>
             {
-                foreach (var theme in Themes)
+                foreach (var theme in AxuKitTheme.Themes)
                 {
                     if (theme.DisplayName != evt.newValue) continue;
-                    ApplyTheme(theme.Class);
+                    AxuKitTheme.Apply(_root, theme.Class);
                     break;
                 }
             });
             header.Add(dropdown);
-        }
-
-        /// <summary>切换主题：从根元素移除旧主题类、挂载新主题类并持久化</summary>
-        private void ApplyTheme(string themeClass)
-        {
-            if (_root == null || string.IsNullOrEmpty(themeClass) || _currentThemeClass == themeClass) return;
-
-            if (!string.IsNullOrEmpty(_currentThemeClass)) _root.RemoveFromClassList(_currentThemeClass);
-            _root.AddToClassList(themeClass);
-            _currentThemeClass = themeClass;
-            EditorPrefs.SetString(ThemePrefsKey, themeClass);
         }
 
         private void SetupGroups()
@@ -252,3 +229,4 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
         }
     }
 }
+

@@ -52,12 +52,6 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             var root = new VisualElement();
             root.AddToClassList("page-container");
 
-            // === 标题 ===
-            var header = new Label("批量重命名资产");
-            header.AddToClassList("page-header");
-            header.AddToClassList("mb-15");
-            root.Add(header);
-
             // === 配置区域 ===
             var configBox = new VisualElement();
             configBox.AddToClassList("config-box");
@@ -96,8 +90,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             var col2 = new VisualElement();
             col2.style.flexGrow = 1;
             col2.style.paddingLeft = 10;
-            col2.style.borderLeftWidth = 1;
-            col2.style.borderLeftColor = new Color(0.15f, 0.15f, 0.15f);
+            col2.AddToClassList("col-divider");
             columnsContainer.Add(col2);
 
             // 对齐标签宽度
@@ -121,9 +114,9 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             _modeToggleGroup.style.flexDirection = FlexDirection.Row;
             modeRow.Add(_modeToggleGroup);
 
-            CreateModeToggle("前缀", NumberingMode.Prefix);
-            CreateModeToggle("后缀", NumberingMode.Suffix);
-            CreateModeToggle("无", NumberingMode.None);
+            CreateModeToggle("名称前", NumberingMode.Prefix);
+            CreateModeToggle("名称后", NumberingMode.Suffix);
+            CreateModeToggle("无编号", NumberingMode.None);
 
             _startNumberField = new IntegerField("起始") { value = 1 };
             _startNumberField.RegisterValueChangedCallback(_ => UpdatePreview());
@@ -152,11 +145,11 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             listHeader.style.marginTop = 15;
             root.Add(listHeader);
 
-            var listTitle = new Label("📦 预览与确认");
+            var listTitle = new Label("预览");
             listTitle.AddToClassList("text-bold");
             listHeader.Add(listTitle);
 
-            var refreshBtn = new Button(RefreshSelectedAssets) { text = "🔄 刷新选中" };
+            var refreshBtn = new Button(RefreshSelectedAssets) { text = "刷新选中" };
             refreshBtn.AddToClassList("helper-text-btn");
             listHeader.Add(refreshBtn);
 
@@ -168,7 +161,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             root.Add(_previewListView);
 
             // === 底部操作按钮 ===
-            _activeApplyBtn = new Button(ApplyRename) { text = "✓ 应用重命名" };
+            _activeApplyBtn = new Button(ApplyRename) { text = "应用重命名" };
             _activeApplyBtn.AddToClassList("btn-success");
             _activeApplyBtn.AddToClassList("mt-20");
             root.Add(_activeApplyBtn);
@@ -191,17 +184,6 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             btn.userData = mode;
             btn.AddToClassList("mode-toggle");
 
-            // 基础样式
-            btn.style.marginRight = 0;
-            btn.style.marginLeft = 0;
-            btn.style.paddingLeft = 10;
-            btn.style.paddingRight = 10;
-            btn.style.paddingTop = 2;
-            btn.style.paddingBottom = 2;
-
-            // 按钮间距
-            btn.style.marginRight = 2;
-
             _modeToggleGroup.Add(btn);
         }
 
@@ -212,17 +194,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             {
                 if (element is Button btn && btn.userData is NumberingMode mode)
                 {
-                    if (mode == _numberingMode)
-                    {
-                        // 选中时显示橙色
-                        btn.style.backgroundColor = new Color(1f, 0.5f, 0f);
-                        btn.style.color = Color.white;
-                    }
-                    else
-                    {
-                        btn.style.backgroundColor = new StyleColor(StyleKeyword.Null);
-                        btn.style.color = new StyleColor(StyleKeyword.Null);
-                    }
+                    btn.EnableInClassList("active", mode == _numberingMode);
                 }
             }
         }
@@ -244,13 +216,13 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             oldNameLabel.name = "old-name";
             oldNameLabel.style.width = 200;
             oldNameLabel.style.flexGrow = 1;
-            oldNameLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
+            oldNameLabel.AddToClassList("text-muted");
             row.Add(oldNameLabel);
 
-            var arrow = new Label("➜");
+            var arrow = new Label("→");
             arrow.style.marginLeft = 5;
             arrow.style.marginRight = 5;
-            arrow.style.color = new Color(1f, 1f, 1f, 0.5f);
+            arrow.AddToClassList("text-muted");
             row.Add(arrow);
 
             var newNameLabel = new Label();
@@ -283,16 +255,10 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             {
                 newNameLabel.text = preview.NewName;
 
-                if (preview.OldName == preview.NewName)
-                {
-                    newNameLabel.style.color = new Color(0.5f, 0.5f, 0.5f);
-                    newNameLabel.style.unityFontStyleAndWeight = FontStyle.Normal;
-                }
-                else
-                {
-                    newNameLabel.style.color = new Color(0.4f, 1f, 0.4f);
-                    newNameLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-                }
+                bool changed = preview.OldName != preview.NewName;
+                newNameLabel.EnableInClassList("text-muted", !changed);
+                newNameLabel.EnableInClassList("text-ok", changed);
+                newNameLabel.style.unityFontStyleAndWeight = changed ? FontStyle.Bold : FontStyle.Normal;
             }
         }
 
@@ -342,7 +308,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
 
             if (_activeApplyBtn != null)
             {
-                _activeApplyBtn.text = $"✓ 应用重命名 ({previews.Count})";
+                _activeApplyBtn.text = $"应用重命名（{previews.Count}）";
                 _activeApplyBtn.SetEnabled(previews.Count > 0);
             }
         }

@@ -1,0 +1,171 @@
+/* ==================================================================
+   AxuKit Design Tokens (shared by all AxuKit editor windows)
+   ------------------------------------------------------------------
+   三层结构：本文件 = token 层（布局/圆角/间距/字号 + 各主题色板）。
+   组件样式表（AxuKitBoxV2.uss / CommonWindowStyles.uss / ...）只引用
+   var(--kb-*)，不得自定义颜色。窗口根元素挂 .theme-* 类决定主题
+   （见 AxuKitTheme，EditorPrefs 键 "AxuKit.Theme"）。
+
+   新增主题：复制一个 .theme-* 块替换色值，并在 AxuKitTheme.Themes 登记。
+   USS 能力边界：无 box-shadow / 无背景模糊 —— 层级感靠 surface 分层 +
+   hairline 边线表达；圆角/字重/间距是主要造型手段（参考 macOS 标准）。
+   ================================================================== */
+
+/* ===== Layout / Shape / Type (theme-independent) ===== */
+:root {
+    --kb-sidebar-w: 232px;
+    --kb-header-h: 48px;
+
+    --kb-r-s: 4px;   /* inputs, small controls */
+    --kb-r-m: 8px;   /* buttons, rows */
+    --kb-r-l: 12px;  /* cards, panels */
+
+    --kb-s1: 4px;
+    --kb-s2: 8px;
+    --kb-s3: 12px;
+    --kb-s4: 16px;
+
+    --kb-f-caption: 11px;
+    --kb-f-body: 12px;
+    --kb-f-head: 15px;
+}
+
+/* ===== Theme: UE5 经典 (default, dark + orange) ===== */
+.theme-ue5 {
+    --kb-bg: #141414;
+    --kb-bg-side: #1a1a1a;
+    --kb-surface: #1e1e1e;
+    --kb-surface-2: #262626;
+    --kb-hover: #323232;
+    --kb-active: #3a3a3a;
+    --kb-line: #262626;
+    --kb-line-2: #3a3a3a;
+    --kb-text: #e8e8e8;
+    --kb-text-2: #a0a0a0;
+    --kb-text-3: #6e6e6e;
+    --kb-accent: #ff9500;
+    --kb-accent-2: #e08600;
+    --kb-accent-soft: rgba(255, 149, 0, 0.14);
+    --kb-accent-line: rgba(255, 149, 0, 0.38);
+    --kb-on-accent: #1a1a1a;
+    --kb-ok: #5cb85c;
+    --kb-ok-soft: rgba(92, 184, 92, 0.14);
+    --kb-warn: #ffc107;
+    --kb-warn-soft: rgba(255, 193, 7, 0.12);
+    --kb-bad: #e05252;
+    --kb-bad-soft: rgba(224, 82, 82, 0.13);
+    --kb-dragger: #4a4a4a;
+    --kb-dragger-hover: #5a5a5a;
+}
+
+/* ===== Theme: macOS Light ===== */
+.theme-macos-light {
+    --kb-bg: #f2f2f7;
+    --kb-bg-side: #ececf1;
+    --kb-surface: #ffffff;
+    --kb-surface-2: #f2f2f7;
+    --kb-hover: #e8e8ed;
+    --kb-active: #dcdce2;
+    --kb-line: #e3e3e8;
+    --kb-line-2: #d2d2d7;
+    --kb-text: #1d1d1f;
+    --kb-text-2: #6e6e73;
+    --kb-text-3: #aeaeb2;
+    --kb-accent: #007aff;
+    --kb-accent-2: #0066d6;
+    --kb-accent-soft: rgba(0, 122, 255, 0.12);
+    --kb-accent-line: rgba(0, 122, 255, 0.35);
+    --kb-on-accent: #ffffff;
+    --kb-ok: #248a3d;
+    --kb-ok-soft: rgba(52, 199, 89, 0.16);
+    --kb-warn: #b25000;
+    --kb-warn-soft: rgba(255, 159, 10, 0.16);
+    --kb-bad: #d70015;
+    --kb-bad-soft: rgba(255, 59, 48, 0.12);
+    --kb-dragger: #c7c7cc;
+    --kb-dragger-hover: #aeaeb2;
+}
+
+/* ===== Theme: Tokyo Night ===== */
+.theme-tokyo-night {
+    --kb-bg: #16161e;
+    --kb-bg-side: #1a1b26;
+    --kb-surface: #1f2335;
+    --kb-surface-2: #292e42;
+    --kb-hover: #333a52;
+    --kb-active: #3b4261;
+    --kb-line: #262b3d;
+    --kb-line-2: #3b4261;
+    --kb-text: #c0caf5;
+    --kb-text-2: #9aa5ce;
+    --kb-text-3: #565f89;
+    --kb-accent: #7aa2f7;
+    --kb-accent-2: #6a8fe3;
+    --kb-accent-soft: rgba(122, 162, 247, 0.14);
+    --kb-accent-line: rgba(122, 162, 247, 0.38);
+    --kb-on-accent: #16161e;
+    --kb-ok: #9ece6a;
+    --kb-ok-soft: rgba(158, 206, 106, 0.13);
+    --kb-warn: #e0af68;
+    --kb-warn-soft: rgba(224, 175, 104, 0.12);
+    --kb-bad: #f7768e;
+    --kb-bad-soft: rgba(247, 118, 142, 0.13);
+    --kb-dragger: #414868;
+    --kb-dragger-hover: #565f89;
+}
+
+/* ===== Theme: Dracula ===== */
+.theme-dracula {
+    --kb-bg: #191a21;
+    --kb-bg-side: #21222c;
+    --kb-surface: #282a36;
+    --kb-surface-2: #343746;
+    --kb-hover: #3e4154;
+    --kb-active: #484c60;
+    --kb-line: #2e3040;
+    --kb-line-2: #3f4254;
+    --kb-text: #f8f8f2;
+    --kb-text-2: #b6b9d8;
+    --kb-text-3: #6272a4;
+    --kb-accent: #bd93f9;
+    --kb-accent-2: #a374f0;
+    --kb-accent-soft: rgba(189, 147, 249, 0.14);
+    --kb-accent-line: rgba(189, 147, 249, 0.38);
+    --kb-on-accent: #282a36;
+    --kb-ok: #50fa7b;
+    --kb-ok-soft: rgba(80, 250, 123, 0.12);
+    --kb-warn: #f1fa8c;
+    --kb-warn-soft: rgba(241, 250, 140, 0.1);
+    --kb-bad: #ff5555;
+    --kb-bad-soft: rgba(255, 85, 85, 0.12);
+    --kb-dragger: #44475a;
+    --kb-dragger-hover: #565b70;
+}
+
+/* ===== Theme: Nord ===== */
+.theme-nord {
+    --kb-bg: #242933;
+    --kb-bg-side: #2e3440;
+    --kb-surface: #333a47;
+    --kb-surface-2: #3b4252;
+    --kb-hover: #434c5e;
+    --kb-active: #4c566a;
+    --kb-line: #2e3542;
+    --kb-line-2: #434c5e;
+    --kb-text: #eceff4;
+    --kb-text-2: #c0c8d6;
+    --kb-text-3: #616e88;
+    --kb-accent: #88c0d0;
+    --kb-accent-2: #74aec2;
+    --kb-accent-soft: rgba(136, 192, 208, 0.14);
+    --kb-accent-line: rgba(136, 192, 208, 0.38);
+    --kb-on-accent: #2e3440;
+    --kb-ok: #a3be8c;
+    --kb-ok-soft: rgba(163, 190, 140, 0.13);
+    --kb-warn: #ebcb8b;
+    --kb-warn-soft: rgba(235, 203, 139, 0.12);
+    --kb-bad: #d47d86;
+    --kb-bad-soft: rgba(191, 97, 106, 0.15);
+    --kb-dragger: #4c566a;
+    --kb-dragger-hover: #5e6a83;
+}

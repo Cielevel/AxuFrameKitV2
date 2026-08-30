@@ -24,11 +24,6 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CopierGroup
             var root = new VisualElement();
             root.AddToClassList("page-container");
 
-            // --- Header ---
-            var header = new Label("材质球批量关联复制");
-            header.AddToClassList("page-header");
-            root.Add(header);
-
             var hint = new Label("根据子物体名称一一对应，将源模型的材质球同步至目标模型。");
             hint.AddToClassList("page-hint");
             root.Add(hint);
@@ -39,15 +34,15 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CopierGroup
             slotContainer.AddToClassList("mb-25");
             root.Add(slotContainer);
 
-            _sourceField = CreateObjectSlot(slotContainer, "📦 源材质模型 (Source)", "从场景拖入具有正确材质的模型");
+            _sourceField = CreateObjectSlot(slotContainer, "源材质", "从场景拖入具有正确材质的模型");
 
-            var arrow = new Label("▶");
-            arrow.style.fontSize = 30;
+            var arrow = new Label("→");
+            arrow.style.fontSize = 24;
             arrow.style.alignSelf = Align.Center;
-            arrow.style.color = new Color(0.3f, 0.7f, 1.0f);
+            arrow.AddToClassList("text-accent");
             slotContainer.Add(arrow);
 
-            _targetField = CreateObjectSlot(slotContainer, "🎯 目标模型 (Target)", "从场景拖入需要同步材质的模型");
+            _targetField = CreateObjectSlot(slotContainer, "目标材质", "从场景拖入需要同步材质的模型");
 
             // --- Action ---
             _copyButton = new Button(ExecuteCopy);
@@ -108,7 +103,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CopierGroup
 
             if (src == null || target == null) return;
 
-            Log("开始同步材质关联...", "#3498db");
+            Log("开始同步材质关联...", "info");
 
             int success = 0;
             int total = 0;
@@ -124,16 +119,16 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CopierGroup
                 {
                     Undo.RecordObject(targetRenderer, "Copy Materials");
                     targetRenderer.sharedMaterials = renderer.sharedMaterials;
-                    Log($"✓ 同步成功 [{path}]", "#2ecc71");
+                    Log($"同步成功：{path}", "ok");
                     success++;
                 }
                 else
                 {
-                    Log($"✗ 找不到目标节点 [{path}]", "#e74c3c");
+                    Log($"找不到目标节点：{path}", "bad");
                 }
             }
 
-            Log($"完成！总计: {total} | 成功: {success} | 失败: {total - success}", success == total ? "#2ecc71" : "#f1c40f");
+            Log($"完成！总计: {total} | 成功: {success} | 失败: {total - success}", success == total ? "ok" : "warn");
         }
 
         private string GetRelativePath(Transform child, Transform root)
@@ -149,10 +144,10 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CopierGroup
             return path;
         }
 
-        private void Log(string msg, string color)
+        private void Log(string msg, string kind = "info")
         {
             var label = new Label(msg);
-            label.style.color = ColorUtility.TryParseHtmlString(color, out var c) ? c : Color.white;
+            label.AddToClassList($"log-{kind}");
             _logView.Add(label);
             _logView.ScrollTo(label);
         }

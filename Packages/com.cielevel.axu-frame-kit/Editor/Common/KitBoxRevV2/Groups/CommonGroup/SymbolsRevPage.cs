@@ -82,7 +82,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             footer.AddToClassList("symbol-list-footer");
 
             _modeSwitchBtn = new Button(SwitchToCustomMode);
-            _modeSwitchBtn.text = "＋ 自定义符号";
+            _modeSwitchBtn.text = "自定义符号";
             _modeSwitchBtn.AddToClassList("btn-secondary");
             _modeSwitchBtn.style.height = 34;
             footer.Add(_modeSwitchBtn);
@@ -105,10 +105,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             // Section Header
             var normalHeader = new VisualElement();
             normalHeader.AddToClassList("section-header");
-            var headerIcon = new Label("⚙");
-            headerIcon.AddToClassList("section-header-icon");
-            normalHeader.Add(headerIcon);
-            _detailTitle = new Label("Symbols");
+            _detailTitle = new Label("符号");
             _detailTitle.AddToClassList("section-title");
             normalHeader.Add(_detailTitle);
             normalPanel.Add(normalHeader);
@@ -126,15 +123,8 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             var statusSection = new VisualElement();
             statusSection.AddToClassList("sub-section");
 
-            var statusTitle = new Label("状态信息");
-            statusTitle.AddToClassList("sub-section-title");
-            statusSection.Add(statusTitle);
-
             var statusRow = new VisualElement();
             statusRow.AddToClassList("form-row");
-            var statusLabel = new Label("当前状态:");
-            statusLabel.AddToClassList("form-label");
-            statusRow.Add(statusLabel);
             _detailStatus = new Label("-");
             _detailStatus.AddToClassList("text-bold");
             _detailStatus.AddToClassList("form-value");
@@ -169,9 +159,6 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             // Section Header
             var customHeader = new VisualElement();
             customHeader.AddToClassList("section-header");
-            var customIcon = new Label("✏");
-            customIcon.AddToClassList("section-header-icon");
-            customHeader.Add(customIcon);
             var customTitle = new Label("自定义宏管理");
             customTitle.AddToClassList("section-title");
             customHeader.Add(customTitle);
@@ -184,10 +171,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             // Info Box
             var infoBox = new VisualElement();
             infoBox.AddToClassList("info-box");
-            var infoIcon = new Label("💡");
-            infoIcon.AddToClassList("info-box-icon");
-            infoBox.Add(infoIcon);
-            var infoText = new Label("在此处输入任意预编译宏符号名称，可查询当前状态并进行添加或移除操作。\n例如: MY_CUSTOM_DEFINE");
+            var infoText = new Label("输入预编译宏符号名称即可查询状态并添加或移除，例如 MY_CUSTOM_DEFINE");
             infoText.AddToClassList("info-box-text");
             infoBox.Add(infoText);
             customContent.Add(infoBox);
@@ -202,7 +186,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
 
             var inputRow = new VisualElement();
             inputRow.AddToClassList("form-row");
-            var labelInfo = new Label("Symbol Name:");
+            var labelInfo = new Label("符号名称");
             labelInfo.AddToClassList("form-label");
             inputRow.Add(labelInfo);
             _customSymbolInput = new TextField();
@@ -215,10 +199,10 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             var customStatusRow = new VisualElement();
             customStatusRow.AddToClassList("form-row");
             customStatusRow.style.marginTop = 8;
-            var customStatusPrefix = new Label("Status:");
+            var customStatusPrefix = new Label("状态");
             customStatusPrefix.AddToClassList("form-label");
             customStatusRow.Add(customStatusPrefix);
-            _customStatusLabel = new Label("等待输入...");
+            _customStatusLabel = new Label("输入后显示状态");
             _customStatusLabel.AddToClassList("text-bold");
             _customStatusLabel.AddToClassList("form-value");
             customStatusRow.Add(_customStatusLabel);
@@ -254,7 +238,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             _currentSelectedRow = null;
 
             // 1. Tool Recommended (Inner)
-            var group1Header = new Label("工具 Symbol");
+            var group1Header = new Label("内置符号");
             group1Header.AddToClassList("symbol-list-header");
             _leftScrollView.Add(group1Header);
 
@@ -267,13 +251,13 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             var defined = GetProjectDefinedSymbols();
             var projectSymbols = defined.Where(s => !InnerSymbols.AllSymbols.Contains(s)).ToList();
 
-            var group2Header = new Label("工程 Symbol");
+            var group2Header = new Label("工程符号");
             group2Header.AddToClassList("symbol-list-header");
             _leftScrollView.Add(group2Header);
 
             if (projectSymbols.Count == 0)
             {
-                var emptyLabel = new Label("(无其他自定义宏)");
+                var emptyLabel = new Label("无自定义宏");
                 emptyLabel.AddToClassList("symbol-empty-label");
                 _leftScrollView.Add(emptyLabel);
             }
@@ -410,7 +394,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             }
             else
             {
-                _detailDesc.text = "项目内定义的宏符号 (Project Symbol)";
+                _detailDesc.text = "工程内定义的宏符号";
             }
 
             bool isAdded = ScriptDefineSymbolSetter.IsSymbolAdded(_selectedSymbol);
@@ -423,12 +407,12 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
 
             if (isAdded)
             {
-                _actionButton.text = "➖ 移除符号宏";
+                _actionButton.text = "移除符号宏";
                 _actionButton.AddToClassList("btn-danger");
             }
             else
             {
-                _actionButton.text = "➕ 添加符号宏";
+                _actionButton.text = "添加符号宏";
                 _actionButton.AddToClassList("btn-success");
             }
         }
@@ -496,12 +480,12 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             _customActionButton.SetEnabled(true);
             if (isAdded)
             {
-                _customActionButton.text = "➖ 移除自定义宏";
+                _customActionButton.text = "移除自定义宏";
                 _customActionButton.AddToClassList("btn-danger");
             }
             else
             {
-                _customActionButton.text = "➕ 添加自定义宏";
+                _customActionButton.text = "添加自定义宏";
                 _customActionButton.AddToClassList("btn-success");
             }
         }

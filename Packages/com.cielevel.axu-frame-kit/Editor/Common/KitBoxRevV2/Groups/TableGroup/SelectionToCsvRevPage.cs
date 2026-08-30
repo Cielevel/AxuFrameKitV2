@@ -71,12 +71,6 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             var root = new VisualElement();
             root.AddToClassList("page-container");
 
-            // --- Header ---
-            var header = new Label("选中资产信息导出为 CSV");
-            header.AddToClassList("page-header");
-            header.AddToClassList("mb-15");
-            root.Add(header);
-
             // --- Path Settings ---
             var configBox = new VisualElement();
             configBox.AddToClassList("config-box");
@@ -114,7 +108,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             columnBox.AddToClassList("column-selection-container");
             root.Add(columnBox);
 
-            var colHeader = new Label("选择导出列:");
+            var colHeader = new Label("导出列");
             colHeader.AddToClassList("section-header");
             colHeader.style.marginTop = 0; // Override default top margin for inside container
             colHeader.style.marginBottom = 10;
@@ -155,12 +149,12 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             var optionsBox = new VisualElement();
             optionsBox.AddToClassList("options-row");
 
-            _includeEnglishKeysToggle = new Toggle("导出Key行 (Row 2)");
+            _includeEnglishKeysToggle = new Toggle("导出键名行");
             _includeEnglishKeysToggle.value = true;
             _includeEnglishKeysToggle.AddToClassList("option-toggle");
             optionsBox.Add(_includeEnglishKeysToggle);
 
-            _includeTypesToggle = new Toggle("导出类型行 (Row 3)");
+            _includeTypesToggle = new Toggle("导出类型行");
             _includeTypesToggle.value = true;
             _includeTypesToggle.AddToClassList("option-toggle");
             optionsBox.Add(_includeTypesToggle);
@@ -173,7 +167,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             listHeader.AddToClassList("mb-5");
             root.Add(listHeader);
 
-            var listTitle = new Label("📦 当前选中的资产");
+            var listTitle = new Label("选中资产");
             listTitle.AddToClassList("text-bold");
             listHeader.Add(listTitle);
 
@@ -187,7 +181,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
 
             // --- Export Action ---
             _exportButton = new Button(ExportSelectedAssets);
-            _exportButton.text = "📤 导出非文件夹资产到 CSV";
+            _exportButton.text = "导出 CSV";
             _exportButton.AddToClassList("btn-success");
             _exportButton.AddToClassList("mt-20");
             root.Add(_exportButton);
@@ -282,8 +276,8 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             var obj = AssetDatabase.LoadAssetAtPath<Object>(path);
 
             element.Q<Image>("asset-icon").image = AssetDatabase.GetCachedIcon(path);
-            element.Q<Label>("asset-name").text = obj != null ? obj.name : "(Missing)";
-            element.Q<Label>("asset-type").text = obj != null ? obj.GetType().Name : "Unknown";
+            element.Q<Label>("asset-name").text = obj != null ? obj.name : "（缺失）";
+            element.Q<Label>("asset-type").text = obj != null ? obj.GetType().Name : "未知";
         }
 
         private void UpdateSelection()
@@ -297,15 +291,6 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             // Check if exactly one folder is selected for "Export to Selected Folder" button
             UpdateExportToSelectedFolderButton();
 
-            // Re-check export button class for disabled state (handled by built-in Unity usually, but we have custom class)
-            if (_currentGuids.Count > 0)
-            {
-                _exportButton.RemoveFromClassList("disabled"); // if we had one
-            }
-            else
-            {
-                // _exportButton.AddToClassList("disabled");
-            }
         }
 
         /// <summary>
@@ -338,7 +323,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             if (canSelect)
             {
                 _exportToSelectedFolderBtn.tooltip = $"设置保存路径为: {selectedFolderPath}";
-                _exportToSelectedFolderBtn.text = "📂 选择当前文件夹";
+                _exportToSelectedFolderBtn.text = "选择当前文件夹";
             }
             else
             {
