@@ -1,17 +1,20 @@
 # 08 · Unity Pipeline 本地 API 使用指南（AI Agent 直连 Editor）
 
-> 2026-08-29 实测验证。本工程已安装 `com.unity.pipeline 0.5.0-exp.1`（见 manifest.json），
+> 2026-08-29 实测验证（2026-08-30 修复 macOS 启动失败，见第 8 节）。本工程的 `com.unity.pipeline 0.5.0-exp.1`
+> 已提升为**嵌入式包**（`Packages/com.unity.pipeline`，含 macOS 端口探测补丁；manifest.json 不再声明该条目），
 > Unity 编辑器运行时会启动一个 **仅回环（127.0.0.1）的 HTTP 服务**，任何本机脚本/AI Agent 都可以直接调用它驱动 Editor。
 > 已验证：读状态、枚举命令、执行 `console` 命令均成功。**注意：本文件包含的用法可让 agent 实际修改工程，使用时保持谨慎。**
 
 ## 0. 已内化的子代理（优先派发，无需手写 curl）
 
-本能力已封装为两个用户级子代理（`~/.zcode/agents/`，会话启动时加载）：
+本能力已封装为用户级 + 工程级子代理（`~/.zcode/agents/` 与 `.zcode/agents/`，同名时**工程级覆盖**全局版；会话启动时加载）：
 
 | 子代理 | 职责 | 边界 |
 |---|---|---|
 | `unity-pipeline` | 驱动运行中 Editor：recompile / run_tests / create_* / build / bake / audit / capture / console | 可执行（有副作用），按最小副作用纪律 |
 | `unity-pipeline-observe` | 只读观测：状态 / Console / 测试清单 / 异步进度 | 只读，exec 白名单限只读命令 |
+
+另有一套覆盖 Unity 全流程的子代理（architect / runtime-dev / editor-dev / ui-dev / asset-scene / tester / debugger / build / reviewer），其中 tester、asset-scene、debugger、build 也会按本文 API 执行受限操作。**完整清单与派发矩阵见 [09-unity-subagents.md](09-unity-subagents.md)**。
 
 派发规则：Editor 运行中且需要"实际执行/验证"→ `unity-pipeline`；只需看状态/日志 → `unity-pipeline-observe`；Editor 未运行且需无头验证 → `unity-build`；纯日志分析 → `unity-debugger`。
 
@@ -69,15 +72,44 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/
 
 ## 6. 与 Unity CLI 的关系
 
-- 本机已装 **Unity CLI 0.1.0-beta.3**（`C:\Users\cielevel\AppData\Local\Unity\bin\unity.exe`），当前仅含管理命令
-  （editors/install/open/projects/auth/doctor…），**尚无** `command`/`eval`/`pipeline` 命令组——博客功能领先分发构建。
+- 两台机器均已装 **Unity CLI 0.1.0-beta.3**：
+  - Windows: `C:\Users\cielevel\AppData\Local\Unity\bin\unity.exe`
+  - macOS（2026-08-30 官方脚本安装）: `~/.unity/bin/unity`，PATH 经 `~/.zshrc` 源 `~/.unity/env`；
+    官方安装命令 `curl -fsSL https://public-cdn.cloud.unity3d.com/hub/prod/cli/install.sh | UNITY_CLI_CHANNEL=beta bash`
+- 当前 beta 仅含管理命令（auth/editors/install/install-modules/install-path/language/projects/open/uninstall/upgrade/changelog…），
+  **尚无** `command`/`eval`/`pipeline` 命令组——博客功能领先分发构建。
 - 在 CLI 推出带 `command` 组的新 beta 前，直接按本文用 HTTP API 即可（功能等价，官方 CLI 本就是这层 API 的封装）。
-- 两台机器各装 CLI；Pipeline 包随工程 git 同步。
+- Pipeline 包随工程 git 同步；CLI 自身升级用 `unity upgrade`。
 
 ## 7. 注意事项
 
 - `-automated` 警告：交互模式启动 Editor 时服务会警告"模态弹窗可能打断自动化流"。仅提醒；要消除可用
   `-automated` 参数启动 Editor（如 `Unity.exe -projectPath <路径> -automated`）。
-- 服务仅监听回环地址，token 门控 eval——不暴露局域网；`Library/` 在 .gitignore 中，token 不会入库。
+- 服务仅监听回环地址（2026-08-30 起在 socket 层即真回环，见第 8 节），token 门控 eval——不暴露局域网；
+  `Library/` 在 .gitignore 中，token 不会入库。
 - Play 模式/`--runtime <player>` 的监听默认关闭（仅 dev 构建手动开启）。
 - 包为 experimental（0.5.0-exp.1），API 可能随版本演进。
+
+## 8. 修复记录：macOS "No available ports in range 7800-7849"（2026-08-30）
+
+**现象**：Editor 启动即报 `Failed to start Pipeline Server: No available ports in range 7800-7849`，
+`Library/Pipeline/.unity-pipeline-port` 不生成，整个 HTTP API 不可用。重启 Editor 无效。
+
+**根因**：Unity 6000.0（Mono）的 `HttpListener` 对强通配符主机名 `http://+:port/` 抛
+`SocketException: The requested address is not valid in this context`（EINVAL），而
+`BasePipelineServer.IsPortAvailable` 正是用它逐个探测 7800-7849 共 50 个端口 → 全部被判定"不可用"。
+实测系统层绑定（127.0.0.1 / ::1 / 0.0.0.0 / `*` 弱通配 / 显式回环前缀）全部正常，**并非端口被占**。
+
+**修复**（已落地并验证 /api/status=ready + console 命令可用）：
+- 包由 registry 提升为**嵌入式包**：`Packages/com.unity.pipeline`（已从 manifest.json 移除条目，
+  packages-lock 中 source=embedded），排除缓存签名文件（`.signature` / `.attestation.p7m`）。
+- 修补 `Runtime/Common/BasePipelineServer.cs` 的 `AddLoopbackPrefixes`：`http://+:port/` 改为显式
+  回环三前缀 `http://127.0.0.1:port/`、`http://localhost:port/`、`http://[::1]:port/`（Mono 按 Host
+  字面匹配前缀，三种写法都要覆盖；文档示例用 127.0.0.1 即可）。附带收益：监听在 socket 层真正只绑
+  回环（原先 `+` 会绑全部网卡再靠代码层回环校验兜底），比原实现更安全。
+- **升级该包版本时补丁会丢失，需按上述内容重打。**
+
+**排查教训**：Editor 出现"不自动刷新、不重编译、AppleScript quit/activate 无响应、Editor.log 长时间静默"
+时，先怀疑资产管道僵死（本次伴随 `Unexpected transport error from import worker 0`）。此时 `sample`
+主线程只见空闲事件循环（非模态卡死），`osascript quit` 无效，但 `kill -TERM` 可 2 秒内优雅退出，
+重启后完整包解析/编译/服务启动即恢复正常。

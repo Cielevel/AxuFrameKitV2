@@ -248,7 +248,7 @@ Assets/
   "com.unity.inputsystem": "1.11.1",
   "com.unity.multiplayer.center": "1.0.0",
   "com.unity.nuget.newtonsoft-json": "3.2.2",
-  "com.unity.pipeline": "0.5.0-exp.1",
+  "com.unity.pipeline": "嵌入式包 (embedded, 0.5.0-exp.1) - Unity CLI agent 集成（已修补 macOS HttpListener 端口探测，见 .zcode/08 第 8 节）",
   "com.unity.render-pipelines.universal": "17.0.3",
   "com.unity.test-framework": "1.4.6",
   "com.unity.timeline": "1.8.7",
@@ -350,7 +350,7 @@ UIBindTextStr.Bind(myTextComponent, () => model.PlayerName);
 
 ## 文档位置
 
-- **AI 知识库**: 根目录 `.zcode/`（2026-08-29 勘察生成的详细模块清单、包结构、文档清单与演进史，**查模块/类时优先检索**）
+- **AI 知识库**: 根目录 `.zcode/`（2026-08-29 勘察生成的详细模块清单、包结构、文档清单与演进史，**查模块/类时优先检索**；`08` 为 Unity Pipeline 本地 API、`09` 为 Unity 全流程子代理体系）
 - **框架文档**（2026-08-29 已迁入包内、随代码放置）: `Packages/com.cielevel.axu-frame-kit/`
   - 包根 `README.md`（包结构与**全量文档索引表**）、`CHANGELOG.md`（变更记录）
   - 各模块 ReadMe/HOWTOUSE/ARCHITECTURE 位于对应模块目录旁，如 `Runtime/_Core/Advanced/BetterFSM/ReadMe.md`、

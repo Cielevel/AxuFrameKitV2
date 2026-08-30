@@ -299,10 +299,14 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
                 .ToList();
         }
 
-        // UE5 Theme Colors (for inline style when USS class is not enough)
-        private static readonly Color Ue5AccentPrimary = new Color(1f, 0.584f, 0f);     // #ff9500
-        private static readonly Color Ue5TextSecondary = new Color(0.627f, 0.627f, 0.627f); // #a0a0a0
-        private static readonly Color Ue5StatusDisabled = new Color(0.5f, 0.25f, 0.25f); // Muted red
+        // 状态文本颜色统一走 USS 类（跟随当前主题的 --kb-* 变量），不在 C# 内联硬编码色值
+        private static void SetStatusClass(VisualElement element, string colorClass)
+        {
+            element.RemoveFromClassList("status-added");
+            element.RemoveFromClassList("status-removed");
+            element.RemoveFromClassList("text-secondary");
+            element.AddToClassList(colorClass);
+        }
 
         private VisualElement CreateSymbolRow(string symbol, bool isInner)
         {
@@ -411,7 +415,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
 
             bool isAdded = ScriptDefineSymbolSetter.IsSymbolAdded(_selectedSymbol);
             _detailStatus.text = isAdded ? "✓ 已启用" : "○ 未启用";
-            _detailStatus.style.color = isAdded ? Ue5AccentPrimary : Ue5StatusDisabled;
+            SetStatusClass(_detailStatus, isAdded ? "status-added" : "status-removed");
 
             // Clear previous button classes
             _actionButton.RemoveFromClassList("btn-success");
@@ -478,7 +482,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
             if (string.IsNullOrEmpty(symbol))
             {
                 _customStatusLabel.text = "等待输入";
-                _customStatusLabel.style.color = Ue5TextSecondary;
+                SetStatusClass(_customStatusLabel, "text-secondary");
                 _customActionButton.text = "添加/移除";
                 _customActionButton.SetEnabled(false);
                 _customActionButton.AddToClassList("btn-secondary");
@@ -487,7 +491,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
 
             bool isAdded = ScriptDefineSymbolSetter.IsSymbolAdded(symbol);
             _customStatusLabel.text = isAdded ? "✓ 已存在" : "○ 未定义";
-            _customStatusLabel.style.color = isAdded ? Ue5AccentPrimary : Ue5StatusDisabled;
+            SetStatusClass(_customStatusLabel, isAdded ? "status-added" : "status-removed");
 
             _customActionButton.SetEnabled(true);
             if (isAdded)

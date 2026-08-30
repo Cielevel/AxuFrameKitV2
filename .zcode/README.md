@@ -24,6 +24,7 @@
 | [06-assets-layout.md](06-assets-layout.md) | Assets 布局、示例场景、独立模块、实验模块、文档目录 | 找示例场景、新增模块 |
 | [07-docs-and-history.md](07-docs-and-history.md) | 全项目文档清单与状态、AGENTS.md 过时条目、git 演进时间线 | 判断文档可信度、了解历史决策 |
 | [08-unity-pipeline-api.md](08-unity-pipeline-api.md) | **Unity Pipeline 本地 API**（HTTP 直连运行中 Editor：142 个命令、鉴权、示例） | **需要编译/测试/读 Console/操作资产时优先用这个** |
+| [09-unity-subagents.md](09-unity-subagents.md) | **Unity 全流程子代理体系**（11 个代理的分工、派发矩阵、全局/工程双层覆盖机制） | **派发子代理前、调整代理定义时先读这个** |
 
 ## 重要提醒（信息时效性）
 

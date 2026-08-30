@@ -27,6 +27,22 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
         private int _currentPageIndex = -1;
         private IKitPageRevV2 _currentPage;
 
+        /// <summary>主题持久化键（EditorPrefs，存主题类名）</summary>
+        private const string ThemePrefsKey = "AxuKitBoxRevV2.Theme";
+
+        /// <summary>
+        /// 主题注册表：新增主题时在 AxuKitBoxV2.uss 里加一个 .theme-* 变量块，再在此登记即可
+        /// </summary>
+        private static readonly (string DisplayName, string Class)[] Themes =
+        {
+            ("UE5 经典", "theme-ue5"),
+            ("Tokyo Night", "theme-tokyo-night"),
+            ("Dracula", "theme-dracula"),
+            ("Nord", "theme-nord"),
+        };
+
+        private string _currentThemeClass;
+
         [MenuItem("AxuFrameKit/AxuEditor工具集V2-Rev %#m")]
         public static void Open()
         {
@@ -53,14 +69,12 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
             var uxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>($"{dirPath}/UI/AxuKitBoxV2.uxml");
             if (uxml != null) uxml.CloneTree(_root);
 
-            // Theme Selection - Switch between default and UE5 theme
-            // Default Theme:
+            // Theme System - 主题类挂载在根元素上，决定 --kb-* 变量值
             var uss = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/UI/AxuKitBoxV2.uss");
-
-            // UE5 Theme (uncomment to use):
-            // var uss = AssetDatabase.LoadAssetAtPath<StyleSheet>($"{dirPath}/UI/AxuKitBoxV2_UE5Theme.uss");
-
             if (uss != null) _root.styleSheets.Add(uss);
+            var savedTheme = EditorPrefs.GetString(ThemePrefsKey, Themes[0].Class);
+            ApplyTheme(System.Array.Exists(Themes, t => t.Class == savedTheme) ? savedTheme : Themes[0].Class);
+            BuildThemeDropdown();
 
             // References
             _navContainer = _root.Q<VisualElement>("nav-container");
@@ -82,6 +96,44 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
             {
                 DisplayPage(_currentPage);
             }
+        }
+
+        /// <summary>构建主题选择下拉（置于 content-header 右侧）</summary>
+        private void BuildThemeDropdown()
+        {
+            var header = _root.Q<VisualElement>("content-header");
+            if (header == null) return;
+
+            var choices = new List<string>();
+            var defaultIndex = 0;
+            for (int i = 0; i < Themes.Length; i++)
+            {
+                choices.Add(Themes[i].DisplayName);
+                if (Themes[i].Class == _currentThemeClass) defaultIndex = i;
+            }
+
+            var dropdown = new DropdownField("主题", choices, defaultIndex) { name = "theme-dropdown" };
+            dropdown.RegisterValueChangedCallback(evt =>
+            {
+                foreach (var theme in Themes)
+                {
+                    if (theme.DisplayName != evt.newValue) continue;
+                    ApplyTheme(theme.Class);
+                    break;
+                }
+            });
+            header.Add(dropdown);
+        }
+
+        /// <summary>切换主题：从根元素移除旧主题类、挂载新主题类并持久化</summary>
+        private void ApplyTheme(string themeClass)
+        {
+            if (_root == null || string.IsNullOrEmpty(themeClass) || _currentThemeClass == themeClass) return;
+
+            if (!string.IsNullOrEmpty(_currentThemeClass)) _root.RemoveFromClassList(_currentThemeClass);
+            _root.AddToClassList(themeClass);
+            _currentThemeClass = themeClass;
+            EditorPrefs.SetString(ThemePrefsKey, themeClass);
         }
 
         private void SetupGroups()
