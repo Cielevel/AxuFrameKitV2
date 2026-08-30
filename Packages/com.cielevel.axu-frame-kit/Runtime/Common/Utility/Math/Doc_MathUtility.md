@@ -11,6 +11,7 @@
 
 核心类为 `AxuTweenExtension`，它为 Unity 的常用组件提供了类似 DOTween 的链式扩展方法。
 **注意**：调用扩展方法创建动画后，**必须调用 `.Start()`** 才能开始播放。
+**注意（完成判定）**：补间完成当帧 Runner 会立即回收复用该 Tweener（`Reset()` 后 `IsCompleted` 复位并移出列表），因此**不要事后轮询 `IsCompleted`**（永远读到 false）；完成回调请使用 `OnComplete`。
 
 ### 常用接口一览表
 

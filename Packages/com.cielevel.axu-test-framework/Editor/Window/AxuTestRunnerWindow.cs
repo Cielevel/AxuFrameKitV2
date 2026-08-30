@@ -1,0 +1,568 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using UnityEditor;
+using UnityEditor.TestTools.TestRunner.Api;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+namespace AxuTestFramework.Editor
+{
+    /// <summary>
+    /// AxuTestRunner 测试看板窗口（纯 UI Toolkit，布局语言仿 AxuKitBox，样式 token 独立自持、
+    /// 不引用 AxuFrameKit.Editor）。左侧为测试套件树（按程序集/类分组，TestRunnerApi.RetrieveTestList），
+    /// 右侧为最近报告的结果树（状态/耗时/失败消息与堆栈可展开），顶栏为模式切换 + Run + 过滤输入 +
+    /// 最近报告路径（点击 reveal）。运行直接调用 <see cref="AxuTestRunService"/>（不经 HTTP）。
+    /// </summary>
+    public class AxuTestRunnerWindow : EditorWindow
+    {
+        private const string UssResourcePath = "Packages/com.cielevel.axu-test-framework/Editor/UI/AxuTestTokens.uss";
+
+        private string _mode = "editor";
+        private bool _running;
+
+        private Button _runButton;
+        private Button _editorModeButton;
+        private Button _playModeButton;
+        private TextField _filterField;
+        private Label _statusLabel;
+        private Button _reportPathButton;
+        private Label _summaryLabel;
+        private ScrollView _testsScroll;
+        private ScrollView _resultsScroll;
+
+        /// <summary>本域最近一次成功加载的报告路径（供 reveal 与 axu_test_report latest 兜底对照）。</summary>
+        private string _loadedReportPath;
+        private AxuTestReport _report;
+
+        /// <summary>左侧树当前数据（用于窗口重开时保留过滤输入等状态）。</summary>
+        private List<ITestAdaptor> _cachedAssemblyRoots = new List<ITestAdaptor>();
+
+        /// <summary>菜单入口：AxuFrameKit/AxuTestRunner（与 AxuKitBox 同级，仅字符串同前缀，无代码依赖）。</summary>
+        [MenuItem("AxuFrameKit/AxuTestRunner")]
+        public static void Open()
+        {
+            var window = GetWindow<AxuTestRunnerWindow>();
+            window.titleContent = new GUIContent("AxuTestRunner");
+            window.minSize = new Vector2(900f, 560f);
+            window.Show();
+        }
+
+        private void CreateGUI()
+        {
+            rootVisualElement.AddToClassList("axu-theme-ue5");
+
+            var uss = AssetDatabase.LoadAssetAtPath<StyleSheet>(UssResourcePath);
+            if (uss != null)
+                rootVisualElement.styleSheets.Add(uss);
+
+            BuildTopBar();
+            BuildMainArea();
+            BuildStatusBar();
+
+            _ = RefreshTestsAsync();
+            TryLoadLatestReport();
+        }
+
+        // ------------------------------------------------------------------ UI 构建
+
+        private void BuildTopBar()
+        {
+            var topBar = new VisualElement { name = "ax-topbar" };
+            topBar.AddToClassList("ax-topbar");
+
+            _editorModeButton = new Button(() => SetMode("editor")) { text = "EditMode", name = "ax-mode-editor" };
+            _editorModeButton.AddToClassList("ax-mode-button");
+            _playModeButton = new Button(() => SetMode("playmode")) { text = "PlayMode", name = "ax-mode-play" };
+            _playModeButton.AddToClassList("ax-mode-button");
+
+            _runButton = new Button(RunTests) { text = "Run", name = "ax-run-button" };
+            _runButton.AddToClassList("ax-run-button");
+
+            var refreshButton = new Button(() => _ = RefreshTestsAsync()) { text = "刷新列表", name = "ax-refresh-button" };
+            refreshButton.AddToClassList("ax-secondary-button");
+
+            _filterField = new TextField { name = "ax-filter-field" };
+            _filterField.AddToClassList("ax-filter-field");
+            _filterField.tooltip = "测试全名包含匹配（大小写不敏感），Run 时作为 testName 过滤下发";
+            _filterField.RegisterValueChangedCallback(_ => RenderTestsTree());
+
+            _reportPathButton = new Button(RevealReport) { text = "（尚无报告）", name = "ax-report-path" };
+            _reportPathButton.AddToClassList("ax-report-path");
+            _reportPathButton.tooltip = "点击在 Finder 中显示最近一次报告文件";
+            _reportPathButton.SetEnabled(false);
+
+            topBar.Add(_editorModeButton);
+            topBar.Add(_playModeButton);
+            topBar.Add(_runButton);
+            topBar.Add(refreshButton);
+            topBar.Add(_filterField);
+            topBar.Add(_reportPathButton);
+
+            rootVisualElement.Add(topBar);
+            SetMode(_mode);
+        }
+
+        private void BuildMainArea()
+        {
+            var main = new VisualElement { name = "ax-main" };
+            main.AddToClassList("ax-main");
+
+            // 左：测试套件树
+            var testsPane = new VisualElement { name = "ax-tests-pane" };
+            testsPane.AddToClassList("ax-pane");
+            var testsHeader = new Label("测试套件（按程序集 / 类分组）");
+            testsHeader.AddToClassList("ax-pane-header");
+            _testsScroll = new ScrollView { name = "ax-tests-scroll", viewDataKey = "ax-tests-scroll" };
+            _testsScroll.AddToClassList("ax-scroll");
+            testsPane.Add(testsHeader);
+            testsPane.Add(_testsScroll);
+
+            // 右：结果树
+            var resultsPane = new VisualElement { name = "ax-results-pane" };
+            resultsPane.AddToClassList("ax-pane");
+            resultsPane.AddToClassList("ax-pane-last");
+            var resultsHeader = new Label("最近报告结果");
+            resultsHeader.AddToClassList("ax-pane-header");
+            _summaryLabel = new Label("（尚无结果——先 Run 一次）");
+            _summaryLabel.AddToClassList("ax-summary");
+            _resultsScroll = new ScrollView { name = "ax-results-scroll", viewDataKey = "ax-results-scroll" };
+            _resultsScroll.AddToClassList("ax-scroll");
+            resultsPane.Add(resultsHeader);
+            resultsPane.Add(_summaryLabel);
+            resultsPane.Add(_resultsScroll);
+
+            main.Add(testsPane);
+            main.Add(resultsPane);
+            rootVisualElement.Add(main);
+        }
+
+        private void BuildStatusBar()
+        {
+            var bar = new VisualElement { name = "ax-statusbar" };
+            bar.AddToClassList("ax-statusbar");
+            _statusLabel = new Label("就绪");
+            _statusLabel.AddToClassList("ax-status-text");
+            bar.Add(_statusLabel);
+            rootVisualElement.Add(bar);
+        }
+
+        private void SetMode(string mode)
+        {
+            _mode = mode;
+            if (_editorModeButton == null || _playModeButton == null)
+                return;
+            _editorModeButton.AddToClassList("ax-mode-active");
+            _playModeButton.RemoveFromClassList("ax-mode-active");
+            if (mode != "editor")
+            {
+                _playModeButton.AddToClassList("ax-mode-active");
+                _editorModeButton.RemoveFromClassList("ax-mode-active");
+            }
+            _ = RefreshTestsAsync();
+        }
+
+        private void RevealReport()
+        {
+            if (!string.IsNullOrEmpty(_loadedReportPath) && File.Exists(_loadedReportPath))
+                EditorUtility.RevealInFinder(_loadedReportPath);
+        }
+
+        // ------------------------------------------------------------------ 左侧：测试列表
+
+        private async Task RefreshTestsAsync()
+        {
+            if (_testsScroll == null)
+                return;
+
+            UpdateStatus($"正在获取 {( _mode == "playmode" ? "PlayMode" : "EditMode")} 测试列表…");
+            var testMode = _mode == "playmode" ? TestMode.PlayMode : TestMode.EditMode;
+            var tcs = new TaskCompletionSource<ITestAdaptor>();
+            var api = ScriptableObject.CreateInstance<TestRunnerApi>();
+            api.RetrieveTestList(testMode, root => tcs.TrySetResult(root));
+
+            // TestRunnerApi 为无状态门面（TestListJob 只持有 provider 与回调，不回引实例），用后即毁防泄漏。
+            UnityEngine.Object.DestroyImmediate(api);
+
+            var completed = await Task.WhenAny(tcs.Task, Task.Delay(10000));
+            if (completed != tcs.Task)
+            {
+                UpdateStatus("获取测试列表超时（10s）——编辑器可能正在编译，稍后点\"刷新列表\"重试。");
+                return;
+            }
+
+            _cachedAssemblyRoots.Clear();
+            var root = tcs.Task.Result;
+            if (root != null && root.Children != null)
+                _cachedAssemblyRoots.AddRange(root.Children);
+            if (root != null && root.IsSuite && (root.Children == null || !root.Children.Any()))
+                _cachedAssemblyRoots.Add(root);
+
+            RenderTestsTree();
+            UpdateStatus($"测试列表已刷新（{_mode}，{CountLeafTests()} 个用例）。");
+        }
+
+        private int CountLeafTests()
+        {
+            var count = 0;
+            foreach (var assembly in _cachedAssemblyRoots)
+                CountLeafTests(assembly, ref count);
+            return count;
+        }
+
+        private void CountLeafTests(ITestAdaptor node, ref int count)
+        {
+            if (node == null)
+                return;
+            if (!node.HasChildren && !node.IsSuite)
+            {
+                count++;
+                return;
+            }
+            if (node.Children == null)
+                return;
+            foreach (var child in node.Children)
+                CountLeafTests(child, ref count);
+        }
+
+        /// <summary>渲染左侧套件树（应用过滤输入的包含匹配；程序集 → 类 → 用例）。</summary>
+        private void RenderTestsTree()
+        {
+            if (_testsScroll == null)
+                return;
+            _testsScroll.Clear();
+
+            var needle = (_filterField.value ?? "").Trim();
+            var excludedNote = AxuTestAssemblyScanner.ForbiddenAssemblyPrefix;
+
+            foreach (var assembly in _cachedAssemblyRoots)
+            {
+                var foldout = new Foldout { text = assembly.Name, value = true };
+                foldout.AddToClassList("ax-group-foldout");
+                var hasContent = RenderFixtureLevel(assembly, foldout, needle);
+                if (!hasContent)
+                    continue;
+                _testsScroll.Add(foldout);
+            }
+
+            if (_testsScroll.childCount == 0)
+            {
+                var empty = new Label(string.IsNullOrEmpty(needle) ? "（无测试）" : $"（无匹配 \"{needle}\" 的测试）");
+                empty.AddToClassList("ax-empty-note");
+                _testsScroll.Add(empty);
+            }
+
+            var note = new Label($"安全过滤：程序集名以 {excludedNote} 开头的测试始终被排除（防 pipeline 自带测试毒化本地 API 鉴权）。");
+            note.AddToClassList("ax-footnote");
+            _testsScroll.Add(note);
+        }
+
+        /// <summary>递归渲染套件层级；返回该子树是否有可见内容。</summary>
+        private bool RenderFixtureLevel(ITestAdaptor node, Foldout parent, string needle)
+        {
+            if (node.Children == null)
+                return false;
+
+            var hasContent = false;
+            foreach (var child in node.Children)
+            {
+                if (!child.HasChildren && !child.IsSuite)
+                {
+                    if (needle.Length > 0 &&
+                        (child.FullName == null ||
+                         child.FullName.IndexOf(needle, StringComparison.OrdinalIgnoreCase) < 0))
+                    {
+                        continue;
+                    }
+
+                    var testLabel = new Label(child.Name);
+                    testLabel.AddToClassList("ax-test-row");
+                    testLabel.tooltip = child.FullName + (child.RunState == RunState.Explicit ? "\n[Explicit]" : "");
+                    parent.Add(testLabel);
+                    hasContent = true;
+                    continue;
+                }
+
+                var childFoldout = new Foldout { text = GetDisplayName(child), value = false };
+                childFoldout.AddToClassList("ax-fixture-foldout");
+                if (RenderFixtureLevel(child, childFoldout, needle))
+                {
+                    parent.Add(childFoldout);
+                    hasContent = true;
+                }
+            }
+            return hasContent;
+        }
+
+        private static string GetDisplayName(ITestAdaptor node)
+        {
+            if (string.IsNullOrEmpty(node.FullName))
+                return node.Name;
+            var lastDot = node.FullName.LastIndexOf('.');
+            return lastDot >= 0 && lastDot < node.FullName.Length - 1
+                ? node.FullName.Substring(lastDot + 1)
+                : node.FullName;
+        }
+
+        // ------------------------------------------------------------------ 运行
+
+        private async void RunTests()
+        {
+            if (_running)
+                return;
+
+            _running = true;
+            _runButton.SetEnabled(false);
+            UpdateStatus($"正在运行 {_mode} 测试…");
+
+            try
+            {
+                var request = new AxuTestRunRequest
+                {
+                    Mode = _mode,
+                    Filter = _filterField.value ?? "",
+                    FilterType = "testName",
+                    ClearConsole = true,
+                    Report = true,
+                    TimeoutMs = 600000
+                };
+
+                var outcome = await AxuTestRunService.StartRunAsync(request);
+
+                AxuTestRunStatus finalStatus = null;
+                if (outcome.Status == "playmode_running")
+                {
+                    UpdateStatus("PlayMode 运行中（等待状态文件 completed）…");
+                    finalStatus = await PollStatusUntilCompletedAsync(900000);
+                    if (finalStatus == null)
+                    {
+                        UpdateStatus("PlayMode 运行等待超时（15 分钟）——可经 axu_test_status 或状态文件继续观察。");
+                        return;
+                    }
+                }
+
+                ShowOutcome(outcome, finalStatus);
+            }
+            catch (Exception ex)
+            {
+                UpdateStatus("运行失败: " + ex.Message);
+                Debug.LogException(ex);
+            }
+            finally
+            {
+                _running = false;
+                _runButton.SetEnabled(true);
+                TryLoadLatestReport();
+            }
+        }
+
+        /// <summary>轮询运行状态文件直至 completed/error（步长 500ms，上限 15 分钟）。</summary>
+        private static async Task<AxuTestRunStatus> PollStatusUntilCompletedAsync(int timeoutMs)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+            while (DateTime.UtcNow < deadline)
+            {
+                var status = AxuTestRunStatus.TryRead();
+                if (status != null && status.Status != AxuTestRunStatus.Running)
+                    return status;
+                await Task.Delay(500);
+            }
+            return null;
+        }
+
+        /// <summary>渲染运行结果。PlayMode 异步段（StartRunAsync 返回 playmode_running）以轮询到的
+        /// 最终状态文件渲染成功/失败，数据与 axu_test_status 的终值对齐。</summary>
+        private void ShowOutcome(AxuTestRunOutcome outcome, AxuTestRunStatus finalStatus = null)
+        {
+            // PlayMode 异步段：StartRunAsync 返回时 outcome 停留在 playmode_running（Summary 为空），
+            // 原样落入错误分支会把成功运行显示为"错误: playmode_running"——改用轮询终值渲染。
+            if (outcome.Status == "playmode_running")
+            {
+                if (finalStatus == null)
+                {
+                    UpdateStatus("PlayMode 运行已启动（未见终态状态文件）。");
+                    return;
+                }
+                outcome = MapFinalStatus(finalStatus);
+            }
+
+            if (outcome.Status == "completed")
+            {
+                var summary = outcome.Summary;
+                if (summary != null)
+                {
+                    UpdateStatus($"完成: {summary.Passed}/{summary.Total} 通过, {summary.Failed} 失败, " +
+                                 $"{summary.Skipped} 跳过" + (outcome.AllPassed ? " —— 全绿" : " —— 存在失败"));
+                }
+                else
+                {
+                    UpdateStatus(outcome.Message ?? "完成。");
+                }
+            }
+            else if (outcome.Status == "timeout")
+            {
+                UpdateStatus("超时: " + outcome.Error);
+            }
+            else
+            {
+                UpdateStatus("错误: " + (outcome.Error ?? outcome.Status));
+            }
+        }
+
+        /// <summary>把轮询到的最终状态文件映射为结果模型（与 AxuTestRunService 对 EditMode 的
+        /// completed/error 映射对齐），供 PlayMode 异步段收尾时渲染。</summary>
+        private static AxuTestRunOutcome MapFinalStatus(AxuTestRunStatus finalStatus)
+        {
+            if (finalStatus.Status == AxuTestRunStatus.Error)
+            {
+                return new AxuTestRunOutcome
+                {
+                    Success = false,
+                    Status = "error",
+                    Error = finalStatus.Message ?? "运行结束但报告流程出错，详见 Editor Console。"
+                };
+            }
+
+            return new AxuTestRunOutcome
+            {
+                Success = true,
+                Status = "completed",
+                Summary = finalStatus.Summary,
+                ReportPath = finalStatus.ReportPath,
+                AllPassed = finalStatus.Summary != null && finalStatus.Summary.Total > 0 &&
+                            finalStatus.Summary.Failed == 0 && finalStatus.Summary.Inconclusive == 0,
+                Message = finalStatus.Summary == null ? "运行完成（无汇总数据）。" : null
+            };
+        }
+
+        // ------------------------------------------------------------------ 右侧：报告结果
+
+        /// <summary>加载最近可用的报告（优先本域 LastReportPath，其次报告目录里最新文件）。</summary>
+        private void TryLoadLatestReport()
+        {
+            string path = null;
+
+            if (AxuTestReportWriter.LastReportPath != null && File.Exists(AxuTestReportWriter.LastReportPath))
+            {
+                path = AxuTestReportWriter.LastReportPath;
+            }
+            else
+            {
+                var directory = AxuTestReportPaths.ToFullPath(AxuTestReportPaths.ReportsDirectory);
+                if (Directory.Exists(directory))
+                {
+                    var newest = new DirectoryInfo(directory)
+                        .EnumerateFiles("*.json")
+                        .OrderByDescending(f => f.LastWriteTimeUtc)
+                        .FirstOrDefault();
+                    path = newest?.FullName;
+                }
+            }
+
+            LoadReport(path);
+        }
+
+        /// <summary>读报告 JSON 并渲染结果树；读不到时保留现状提示。</summary>
+        private void LoadReport(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return;
+
+            try
+            {
+                _report = JsonConvert.DeserializeObject<AxuTestReport>(File.ReadAllText(path));
+                _loadedReportPath = path;
+            }
+            catch (Exception ex)
+            {
+                UpdateStatus("报告解析失败: " + ex.Message);
+                return;
+            }
+
+            _reportPathButton.text = Path.GetFileName(_loadedReportPath);
+            _reportPathButton.SetEnabled(true);
+            _reportPathButton.tooltip = _loadedReportPath;
+            RenderResultsTree();
+        }
+
+        /// <summary>渲染右侧结果树（按程序集分组；每条用例可展开查看消息与堆栈）。</summary>
+        private void RenderResultsTree()
+        {
+            _resultsScroll.Clear();
+
+            if (_report?.Summary != null)
+            {
+                _summaryLabel.text =
+                    $"[{_report.Mode}] {_report.Summary.Passed}/{_report.Summary.Total} 通过 · " +
+                    $"{_report.Summary.Failed} 失败 · {_report.Summary.Skipped} 跳过 · " +
+                    $"console 错误 {_report.Console?.ErrorCount ?? 0} 条";
+            }
+
+            var results = _report?.Results;
+            if (results == null || results.Count == 0)
+            {
+                var empty = new Label("（报告无用例明细）");
+                empty.AddToClassList("ax-empty-note");
+                _resultsScroll.Add(empty);
+                return;
+            }
+
+            foreach (var group in results.GroupBy(r => r.Assembly ?? "(未知程序集)").OrderBy(g => g.Key))
+            {
+                var foldout = new Foldout { text = $"{group.Key}（{group.Count()}）", value = group.Any(IsFailed) };
+                foldout.AddToClassList("ax-group-foldout");
+
+                foreach (var result in group.OrderByDescending(r => IsFailed(r)).ThenBy(r => r.FullName))
+                    foldout.Add(CreateResultRow(result));
+
+                _resultsScroll.Add(foldout);
+            }
+        }
+
+        /// <summary>单条结果行：可展开 Foldout，头部为状态 + 名称 + 耗时，内容为消息与堆栈。</summary>
+        private VisualElement CreateResultRow(ReportResult result)
+        {
+            var failed = IsFailed(result);
+            var skipped = result.Status != null && result.Status.StartsWith("Skipped", StringComparison.OrdinalIgnoreCase);
+            var header = $"{(failed ? "FAIL" : skipped ? "SKIP" : "PASS")}  {result.FullName}  ({result.DurationMs:0.#} ms)";
+
+            var row = new Foldout { text = header, value = failed };
+            row.AddToClassList("ax-result-row");
+            row.AddToClassList(failed ? "ax-row-fail" : skipped ? "ax-row-skip" : "ax-row-pass");
+
+            if (!string.IsNullOrEmpty(result.Message))
+            {
+                var messageLabel = new Label(result.Message) { name = "ax-result-message" };
+                messageLabel.AddToClassList("ax-result-detail");
+                row.Add(messageLabel);
+            }
+            if (!string.IsNullOrEmpty(result.StackTrace))
+            {
+                var stackLabel = new Label(result.StackTrace) { name = "ax-result-stack" };
+                stackLabel.AddToClassList("ax-result-detail");
+                row.Add(stackLabel);
+            }
+            if (result.Categories != null && result.Categories.Count > 0)
+            {
+                var categoriesLabel = new Label("Categories: " + string.Join(", ", result.Categories));
+                categoriesLabel.AddToClassList("ax-result-detail");
+                row.Add(categoriesLabel);
+            }
+            return row;
+        }
+
+        private static bool IsFailed(ReportResult result)
+        {
+            return result.Status != null && result.Status.StartsWith("Failed", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void UpdateStatus(string message)
+        {
+            if (_statusLabel != null)
+                _statusLabel.text = message;
+        }
+    }
+}

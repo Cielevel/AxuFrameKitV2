@@ -1,0 +1,25 @@
+{
+    "name": "AxuTestFramework.Editor",
+    "rootNamespace": "AxuTestFramework.Editor",
+    "references": [
+        "AxuTestFramework",
+        "Unity.Pipeline",
+        "Unity.Nuget.Newtonsoft-Json",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

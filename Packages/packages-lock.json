@@ -63,6 +63,16 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.cielevel.axu-test-framework": {
+      "version": "file:com.cielevel.axu-test-framework",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.test-framework": "1.4.6",
+        "com.unity.nuget.newtonsoft-json": "3.2.2",
+        "com.unity.pipeline": "0.5.0-exp.1"
+      }
+    },
     "com.termway.ide.antigravity": {
       "version": "https://github.com/TermWay/unity-ide-antigravity.git",
       "depth": 0,

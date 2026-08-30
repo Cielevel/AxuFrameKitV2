@@ -4,6 +4,11 @@
 
 ## [0.1.0]
 
+### 2026-08-31
+
+- **新增**：包内测试体系落地（接入测试基建包 `com.cielevel.axu-test-framework`）。`Tests/Editor/`（`AxuFrameKit.Tests.Editor`，23 个 EditMode 测试，类别 `Axu/Smoke` / `Axu/Core/Util` / `Axu/Common/Util`）+ `Tests/Runtime/`（`AxuFrameKit.Tests.Runtime`，6 个 PlayMode 冒烟测试，类别 `Axu/Play`）；`UNITY_INCLUDE_TESTS` 守护不进构建，运行经 pipeline `axu_test_run` 命令或菜单 `AxuFrameKit/AxuTestRunner` 看板。`Assets/Tests/Editor/` 保留为工程级冒烟入口。
+- **文档**：`Doc_MathUtility.md` 补充 AxuTween 完成判定语义（完成当帧 Runner 回收复用，勿轮询 `IsCompleted`，用 `OnComplete`）；`BetterFSM/ReadMe.md` 补充状态以 `GetType()` 为键、每状态类型仅一实例的约束；AGENTS.md 事件系统示例勘误（实际为 `EventCenter.Default` / `EventCentral.Default` + `Register/Send`）。
+
 ### 2026-08-30
 
 - **修复**：KitBox 标题栏主题下拉框（`#theme-dropdown`）横向溢出窗口右缘、"UE5 经典"文字与下拉箭头被截断——Unity 默认主题给 BaseField label 预留的 `min-width: 120px` 挤占了固定宽 168px 中输入框的可用空间。USS 为字段补 `min-width: 0`/`flex-shrink`，label 改为自适应宽，input 填充剩余宽并 `overflow: hidden`，窗口变窄时随头部行收缩而非顶出边界。

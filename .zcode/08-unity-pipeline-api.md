@@ -113,3 +113,55 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/
 时，先怀疑资产管道僵死（本次伴随 `Unexpected transport error from import worker 0`）。此时 `sample`
 主线程只见空闲事件循环（非模态卡死），`osascript quit` 无效，但 `kill -TERM` 可 2 秒内优雅退出，
 重启后完整包解析/编译/服务启动即恢复正常。
+
+## 9. 工程侧自定义命令：`axu_test_*`（AxuTestFramework，2026-08-31 新增）
+
+来源：嵌入式包 `Packages/com.cielevel.axu-test-framework/Editor/`（AxuTestFramework.Editor 程序集）经
+`[CliCommand]` 由 TypeCache 自动发现注册，**pipeline 包源码零改动**。测试框架完整说明见包内 README。
+
+### 命令一览
+
+| 命令 | 参数 | 说明 |
+|---|---|---|
+| `axu_test_run` | `mode`(editor/playmode/all，默认 editor)、`assembly`、`category`(逗号分隔，**区分大小写**)、`filter`+`filter_type`(testName/assembly/category)、`clear_console`(默认 true)、`report`(默认 true)、`out_path`(可选留档；不以 .json 结尾视为目录)、`timeout_ms`(默认 120000) | 发起测试运行。**安全内置**：未显式指定 assembly 时自动限定"工程测试程序集"并**排除 `Unity.Pipeline.Tests*`**（返回值含 `ExcludedAssemblies`） |
+| `axu_test_status` | 无 | 轮询运行状态（读 `Temp/axu_test_run_status.json`）；PlayMode 必用。running 超过 15 分钟视为陈旧不阻塞新运行 |
+| `axu_test_report` | `latest`(bool) 或 `path` | 返回报告 JSON 原文；超过 256KB 返回 `{status:"too_large"}` 信封 |
+
+### 调用示例
+
+```bash
+TOKEN=$(python3 -c "import json;print(json.load(open('Library/Pipeline/.unity-pipeline-port'))['evalToken'])")
+PORT=$(python3 -c "import json;print(json.load(open('Library/Pipeline/.unity-pipeline-port'))['port'])")
+
+# EditMode：同步返回完整结果（内部轮询至 completed）
+curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"command":"axu_test_run","parameters":{"mode":"editor","assembly":"AxuFrameKit.Tests.Editor"}}' \
+  "http://127.0.0.1:$PORT/api/exec"
+
+# PlayMode：异步（进出 Play 触发域重载，必须异步）→ 轮询 → 收报告
+curl -s -X POST ... -d '{"command":"axu_test_run","parameters":{"mode":"playmode","assembly":"AxuFrameKit.Tests.Runtime"}}' ...
+curl -s -X POST ... -d '{"command":"axu_test_status","parameters":{}}' ...          # 循环至 completed
+curl -s -X POST ... -d '{"command":"axu_test_report","parameters":{"latest":true}}' ...
+```
+
+返回关键节：`Status`(completed/playmode_running/…)、`Summary{Total,Passed,Failed,Skipped,Inconclusive}`、
+`ReportPath`、`ExcludedAssemblies`、`AllPassed`。
+
+### 报告与产物
+
+- 报告 JSON：`Library/AxuTestReports/{yyyyMMdd-HHmmss}-{mode}.json`，schema `axu-test-report/1`
+  （`StartedAt/EndedAt/Mode/Filter/Summary/Results[]/Console/Artifacts[]/Environment`，失败含 Message/StackTrace）。
+- 截图 artifacts：`Library/AxuTestReports/artifacts/`（测试内 `AxuCapture.ScreenshotCoroutine` 产生）。
+- 报告由程序集级 `[assembly: TestRunCallback]`（AxuTestReportWriter）在 RunFinished 落盘——**域重载开/关两种形态均验证可用**（2026-08-31 spike，见 `.zcode/reports/2026-08-31-playmode-spike.md`）。
+- pipeline 自带 `run_tests` 发起的运行同样会出报告（mode 记 `unknown`）。
+
+### 事故警示（2026-08-31 实证）
+
+pipeline 自带 `run_tests` **无过滤裸跑**会实跑 `Unity.Pipeline.Tests.*`，其中 `SecurityTokenTests` 的
+SetUp/TearDown 调 `SecurityTokenManager.ClearCache()` 毒化会话 token → 之后所有请求 401 死锁，需触发
+域重载重启服务恢复。**直用 `run_tests` 必须带 assembly 过滤；优先改用 `axu_test_run`**。
+
+### 配套窗口
+
+菜单 `AxuFrameKit/AxuTestRunner`（UITK 看板：套件树/结果树/模式切换/最近报告），与 HTTP 命令共用
+`AxuTestRunService` 编排核心；与内置 `run_tests` 之间有并发检测（`Temp/pipeline_test_request.json`）。

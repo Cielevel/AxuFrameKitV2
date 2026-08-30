@@ -11,3 +11,4 @@
 - state 对 state 的转移有确切的关系、转移条件。
 - state 之间的关系类似于图/树。
 - state 的转移更像 unity 中的 animator（可以参考 animator 来进行理解）。
+- **约束**：状态节点以 `state.GetType()`（类型）为键（内部是 `Dictionary<Type, StateNode>`），**每个状态类型只能注册一个实例**；同类型的多个实例会互相覆盖（转移会解析回先注册的实例）。

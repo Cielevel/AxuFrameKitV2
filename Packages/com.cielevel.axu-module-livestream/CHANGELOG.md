@@ -5,6 +5,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- 2026-08-31：包内测试接入测试框架 AxuTestFramework——新增 `Tests/Editor/`（`AxuFrameKit.Modules.LiveStream.Tests.Editor`，6 个 EditMode 测试，类别 `Axu/Module/LiveStream`：操作录制/回放分发、评论触发器三路分发、礼物直传与按数量切割）。`UNITY_INCLUDE_TESTS` 守护不进构建；运行经 pipeline `axu_test_run`。
+
 ## [0.1.0] - 2026-08-29
 
 ### Added

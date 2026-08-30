@@ -1,7 +1,7 @@
 # AxuFrameKit Project Guide
 
 > 本文档供 AI Coding Agent 阅读，用于快速了解本项目架构与开发规范。
-> （2026-08-29 更新：已同步框架迁移到 UPM 嵌入式包后的现状；详细模块清单见 `.zcode/` 知识库）
+> （2026-08-31 更新：新增 AxuTestFramework 通用测试体系与 axu_test_* pipeline 命令；2026-08-29 已同步框架迁移到 UPM 嵌入式包后的现状；详细模块清单见 `.zcode/` 知识库）
 
 ## 项目概览
 
@@ -189,7 +189,7 @@ Assets/
 │   ├── _Sample_Inner/         # 内部示例
 │   └── AITools_Config/        # AIChatConfig 用户配置资产（含 API key，属用户数据不入包）
 ├── TEMP/                  # 临时测试数据 (CSV)
-├── Tests/                 # 单元测试 (AxuFrameKitV2.Tests.Editor：_Core 冒烟测试，EditMode)
+├── Tests/                 # 工程级测试入口 (AxuFrameKitV2.Tests.Editor：_Core 冒烟，EditMode；框架包测试在包内 Tests/)
 ├── TextMesh Pro/          # TMP Essential 资源
 └── URP/                   # URP 管线资产 (Settings/PC_RPAsset 为全局管线)
 ```
@@ -209,7 +209,7 @@ Assets/
 - **Editor 层**: `AxuFrameKit.Common.Editor.{区域}`
 - **Modules 层**: `AxuFrameKit.Modules.{模块名}`
 - **独立模块**: `AxuIndieModules.{模块名}`
-- **测试代码**: `TestAndSample.{路径}`
+- **测试代码**: `AxuFrameKit.Tests.{Editor|Runtime}`（框架包）、`TestAndSample.{路径}`（Assets 工程级入口）、`AxuTestFramework(.Editor).*`（测试基建包自身）、模块包 `{被测程序集}.Tests.*`
 
 ### 类命名
 - **单例基类**: `Singleton<T>`, `SingletonMono<T>`, `SingletonLazy<T>`, `SingletonMonoCr<T>`, `SingletonMonoCrDs<T>`
@@ -240,6 +240,7 @@ Assets/
   "com.cielevel.axu-indie-selection-to-csv": "嵌入式包 - 选中导出 CSV（零依赖）",
   "com.cielevel.axu-indie-sprite-to-animation": "嵌入式包 - 序列帧转动画（零依赖）",
   "com.cielevel.axu-indie-stat-pipeline": "嵌入式包 - 数值管线（零依赖）",
+  "com.cielevel.axu-test-framework": "嵌入式包 - 通用测试框架 AxuTestFramework（Runtime 工具层 + axu_test_* pipeline 命令 + AxuTestRunner 窗口）",
   "com.termway.ide.antigravity": "Git 包 - IDE 增强",
   "com.unity.ai.navigation": "2.0.4",
   "com.unity.collab-proxy": "2.9.3",
@@ -269,7 +270,8 @@ Assets/
 ### 编辑器设置
 - **序列化模式**: Force Text (m_SerializationMode: 2)
 - **行尾符**: OS Native (m_LineEndingsForNewScripts: 0)
-- **进入 Play 模式选项**: 已启用，不重新加载域/场景 (EnterPlayModeOptionsEnabled: 1)
+- **进入 Play 模式选项**: Enabled 标志开启但 Options=0（None）——**进 Play 时域重载与场景重载照常发生**。
+  （2026-08-31 勘误：此前误记为"不重新加载域/场景"，是把 `m_EnterPlayModeOptionsEnabled` 误当选项值；实测 `m_EnterPlayModeOptions: 0`。无论哪种形态，PlayMode 测试都应在 `[UnitySetUp]` 调 `AxuTestState.ResetStatics()`）
 - **色彩空间**: Linear
 
 ### 构建输出
@@ -303,22 +305,27 @@ public class LazyManager : SingletonLazy<LazyManager> { }
 
 ### 2. 事件系统
 
-**Core 层 - 类型安全事件中心** (`AxuFrameKit._Core.Advanced.EventSystem`):
+**Core 层 - 类型安全事件中心** (`AxuFrameKit._Core.Advanced.EventSystem`，静态实例 `EventCenter.Default`)：
 ```csharp
-// 订阅
-EventCenter.Subscribe<PlayerDiedEvent>(OnPlayerDied);
+// 订阅（返回 IDisposable，Dispose 即退订）
+IDisposable sub = EventCenter.Default.Subscribe<PlayerDiedEvent>(OnPlayerDied);
 
 // 发布
-EventCenter.Publish(new PlayerDiedEvent { PlayerId = 1 });
+EventCenter.Default.Publish(new PlayerDiedEvent { PlayerId = 1 });
 
 // 取消订阅
-EventCenter.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
+EventCenter.Default.Unsubscribe(OnPlayerDied);   // 或 sub.Dispose()
 ```
 
-**Common 层 - EventCentral (字符串事件)**:
+**Common 层 - EventCentral (泛型事件，静态实例 `EventCentral.Default`)**：
 ```csharp
-EventCentral.Subscribe("EventName", callback);
-EventCentral.Publish("EventName", data);
+// 订阅（返回 IUnRegister 句柄）
+var reg = EventCentral.Default.Register<PlayerDiedEvent>(OnPlayerDied);
+
+// 发布
+EventCentral.Default.Send(new PlayerDiedEvent { PlayerId = 1 });
+
+// 退订：reg.UnRegister(); 或随生命周期自动退订 reg.UnRegisterWhenGameObjectDestroyed(gameObject);
 ```
 
 **Common 层 - ScriptableObject 事件通道**: `EventChannel<T>`（SO 资产式，可 Inspector 连线，带生命周期自动注销）。
@@ -357,6 +364,7 @@ UIBindTextStr.Bind(myTextComponent, () => model.PlayerName);
     `Runtime/_Core/Utility/Encrypt/`（3 份）、`Runtime/Common/UI/Kit/ListView/DOC/`（5 份）、`Runtime/Common/Utility/Save/`、
     `Runtime/Common/Utility/{Math,Table/CSV}/Doc_*.md`、`Runtime/Common/UI/Framework/UI框架.md` 等——**查文档先看包 README 的索引**
 - **模块包文档**: 8 个模块包（`Packages/com.cielevel.axu-module-*`、`com.cielevel.axu-indie-*`）各自带 README.md / CHANGELOG.md
+- **测试框架文档**: `Packages/com.cielevel.axu-test-framework/README.md`（Runtime 工具层 API、axu_test_* 命令参数表、报告 schema、各包接入约定）
 - **开发文档**: `Assets/DevDoc/`（Socket 技术设计等）、`Assets/_CommonDoc/`（包迁移评估）
 
 ---
@@ -395,9 +403,14 @@ UIBindTextStr.Bind(myTextComponent, () => model.PlayerName);
 
 ## 测试
 
-- 使用 Unity Test Framework (com.unity.test-framework 1.4.6)
-- **框架包内暂无 Tests**；工程测试位于 `Assets/Tests/Editor/`（AxuFrameKitV2.Tests.Editor，EditMode 冒烟测试）；
-  也可通过 Unity Pipeline API 的 `run_tests` 命令远程运行（见 `.zcode/08`）
+- 使用 Unity Test Framework (com.unity.test-framework 1.4.6) + 自建测试基建 **AxuTestFramework**（嵌入式包 `Packages/com.cielevel.axu-test-framework`，命名空间 `AxuTestFramework.*`，Runtime 工具层 `UNITY_INCLUDE_TESTS` 守护不进构建）
+- **测试分布**（2026-08-31 起）：
+  - 框架包 `Packages/com.cielevel.axu-frame-kit/Tests/Editor/`（`AxuFrameKit.Tests.Editor`）与 `Tests/Runtime/`（`AxuFrameKit.Tests.Runtime`，PlayMode）
+  - `Assets/Tests/Editor/`（`AxuFrameKitV2.Tests.Editor`）**保留**为工程级冒烟入口
+  - 模块/indie 包在各自 `Tests/{Editor,Runtime}/` 建测试：asmdef 命名 `{被测程序集}.Tests.{Editor|Runtime}`，引用 AxuTestFramework；包 `package.json` 无需声明测试依赖（缺包时测试程序集因 `UNITY_INCLUDE_TESTS` 不编译，是特性非错误）
+- **运行方式（agent 优先）**：Unity Pipeline 自定义命令 `axu_test_run` / `axu_test_status` / `axu_test_report`（用法见 `.zcode/08`）；报告 JSON 落盘 `Library/AxuTestReports/{时间戳}-{mode}.json`，截图在 `artifacts/`。人用看板：菜单 `AxuFrameKit/AxuTestRunner`
+- ⚠️ **禁止无程序集范围的裸 `run_tests`**：会实跑 pipeline 包自带测试，其 SecurityTokenTests 毒化会话 token 导致后续请求 401 死锁（2026-08-31 事故实证）；`axu_test_run` 已内置排除，直用 pipeline `run_tests` 时必须带 assembly 过滤
+- **编写规范**：类别即套件（`[Category("Axu/Smoke")]`、`[Category("Axu/Play")]`、`[Category("Axu/Core/Util")]`、`[Category("Axu/Module/{名}")]`，fixture 级标注）；命名 `方法名_条件_期望结果`；预期错误用 `LogAssert.Expect`，意外 Error 判失败（`AxuLogWatch`/`AxuNoErrorsScope`）；PlayMode 测试 `[UnitySetUp]` 先 `AxuTestState.ResetStatics()`（域重载开/关都要做，见下方勘误）
 - 示例场景位于 `Assets/TestAndSample/`
 - 每个主要功能都应有对应的 Sample 场景
 

@@ -1,0 +1,278 @@
+/* ==================================================================
+   AxuTestRunner window tokens (independent copy, no reference to
+   AxuFrameKit's AxuKitTokens.uss — values mirror its UE5 dark theme).
+   ------------------------------------------------------------------
+   本文件 = token 层 + 窗口组件层合一。色值取自框架包 AxuKitTokens.uss
+   的 .theme-ue5 意象（bg #141414 / surface #1e1e1e / accent #ff9500 /
+   ok #5cb85c / warn #ffc107 / bad #e05252），但完全独立维护：
+   本包不引用、也不依赖 AxuFrameKit.Editor 程序集。
+   USS 能力边界：无 box-shadow —— 层级感靠 surface 分层 + hairline 边线。
+   ================================================================== */
+
+/* ===== Tokens (UE5 dark, mirrored) ===== */
+.axu-theme-ue5 {
+    --ax-bg: #141414;
+    --ax-surface: #1e1e1e;
+    --ax-surface-2: #262626;
+    --ax-hover: #323232;
+    --ax-line: #262626;
+    --ax-line-2: #3a3a3a;
+    --ax-text: #e8e8e8;
+    --ax-text-2: #a0a0a0;
+    --ax-text-3: #6e6e6e;
+    --ax-accent: #ff9500;
+    --ax-accent-2: #e08600;
+    --ax-accent-soft: rgba(255, 149, 0, 0.14);
+    --ax-on-accent: #1a1a1a;
+    --ax-ok: #5cb85c;
+    --ax-ok-soft: rgba(92, 184, 92, 0.14);
+    --ax-warn: #ffc107;
+    --ax-warn-soft: rgba(255, 193, 7, 0.12);
+    --ax-bad: #e05252;
+    --ax-bad-soft: rgba(224, 82, 82, 0.13);
+    --ax-r-s: 4px;
+    --ax-r-m: 8px;
+    --ax-s2: 8px;
+    --ax-s3: 12px;
+}
+
+/* ===== Root layout ===== */
+.axu-theme-ue5 {
+    background-color: var(--ax-bg);
+    flex-grow: 1;
+    padding: var(--ax-s2);
+}
+
+.ax-topbar {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--ax-s2);
+    padding: var(--ax-s2);
+    border-radius: var(--ax-r-m);
+    background-color: var(--ax-surface);
+    border-width: 1px;
+    border-color: var(--ax-line);
+}
+
+.ax-main {
+    flex-grow: 1;
+    flex-direction: row;
+}
+
+.ax-pane {
+    flex-grow: 1;
+    flex-basis: 0;
+    border-radius: var(--ax-r-m);
+    background-color: var(--ax-surface);
+    border-width: 1px;
+    border-color: var(--ax-line);
+    padding: var(--ax-s2);
+    margin-right: var(--ax-s2);
+}
+
+.ax-pane-last {
+    margin-right: 0;
+    margin-left: var(--ax-s2);
+}
+
+.ax-pane-header {
+    color: var(--ax-text-2);
+    font-size: 11px;
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+}
+
+.ax-scroll {
+    flex-grow: 1;
+}
+
+.ax-statusbar {
+    flex-direction: row;
+    margin-top: var(--ax-s2);
+    padding: 6px var(--ax-s2);
+    border-radius: var(--ax-r-s);
+    background-color: var(--ax-surface-2);
+    border-width: 1px;
+    border-color: var(--ax-line);
+}
+
+.ax-status-text {
+    color: var(--ax-text-2);
+    white-space: normal;
+    flex-shrink: 1;
+}
+
+/* ===== Top bar controls ===== */
+.ax-mode-button {
+    height: 24px;
+    border-radius: var(--ax-r-s);
+    background-color: var(--ax-surface-2);
+    color: var(--ax-text-2);
+    border-width: 1px;
+    border-color: var(--ax-line-2);
+    margin-right: 4px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.ax-mode-button:hover {
+    background-color: var(--ax-hover);
+}
+
+.ax-mode-active {
+    background-color: var(--ax-accent-soft);
+    color: var(--ax-accent);
+    border-color: var(--ax-accent);
+    -unity-font-style: bold;
+}
+
+.ax-run-button {
+    height: 24px;
+    min-width: 64px;
+    border-radius: var(--ax-r-s);
+    background-color: var(--ax-accent);
+    color: var(--ax-on-accent);
+    -unity-font-style: bold;
+    border-width: 0;
+    margin-right: 8px;
+}
+
+.ax-run-button:hover {
+    background-color: var(--ax-accent-2);
+}
+
+.ax-secondary-button {
+    height: 24px;
+    border-radius: var(--ax-r-s);
+    background-color: var(--ax-surface-2);
+    color: var(--ax-text-2);
+    border-width: 1px;
+    border-color: var(--ax-line-2);
+    margin-right: 8px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.ax-secondary-button:hover {
+    background-color: var(--ax-hover);
+}
+
+.ax-filter-field {
+    flex-grow: 1;
+    height: 24px;
+    margin-right: 8px;
+}
+
+.ax-filter-field > #unity-text-input {
+    height: 24px;
+    border-radius: var(--ax-r-s);
+    background-color: var(--ax-surface-2);
+    border-width: 1px;
+    border-color: var(--ax-line-2);
+    color: var(--ax-text);
+}
+
+.ax-report-path {
+    height: 24px;
+    max-width: 220px;
+    border-radius: var(--ax-r-s);
+    background-color: transparent;
+    color: var(--ax-text-3);
+    border-width: 1px;
+    border-color: var(--ax-line-2);
+    padding-left: 8px;
+    padding-right: 8px;
+    -unity-text-align: middle-left;
+    overflow: hidden;
+}
+
+.ax-report-path:hover {
+    color: var(--ax-accent);
+    border-color: var(--ax-accent);
+}
+
+/* ===== Left pane: suite tree ===== */
+.ax-group-foldout .unity-foldout__content {
+    margin-left: 8px;
+}
+
+.ax-fixture-foldout {
+    margin-left: 8px;
+}
+
+.ax-test-row {
+    color: var(--ax-text);
+    padding: 2px 0 2px 12px;
+    -unity-text-align: middle-left;
+}
+
+.ax-test-row:hover {
+    color: var(--ax-accent);
+    background-color: var(--ax-hover);
+    border-radius: var(--ax-r-s);
+}
+
+.ax-footnote {
+    color: var(--ax-text-3);
+    font-size: 10px;
+    white-space: normal;
+    margin-top: var(--ax-s2);
+}
+
+.ax-empty-note {
+    color: var(--ax-text-3);
+    padding: var(--ax-s2);
+    white-space: normal;
+}
+
+/* ===== Right pane: result tree ===== */
+.ax-summary {
+    color: var(--ax-text);
+    font-size: 12px;
+    -unity-font-style: bold;
+    padding: 4px 0;
+    white-space: normal;
+}
+
+.ax-result-row {
+    margin-left: 8px;
+}
+
+.ax-result-row > .unity-toggle__text {
+    white-space: normal;
+    flex-shrink: 1;
+}
+
+.ax-row-pass > .unity-toggle__text {
+    color: var(--ax-ok);
+}
+
+.ax-row-skip > .unity-toggle__text {
+    color: var(--ax-warn);
+}
+
+.ax-row-fail > .unity-toggle__text {
+    color: var(--ax-bad);
+    -unity-font-style: bold;
+}
+
+.ax-result-detail {
+    color: var(--ax-text-2);
+    font-size: 11px;
+    white-space: normal;
+    padding: 2px 4px 6px 16px;
+}
+
+/* ===== Foldout arrows / headers tinting (editor theme alignment) ===== */
+.axu-theme-ue5 .unity-foldout__toggle {
+    color: var(--ax-text);
+    -unity-font-style: bold;
+}
+
+.axu-theme-ue5 .unity-foldout__toggle:hover {
+    color: var(--ax-accent);
+}
+
+.axu-theme-ue5 .unity-label {
+    color: var(--ax-text);
+}
