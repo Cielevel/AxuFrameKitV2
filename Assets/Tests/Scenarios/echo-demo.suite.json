@@ -1,0 +1,34 @@
+{
+  "schema": "axu-suite/1",
+  "id": "echo-demo",
+  "title": "Phase 1 DoD 演示套件：echo 能力端到端（内联场景 + profile 扇出）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "echo.demo",
+      "capability": "echo",
+      "title": "echo 基线（2 秒 / 4 步）",
+      "params": {
+        "message": "hello from axu scenario",
+        "delaySeconds": 2.0,
+        "steps": 4
+      },
+      "budgets": []
+    },
+    {
+      "ref": "echo.demo",
+      "profile": "fast"
+    }
+  ],
+  "profiles": {
+    "fast": {
+      "delaySeconds": 0.2,
+      "steps": 1
+    }
+  },
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 120
+  }
+}

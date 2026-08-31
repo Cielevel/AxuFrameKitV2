@@ -3,13 +3,11 @@
 > 记录已识别但暂缓处理的问题。每项注明发现来源与建议方案，处理完成后移入下方"已完成"或直接删除。
 > （2026-08-31 由 AxuTestFramework 交付审查与出包验证产生）
 
-## 1. OllamaModelCall 窗口脚本阻断 Player 构建 【P1 级，既有问题】
+## 1. ~~OllamaModelCall 窗口脚本阻断 Player 构建~~ 【已修复 2026-08-31，Phase 1 前置授权修复】
 
-- **现象**：Player 构建（StandaloneOSX）在脚本编译阶段即失败，6 个编译错误，`Build/` 零产物。首次实证于 2026-08-31 出包验证（pipeline buildId `build_9b7239184d1e`）。
-- **根因**：`Assets/AxuExperimental/OllamaModelCall/OllamaScriptFillerWindow.cs` 是 EditorWindow 脚本（`using UnityEditor.UIElements`、`[MenuItem]`、`ObjectField`），但**无 `#if UNITY_EDITOR` 保护、不在 Editor 目录**，且 `Assets/AxuExperimental/` 无 asmdef → 被编入 `Assembly-CSharp` 参与 Player 编译，而 Player 编译无 UnityEditor 引用（CS0234/CS0246）。
-- **该问题早于测试体系**：文件最后修改于旧提交（78653cc / 23f9d66），工作区未改动。
-- **建议修复**：移入 `Editor/` 子目录（连同 .meta 保 GUID），或整文件 `#if UNITY_EDITOR` 包裹。
-- ⚠️ **注意**：构建停在第一个报错文件，`Assets/AxuExperimental/` 下可能还有同类未保护窗口脚本（9 个实验模块多为编辑器窗口）——修复后重跑构建逐一排查。当前 6 个错误均出自上述单文件。
+- **修复**：`Assets/AxuExperimental/OllamaModelCall/OllamaScriptFillerWindow.cs` 整文件 `#if UNITY_EDITOR` 包裹（未移动文件、GUID 不变）。
+- **审计**：全 Assets 树扫描 `using UnityEditor`/`EditorWindow`/`MenuItem`/`AssetDatabase`/`EditorPrefs` 等无保护用例，除该文件外其余命中全部位于 `Editor/` 子目录（Player 不编译），无同类残留。
+- **验证**：以 Phase 1 DoD 的 macOS Player 构建实测为准（见 `.zcode/plans/axu-test-framework-game-test-platform-plan.md` Phase 1 台账）。
 
 ## 2. `_Core`"纯 C# 零依赖"表述与实际不符 【P3 级，既有问题】
 

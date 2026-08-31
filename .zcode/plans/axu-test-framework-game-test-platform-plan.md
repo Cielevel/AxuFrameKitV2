@@ -18,7 +18,8 @@
 4. **进度记录与 git 同步**：每个 Phase 完成后：先更新 §7 进度台账（状态/日期/提交/问答记录），再做 git 提交（提交信息建议前缀 `axu-test-v2:`），必要时推送远端——保证其它电脑拉取后可无缝继续开发；中间成果可按子任务多次提交，但每个 Phase 必须以一次包含台账更新的收尾提交结束。
 5. **跨平台双要求（Windows + macOS）**：
    - **持续开发能力**：本工程内的开发/验证流程在 Windows 与 macOS 均可执行——交付的命令模板、脚本、路径一律提供双平台形态（如 Player 启动验证：macOS 为 `.app/Contents/MacOS/<App>`，Windows 为 `.exe`），代码不得硬编码单平台路径；
-   - **使用能力**：包导入其它工程（Windows/macOS 皆可）即用——已是 UPM 包天然支持，但必须坚持：零本工程特有资产/路径/包引用；平台差异 API（FrameTimingManager、ProfilerRecorder、persistentDataPath、输入注入等）一律做运行时探测与降级，并在能力文档中标注各平台可用性。
+   - **使用能力**：包导入其它工程（Windows/macOS 皆可）即用——已是 UPM 包天然支持，但必须坚持：零本工程特有资产/路径/包引用；平台差异 API（FrameTimingManager、ProfilerRecorder、persistentDataPath、输入注入等）一律做运行时探测与降级，并在能力文档中标注各平台可用性；
+   - **实测忠实记录（2026-08-31 补充）**：验证结果只记录**实际执行平台**的实测——在 macOS 上实测就记 macOS 的结果，在 Windows 上实测就记 Windows 的结果，不做跨平台推定或"应当同样成立"的表述；未实测的平台在台账/文档中明确标注"未实测"。当前开发机为 macOS。
 
 ---
 
@@ -486,7 +487,7 @@ AxuMetrics.Gauge("Room.EnemyCount", enemies.Count);       // 瞬时值（采样�
 | Phase | 状态 | 完成日期 | 收尾提交 | 问答记录 |
 |---|---|---|---|---|
 | 0 架构基座 | **已完成（2026-08-31）** | 2026-08-31 | `axu-test-v2: Phase 0 架构基座`（本条目所在提交） | **开工问答（2026-08-31，一次性作答）**：① pipeline 解除方式 = v1 两个命令文件（axu_test_*、axu_window_screenshot，连 .meta）迁入 `Editor.Pipeline/`，Editor 主程序集零 pipeline 引用；② `AXU_TEST_AGENT` = 开发期 Standalone 常开，ProjectSettings 随本 Phase 收尾提交定版；③ 包版本 = Phase 0 即升 0.2.0；④ schema 草案 = 新建包根 `DOC/`。**实施记录**：新增 Core/Agent/Editor.Pipeline 三 asmdef + `SchemaNames.cs`/`AgentInfo.cs`（空程序集不产出 dll，以 Phase 1 反正需要的最小文件填充）；实施勘误：versionDefines 注入点为 Editor.Pipeline 自身（程序集级作用域，不能跨程序集供给）；expression `0.5.0-exp` 实证匹配 0.5.0-exp.1。**DoD 验证**：编译零 error；`Library/ScriptAssemblies/` 5 dll 齐全；`axu_test_run/status/report` 在册且归属 `AxuTestFramework.Editor.Pipeline`；回归 包测试 6/6 + Axu/Smoke 7/7 全绿；AXU_TEST_AGENT 开/关两形态在 Phase 0 因尚无 `#if` 守护代码而编译等价（按构造成立），真实验证移至 Phase 1 DoD。**零影响红线**：①②③④ 全过（Runtime asmdef 未动；Editor asmdef 仅按方案调整 references） |
-| 1 Agent 骨架 | 未开始 | — | — | — |
+| 1 Agent 骨架 | **已完成（2026-08-31/09-01 跨夜）** | 2026-09-01 | `axu-test-v2: Phase 1 Agent 骨架`（本条目所在提交） | **开工问答（2026-08-31，一次性作答）**：① backlog #1 Player 构建阻断 → 授权前置修复（已修：`OllamaScriptFillerWindow.cs` 包 `#if UNITY_EDITOR`，全树审计无同类；Player 构建 45s 首次通过即最终验证）；② echo 内建常驻；③ Editor 报告落 `Library/AxuTestReports/scenario/`。**实施记录**：Core 26 文件（schema POCO/SuiteLoader 扇出/CLI/报告模型）+ Agent 14 文件（Bootstrap/Runner 状态机/看门狗/Echo/报告写盘/退出码）+ Editor 4 文件（define 菜单/JSON 模板菜单/Run Suite 菜单/宿主清道夫）；Demo 套件 `Assets/Tests/Scenarios/echo-demo.suite.json`（内联场景 + `@fast` profile 扇出）。**集成修复 4 项**：① `NamedBuildTarget` 三轮（`UnityEditor.Build` 命名空间 → `.TargetName` 属性）；② RunSingle 裸 `yield return IEnumerator` 改 `StartCoroutine`；③ **环境异常实证：本机 Unity 6000.0.23f1 Editor 的 `WaitForSecondsRealtime` 等待契约失效（m_WaitUntilTime=-1/逐帧放行）** → `AgentWait.RealtimeSeconds` 改为 `Time.realtimeSinceStartup` 逐帧轮询（不再依赖 WFSRT，看门狗粒度升至 ≤1 帧）——⚠️ 工程内其他直接用 WFSRT 的代码同环境可能同样被吞；④ StartFromSources 守卫去掉 `_sourcesChecked`（防跨 Play 泄漏宿主吞启动）+ `AgentHostCleanup` 清道夫。**DoD 验证（macOS 实测，Windows 未实测）**：Editor PlayMode 两轮端到端全绿（2686/213ms、2170/201ms，第二次进 Play 激活正常）；macOS Player 构建 45s 首次通过 → CLI 运行 `-axuSuite -axuQuitOnDone -axuReport` 退出码 0、报告 2/2 pass（2289/201ms，isEditor=false）；`AXU_TEST_AGENT` 开/关两形态实测（dll 29184↔17920 B、守护串 1↔0、define 菜单 dogfood 通过，且发现 sed 直改 ProjectSettings 不会被编译管线感知——切换 define 必须走 API/菜单）；零影响回归 包测试 6/6 + Axu/Smoke 7/7、`axu_test_status` 探活正常、Console 零 error。**实现偏离（已接受）**：Unity 6 移除 `Application.exitCode` 属性 → 退出码经 `Application.Quit(int)` 携带；qualityLevel/resolution 按数值；finding severity 输出 "info/warn/error"；`RunSuite` 返回 bool。**遗留（记 Phase 4）**：Editor 层"桥文件存在但 define 关闭"的显式预检警告。 |
 | 2 度量层 | 未开始 | — | — | — |
 | 3 首批能力 | 未开始 | — | — | — |
 | 4 工具链 | 未开始 | — | — | — |

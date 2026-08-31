@@ -2,8 +2,16 @@
 
 All notable changes to this package will be documented in this file.
 
-## [0.2.0] - 2026-08-31（场景测试平台建设启动，Phase 0 架构基座已落地）
+## [0.2.0] - 2026-08-31（场景测试平台建设启动，Phase 0/1 已落地）
 
+- **Phase 1 Agent 骨架落地**：Core 层 scenario/suite 模型（内联场景、`ref+profile` 扇出 `@profile` 后缀、深合并）、
+  `ScenarioCli` 命令行解析（`-axuSuite/-axuScenario/-axuQuitOnDone/-axuReport/...`）、Agent 层
+  `AgentBootstrap`（RuntimeInitializeOnLoad + 场景组件双入口）+ `AgentRunnerHost`（顺序执行、真实时间看门狗、
+  异常兜底）+ `ScenarioReportWriter`（schema `axu-scenario-report/1`）+ 状态文件 + 退出码（Player 经
+  `Application.Quit(int)` 携带，Editor 永不退出）；内建 `echo` 能力（链路自检）；Editor 菜单
+  `AxuTestFramework/Enable Test Agent`（define 开关）、`Create Scenario/Suite JSON`、`Run Suite JSON...`
+  （Editor 桥文件 `Temp/axu_pending_suite.json` → Play 自动执行）。macOS Player 实测：构建后
+  `-batchmode` 外的正常启动 + `-axuSuite ... -axuQuitOnDone` 退出码 0、报告 2/2 pass。
 - **程序集拓扑扩展**：新增 `AxuTestFramework.Core`（纯 C# 基座，`noEngineReferences: true`，唯一外部依赖
   Newtonsoft.Json）、`AxuTestFramework.Agent`（Player 可编译的场景测试运行时，公开入口由 `AXU_TEST_AGENT`
   define 守护）、`AxuTestFramework.Editor.Pipeline`（Editor-only）。三者 0.2.0 先落程序集与契约，实现按

@@ -1,0 +1,512 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using AxuTestFramework.Agent.Bootstrap;
+using AxuTestFramework.Agent.Reports;
+using AxuTestFramework.Agent.Tools;
+using AxuTestFramework.Core;
+using AxuTestFramework.Core.Json;
+using AxuTestFramework.Core.Report;
+using AxuTestFramework.Core.Scenarios;
+using Newtonsoft.Json.Linq;
+using UnityEngine;
+
+namespace AxuTestFramework.Agent.Runner
+{
+    /// <summary>
+    /// 场景测试运行宿主（核心状态机）：
+    /// 启动来源（Editor 桥文件 &gt; 命令行参数，皆无则静默待命）→ 加载 suite（兼容单 scenario 文件）
+    /// → 逐条顺序执行（能力分发、真实时间超时看门狗、异常兜底）→ 汇总报告/状态文件/退出码。
+    /// </summary>
+    public class AgentRunnerHost : MonoBehaviour
+    {
+        /// <summary>宿主 GameObject 名（DontDestroyOnLoad + DontSave）。</summary>
+        public const string HostObjectName = "AxuTestAgentHost";
+
+        /// <summary>scenarioTimeoutSec 未配置时的默认看门狗超时（秒）。</summary>
+        public const double DefaultScenarioTimeoutSec = 600.0;
+
+#if AXU_TEST_AGENT
+        bool _isRunning;
+        // Unity 6 已移除 Application.exitCode 属性：退出码经 Application.Quit(int) 在退出时携带（见 MaybeQuit）
+        int _exitCode;
+#endif
+
+        /// <summary>是否正在运行 suite。</summary>
+        public bool IsRunning
+        {
+            get
+            {
+#if AXU_TEST_AGENT
+                return _isRunning;
+#else
+                return false;
+#endif
+            }
+        }
+
+        /// <summary>
+        /// 从启动来源解析并开始运行：先读 Editor 桥文件（读到立即删除），否则解析命令行；
+        /// 两者皆无则静默待命（不报错）。防重入只看 <see cref="_isRunning"/>——
+        /// 宿主 GO 是 DontDestroyOnLoad + HideFlags.DontSave，在 Editor 下可能跨 Play 泄漏为编辑态对象，
+        /// 实例字段会带着陈旧值存活；任何"已检查过"类的守卫都会把新 Play 的启动静默吞掉。
+        /// </summary>
+        public void StartFromSources()
+        {
+#if AXU_TEST_AGENT
+            if (_isRunning) return;
+
+            BuiltInCapabilities.RegisterAll();
+
+            var launch = ReadEditorBridge();
+            if (launch == null)
+            {
+                var cli = ScenarioCli.Parse(Environment.GetCommandLineArgs());
+                if (!string.IsNullOrEmpty(cli.SuitePath)) launch = FromCliOptions(cli);
+            }
+
+            if (launch == null) return; // 无启动来源：静默待命
+            StartWithLaunchOptions(launch);
+#endif
+        }
+
+        /// <summary>以给定启动参数开始一次运行（AxuTestAgent.RunSuite API 路径）；define 关闭时返回 false。</summary>
+        public bool StartWithLaunchOptions(ScenarioLaunchOptions launch)
+        {
+#if AXU_TEST_AGENT
+            if (launch == null || string.IsNullOrEmpty(launch.SuitePath))
+            {
+                Debug.LogWarning("[AxuTestAgent] 启动参数缺少 SuitePath，忽略");
+                return false;
+            }
+
+            if (_isRunning)
+            {
+                Debug.LogWarning("[AxuTestAgent] 已有 suite 在运行，忽略新的启动请求");
+                return false;
+            }
+
+            StartCoroutine(RunAll(launch));
+            return true;
+#else
+            return false; // define 未开启：不产生激活行为
+#endif
+        }
+
+        /// <summary>获取或创建常驻宿主（名 AxuTestAgentHost，DontDestroyOnLoad + DontSave）。</summary>
+        public static AgentRunnerHost EnsureHost()
+        {
+            var existing = GameObject.Find(HostObjectName);
+            if (existing != null)
+            {
+                var host = existing.GetComponent<AgentRunnerHost>();
+                if (host != null) return host;
+            }
+
+            var go = new GameObject(HostObjectName);
+            DontDestroyOnLoad(go);
+            go.hideFlags = HideFlags.DontSave;
+            return go.AddComponent<AgentRunnerHost>();
+        }
+
+#if AXU_TEST_AGENT
+        /// <summary>读取 Editor 桥文件 Temp/axu_pending_suite.json；读到后立即删除再返回启动参数（仅 Editor 生效）。</summary>
+        static ScenarioLaunchOptions ReadEditorBridge()
+        {
+            var bridgePath = AgentPaths.EditorBridgeFilePath;
+            if (string.IsNullOrEmpty(bridgePath) || !File.Exists(bridgePath)) return null;
+
+            string json;
+            try
+            {
+                json = File.ReadAllText(bridgePath);
+                File.Delete(bridgePath); // 立即删除，防止重复消费
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[AxuTestAgent] 桥文件读取/删除失败：" + ex.Message);
+                return null;
+            }
+
+            try
+            {
+                var root = JObject.Parse(json);
+                var suitePath = root["suitePath"] != null ? root["suitePath"].ToString() : null;
+                if (string.IsNullOrWhiteSpace(suitePath)) return null;
+
+                var launch = new ScenarioLaunchOptions { SuitePath = suitePath, Source = "editor-bridge" };
+
+                if (root["scenarioIds"] is JArray ids)
+                {
+                    foreach (var id in ids)
+                    {
+                        if (!string.IsNullOrWhiteSpace(id != null ? id.ToString() : null))
+                            launch.ScenarioIds.Add(id.ToString());
+                    }
+                }
+
+                var quitOnDone = root["quitOnDone"] != null && root["quitOnDone"].Type == JTokenType.Boolean
+                    ? (bool)root["quitOnDone"]
+                    : false;
+                launch.QuitOnDone = Application.isEditor ? false : quitOnDone; // Editor 源下一律不退出
+                return launch;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[AxuTestAgent] 桥文件解析失败：" + ex.Message);
+                return null;
+            }
+        }
+
+        /// <summary>CLI 解析结果 → 合并启动参数。</summary>
+        static ScenarioLaunchOptions FromCliOptions(ScenarioCliOptions cli)
+        {
+            return new ScenarioLaunchOptions
+            {
+                SuitePath = cli.SuitePath,
+                ScenarioIds = cli.ScenarioIds != null ? new List<string>(cli.ScenarioIds) : new List<string>(),
+                ReportPath = cli.ReportPath,
+                ArtifactsDir = cli.ArtifactsDir,
+                QuitOnDone = cli.QuitOnDone ?? false,
+                WarnAsFail = cli.WarnAsFail ?? false,
+                Seed = cli.Seed,
+                OverlayHint = cli.OverlayHint,
+                Source = "cli",
+            };
+        }
+
+        /// <summary>加载 suite；schema 为单 scenario 时包装成单条 suite。</summary>
+        static SuiteDef LoadSuiteFromPath(string path)
+        {
+            try
+            {
+                return SuiteLoader.LoadSuite(path);
+            }
+            catch (AxuSchemaException ex) when (ex.ActualSchema == SchemaNames.Scenario)
+            {
+                var scenario = SuiteLoader.LoadScenario(path);
+                return new SuiteDef
+                {
+                    Id = scenario.Id,
+                    Scenarios = new List<SuiteScenarioRef> { new SuiteScenarioRef { Inline = scenario } },
+                };
+            }
+        }
+
+        /// <summary>主流程：加载 → 逐条执行 → 汇总报告/退出码/状态文件 →（Player 且 QuitOnDone）退出。</summary>
+        IEnumerator RunAll(ScenarioLaunchOptions launch)
+        {
+            _isRunning = true;
+            var suiteIdFallback = AgentPaths.SanitizeFileName(SuiteIdFallbackFromPath(launch.SuitePath));
+            var reportPath = string.IsNullOrEmpty(launch.ReportPath)
+                ? AgentPaths.DefaultReportPath(suiteIdFallback)
+                : launch.ReportPath;
+            var startedUtc = DateTime.UtcNow;
+
+            try
+            {
+                // ---- 阶段 A：加载与解析（无协程让步，可安全 try/catch）----
+                SuiteDef suite;
+                List<ResolvedScenario> resolved;
+                try
+                {
+                    suite = LoadSuiteFromPath(launch.SuitePath);
+                    resolved = SuiteLoader.Resolve(suite, launch.ScenarioIds);
+                }
+                catch (Exception ex)
+                {
+                    FailInfrastructure(suiteIdFallback, startedUtc, reportPath, "suite 加载/解析失败：" + ex.Message);
+                    yield break;
+                }
+
+                var settings = suite.Settings ?? new SuiteSettings();
+                var warnAsFail = settings.WarnAsFail || launch.WarnAsFail;
+                var stopOnFailure = settings.StopOnFailure;
+                var timeoutSec = settings.ScenarioTimeoutSec ?? DefaultScenarioTimeoutSec;
+
+                ScenarioStatusFile.WriteRunning(suite.Id, startedUtc, 0, resolved.Count, reportPath);
+
+                // ---- 阶段 B：逐条顺序执行（RunSingle 内部已兜底一切 runner 异常）----
+                var results = new List<ScenarioReportResult>();
+                var failureSeen = false;
+                foreach (var scenario in resolved)
+                {
+                    if (stopOnFailure && failureSeen)
+                    {
+                        AgentLog.Instance.Warning($"stopOnFailure 生效：跳过剩余 scenario（下一个为 {scenario.Id}）");
+                        break;
+                    }
+
+                    var handle = new ScenarioRunHandle(scenario.Id);
+                    var result = new ScenarioReportResult
+                    {
+                        ScenarioId = scenario.Id,
+                        Capability = scenario.Capability,
+                        Unbudgeted = scenario.Budgets == null || scenario.Budgets.Count == 0,
+                    };
+
+                    yield return StartCoroutine(RunSingle(scenario, handle, timeoutSec));
+
+                    result.Status = MapStatus(handle.Status);
+                    result.DurationMs = handle.ElapsedMilliseconds;
+                    result.Findings.AddRange(handle.Findings);
+                    results.Add(result);
+                    if (result.Status == "fail" || result.Status == "error") failureSeen = true;
+
+                    AgentLog.Instance.Info(
+                        $"scenario \"{scenario.Id}\" 完成：{result.Status}（{result.DurationMs}ms，findings={result.Findings.Count}）");
+                    ScenarioStatusFile.WriteRunning(suite.Id, startedUtc, results.Count, resolved.Count, reportPath);
+                }
+
+                // ---- 阶段 C：汇总、报告、退出码（无协程让步，可安全 try/catch）----
+                var summary = new ReportSummary();
+                foreach (var result in results)
+                {
+                    summary.Total++;
+                    if (result.Status == "pass") summary.Passed++;
+                    else if (result.Status == "warn") summary.Warned++;
+                    else summary.Failed++;
+                }
+
+                ScenarioExitCode exitCode;
+                if (summary.Failed > 0) exitCode = ScenarioExitCode.Failures;
+                else if (summary.Warned > 0) exitCode = warnAsFail ? ScenarioExitCode.Failures : ScenarioExitCode.WarningsOnly;
+                else exitCode = ScenarioExitCode.Success;
+
+                var report = new ScenarioReport
+                {
+                    SuiteId = suite.Id,
+                    StartedAt = FormatUtc(startedUtc),
+                    EndedAt = FormatUtc(DateTime.UtcNow),
+                    Environment = ScenarioReportWriter.CollectEnvironment(),
+                    Summary = summary,
+                    ExitCode = exitCode,
+                    Results = results,
+                };
+
+                string finalPath;
+                try
+                {
+                    finalPath = ScenarioReportWriter.WriteReport(report, reportPath);
+                }
+                catch (Exception ex)
+                {
+                    FailInfrastructure(suite.Id, startedUtc, reportPath, "报告写盘失败：" + ex.Message);
+                    yield break;
+                }
+
+                _exitCode = (int)exitCode; // Player 退出码经 Quit(int) 携带；Editor 无进程退出码语义
+                ScenarioStatusFile.WriteCompleted(suite.Id, startedUtc, results.Count, resolved.Count, finalPath, summary, (int)exitCode);
+                AgentLog.Instance.Info(
+                    $"suite \"{suite.Id}\" 结束：{summary.Passed} pass / {summary.Warned} warn / {summary.Failed} fail；退出码 {(int)exitCode}；报告 {finalPath}");
+            }
+            finally
+            {
+                _isRunning = false;
+                // QuitOnDone 退出码=判定；Editor 内永不 Quit
+                if (launch.QuitOnDone && !Application.isEditor) Application.Quit(_exitCode);
+            }
+        }
+
+        /// <summary>执行单个 scenario：能力分发 → Runner 协程 + 超时看门狗 + 异常兜底。</summary>
+        IEnumerator RunSingle(ResolvedScenario scenario, ScenarioRunHandle handle, double timeoutSec)
+        {
+            if (!AxuCapabilityRegistry.TryGet(scenario.Capability, out var capability))
+            {
+                handle.Status = RunStatus.Error;
+                handle.AddFinding(FindingSeverity.Error, "CAPABILITY_MISSING",
+                    $"capability \"{scenario.Capability}\" 未注册（scenario \"{scenario.Id}\"）");
+                yield break;
+            }
+
+            IScenarioRunner runner = null;
+            try
+            {
+                runner = capability.CreateRunner(new ScenarioContext(handle, AgentLog.Instance));
+            }
+            catch (Exception ex)
+            {
+                Fault(handle, "RUNTIME_EXCEPTION", ex);
+            }
+
+            IEnumerator execution = null;
+            if (runner != null)
+            {
+                try
+                {
+                    execution = runner.Run(scenario, handle);
+                }
+                catch (Exception ex)
+                {
+                    Fault(handle, "RUNTIME_EXCEPTION", ex);
+                }
+            }
+
+            if (runner == null || execution == null) yield break;
+            // 显式 StartCoroutine：保证 Supervise 的每步 yield（含 WaitForSecondsRealtime 段）真正进入
+            // Unity 协程调度——裸 yield return IEnumerator 的展开语义不可靠，实测等待会被吞掉。
+            yield return StartCoroutine(Supervise(execution, handle, timeoutSec));
+        }
+
+        /// <summary>
+        /// 监督执行循环：逐步推进 Runner 迭代器；嵌套迭代器（如 AgentWait 分段等待）手动代步，
+        /// 其产出的等待指令交给 Unity（≤0.25s 段），每段结束复查超时/取消——保证看门狗按真实时间介入。
+        /// </summary>
+        IEnumerator Supervise(IEnumerator execution, ScenarioRunHandle handle, double timeoutSec)
+        {
+            var stop = false;
+            while (!stop)
+            {
+                if (handle.CancelRequested || IsTimedOut(handle, timeoutSec))
+                {
+                    if (!handle.CancelRequested) Timeout(handle, timeoutSec);
+                    stop = true;
+                    break;
+                }
+
+                bool moved;
+                try
+                {
+                    moved = execution.MoveNext();
+                }
+                catch (Exception ex)
+                {
+                    Fault(handle, "RUNTIME_EXCEPTION", ex);
+                    stop = true;
+                    break;
+                }
+
+                if (!moved)
+                {
+                    stop = true;
+                    break;
+                }
+
+                var current = execution.Current;
+                if (current is IEnumerator nested)
+                {
+                    // 嵌套迭代器：手动代步（不递归），段间复查看门狗
+                    while (true)
+                    {
+                        if (handle.CancelRequested || IsTimedOut(handle, timeoutSec))
+                        {
+                            if (!handle.CancelRequested) Timeout(handle, timeoutSec);
+                            stop = true;
+                            break;
+                        }
+
+                        bool nestedMoved;
+                        try
+                        {
+                            nestedMoved = nested.MoveNext();
+                        }
+                        catch (Exception ex)
+                        {
+                            Fault(handle, "RUNTIME_EXCEPTION", ex);
+                            stop = true;
+                            break;
+                        }
+
+                        if (!nestedMoved) break;
+
+                        var nestedCurrent = nested.Current;
+                        if (nestedCurrent != null && !(nestedCurrent is IEnumerator))
+                            yield return nestedCurrent; // 等待指令交给 Unity（WaitForSecondsRealtime 段）
+                        else
+                            yield return null;
+                    }
+                }
+                else if (current != null)
+                {
+                    yield return current; // 其余指令交 Unity（注：长等待指令期间看门狗不介入）
+                }
+                else
+                {
+                    yield return null; // 帧推进
+                }
+            }
+
+            // 自然完成且 Runner 未定稿状态：无错即 Passed
+            if (!handle.CancelRequested && handle.Status == RunStatus.Running)
+                handle.Status = RunStatus.Passed;
+        }
+
+        /// <summary>看门狗超时：标记取消并置 Error + RUNTIME_TIMEOUT 结论。</summary>
+        static void Timeout(ScenarioRunHandle handle, double timeoutSec)
+        {
+            handle.MarkCancelled($"看门狗超时（>{timeoutSec:0.#}s）");
+            handle.Status = RunStatus.Error;
+            handle.AddFinding(FindingSeverity.Error, "RUNTIME_TIMEOUT",
+                $"scenario 执行超过 {timeoutSec:0.#}s，已被看门狗中断");
+        }
+
+        /// <summary>执行期异常兜底：置 Error + 结论（含异常消息）。</summary>
+        static void Fault(ScenarioRunHandle handle, string code, Exception ex)
+        {
+            handle.Status = RunStatus.Error;
+            handle.AddFinding(FindingSeverity.Error, code, $"{ex.GetType().Name}: {ex.Message}");
+        }
+
+        static bool IsTimedOut(ScenarioRunHandle handle, double timeoutSec)
+        {
+            return timeoutSec > 0 && handle.ElapsedSeconds > timeoutSec;
+        }
+
+        /// <summary>基础设施错误：写 error 报告 + 状态文件 + 退出码 3。</summary>
+        void FailInfrastructure(string suiteId, DateTime startedUtc, string reportPath, string message)
+        {
+            AgentLog.Instance.Error(message);
+
+            var report = new ScenarioReport
+            {
+                SuiteId = suiteId,
+                StartedAt = FormatUtc(startedUtc),
+                EndedAt = FormatUtc(DateTime.UtcNow),
+                Environment = ScenarioReportWriter.CollectEnvironment(),
+                Summary = new ReportSummary(),
+                ExitCode = ScenarioExitCode.InfrastructureError,
+                Results = new List<ScenarioReportResult>(),
+            };
+
+            string finalPath = null;
+            try
+            {
+                finalPath = ScenarioReportWriter.WriteReport(report, reportPath);
+            }
+            catch (Exception ex)
+            {
+                AgentLog.Instance.Error("错误报告写盘失败：" + ex.Message);
+            }
+
+            _exitCode = (int)ScenarioExitCode.InfrastructureError; // QuitOnDone 退出时携带；报告/状态文件为消费端事实来源
+            ScenarioStatusFile.WriteError(suiteId, startedUtc, finalPath);
+        }
+
+        /// <summary>RunStatus → 报告 status 串（pass/warn/fail/error；Running/Cancelled 归 error）。</summary>
+        static string MapStatus(RunStatus status)
+        {
+            switch (status)
+            {
+                case RunStatus.Passed: return "pass";
+                case RunStatus.Warned: return "warn";
+                case RunStatus.Failed: return "fail";
+                default: return "error";
+            }
+        }
+
+        static string SuiteIdFallbackFromPath(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return "unknown-suite";
+            var stem = Path.GetFileNameWithoutExtension(path);
+            return string.IsNullOrEmpty(stem) ? "unknown-suite" : stem;
+        }
+
+        static string FormatUtc(DateTime utc)
+        {
+            return utc.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
+        }
+#endif
+    }
+}
