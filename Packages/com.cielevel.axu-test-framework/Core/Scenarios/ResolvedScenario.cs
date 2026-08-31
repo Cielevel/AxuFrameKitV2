@@ -20,8 +20,11 @@ namespace AxuTestFramework.Core.Scenarios
         /// <summary>预算规则（无预算时为空列表 → 结果标 unbudgeted）。</summary>
         public List<BudgetRule> Budgets = new List<BudgetRule>();
 
-        /// <summary>基线文件路径（继承自源 scenario，可选）。</summary>
+        /// <summary>基线文件路径（继承自源 scenario，可选；相对 <see cref="SuiteDirectory"/> 解析）。</summary>
         public string Baseline;
+
+        /// <summary>suite/scenario 文件所在目录（scenario.baseline 相对路径的解析基准；宿主在解析时填充）。</summary>
+        public string SuiteDirectory;
 
         /// <summary>源 id（不含 @profile 后缀，供过滤与追溯）。</summary>
         public string SourceId;

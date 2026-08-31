@@ -1,19 +1,24 @@
 {
   "schema": "axu-suite/1",
   "id": "echo-demo",
-  "title": "Phase 1 DoD 演示套件：echo 能力端到端（内联场景 + profile 扇出）",
+  "title": "echo 能力端到端演示（Phase 1 链路 + Phase 2 度量/预算/基线载体）",
   "scenarios": [
     {
       "schema": "axu-scenario/1",
       "id": "echo.demo",
       "capability": "echo",
-      "title": "echo 基线（2 秒 / 4 步）",
+      "title": "echo 基线（2 秒 / 4 步，带预算与基线）",
       "params": {
         "message": "hello from axu scenario",
         "delaySeconds": 2.0,
         "steps": 4
       },
-      "budgets": []
+      "budgets": [
+        { "metric": "fps.avg", "op": ">=", "value": 15 },
+        { "metric": "memory.allocatedMax", "op": "<=", "value": 16384, "unit": "MB", "severity": "warn" },
+        { "metric": "custom.scope.echo.p95", "op": "<=", "value": 3000, "unit": "ms", "severity": "warn" }
+      ],
+      "baseline": "baselines/echo.demo.baseline.json"
     },
     {
       "ref": "echo.demo",

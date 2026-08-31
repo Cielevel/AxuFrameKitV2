@@ -36,6 +36,9 @@ namespace AxuTestFramework.Core.Scenarios
                     case "axuartifacts":
                         options.ArtifactsDir = NextValue(args, ref i);
                         break;
+                    case "axubaselinesave":
+                        options.BaselineSavePath = NextValue(args, ref i);
+                        break;
                     case "axuquitondone":
                         options.QuitOnDone = true;
                         break;

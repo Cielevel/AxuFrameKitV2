@@ -35,8 +35,10 @@ namespace AxuTestFramework.Core.Scenarios
         /// 把 suite 解析为可执行列表：内联 scenario 直接展开；ref 引用同文件内联定义；
         /// ref+profile 用 suite.profiles[profile] 深合并覆盖 params（profile 优先），id 追加 "@profile"；
         /// enabled=false 跳过；selectedIds 非空时仅保留 SourceId 或 Id 命中的条目。
+        /// suiteDirectory：suite/scenario 文件所在目录，写入每条 ResolvedScenario.SuiteDirectory
+        /// （baseline 相对路径的解析基准；单 scenario 文件路径同样传其目录）。
         /// </summary>
-        public static List<ResolvedScenario> Resolve(SuiteDef suite, IList<string> selectedIds = null)
+        public static List<ResolvedScenario> Resolve(SuiteDef suite, IList<string> selectedIds = null, string suiteDirectory = null)
         {
             var results = new List<ResolvedScenario>();
             if (suite == null || suite.Scenarios == null) return results;
@@ -89,7 +91,10 @@ namespace AxuTestFramework.Core.Scenarios
                     Capability = baseDef.Capability,
                     Params = mergedParams,
                     Budgets = baseDef.Budgets != null ? new List<BudgetRule>(baseDef.Budgets) : new List<BudgetRule>(),
-                    Baseline = baseDef.Baseline,
+                    // 扇出实例（@profile）不继承源场景的基线——不同 profile 是不同负载，
+                    // 拿源场景基线对比会把正常差异误判成回归；派生实例默认无基线
+                    Baseline = hasProfile ? null : baseDef.Baseline,
+                    SuiteDirectory = suiteDirectory,
                     SourceId = sourceId,
                 };
 

@@ -1,0 +1,24 @@
+{
+  "schema": "axu-baseline/1",
+  "scenarioId": "echo.demo@fast",
+  "createdAtUtc": "2026-08-31T18:33:44.021Z",
+  "metrics": {
+    "fps.avg": 555.07691679922561,
+    "fps.p50": 555.07691679922561,
+    "fps.p95": 555.07691679922561,
+    "fps.min": 555.07691679922561,
+    "frameTime.cpuAvg": 1.465834,
+    "frameTime.cpuP95": 1.465834,
+    "frameTime.gpuAvg": 1.1403749958844855,
+    "frameTime.gpuP95": 1.1403749958844855,
+    "memory.allocatedMax": 609.246337890625,
+    "memory.allocatedEnd": 609.246337890625,
+    "memory.monoUsedMax": 936.51953125,
+    "memory.reservedMax": 1056.8032760620117,
+    "gc.allocPerFrameAvg": 13.018660481770834,
+    "gc.collections": 0.0,
+    "custom.scope.echo.avg": 200.56533400020271,
+    "custom.scope.echo.p95": 200.56533400020271,
+    "custom.scope.echo.max": 200.56533400020271
+  }
+}

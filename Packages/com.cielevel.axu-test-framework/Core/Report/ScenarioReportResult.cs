@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using AxuTestFramework.Core.Baseline;
+using AxuTestFramework.Core.Budget;
 using Newtonsoft.Json;
 
 namespace AxuTestFramework.Core.Report
@@ -21,14 +23,14 @@ namespace AxuTestFramework.Core.Report
         /// <summary>无预算标记（Budgets 为空时 true，防"没人写阈值所以永远绿"）。</summary>
         [JsonProperty("unbudgeted")] public bool Unbudgeted;
 
-        /// <summary>指标聚合（collector → {agg → 值}）；Phase 1 未接度量层，留 null。</summary>
+        /// <summary>指标聚合（collector → {stat → 值}）；无度量产出时为 null。</summary>
         [JsonProperty("metrics")] public Dictionary<string, Dictionary<string, double>> Metrics;
 
-        /// <summary>预算判定明细（Phase 2 BudgetEvaluator 产出），Phase 1 置 null。</summary>
-        [JsonProperty("budgets")] public object Budgets;
+        /// <summary>预算判定明细（BudgetEvaluator 产出；无 budgets 或未产出时为 null）。</summary>
+        [JsonProperty("budgets")] public List<BudgetOutcome> Budgets;
 
-        /// <summary>基线对比（Phase 2 产出），Phase 1 置 null。</summary>
-        [JsonProperty("baselineDiff")] public object BaselineDiff;
+        /// <summary>基线对比条目（有 baseline 且对比成功时非空；字段见 DOC §5）。</summary>
+        [JsonProperty("baselineDiff")] public List<BaselineDiffEntry> BaselineDiff;
 
         /// <summary>序列数据引用（后续阶段产出），Phase 1 置 null。</summary>
         [JsonProperty("series")] public object Series;

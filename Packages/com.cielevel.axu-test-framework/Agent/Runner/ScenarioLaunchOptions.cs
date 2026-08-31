@@ -34,5 +34,8 @@ namespace AxuTestFramework.Agent.Runner
 
         /// <summary>游戏内 Overlay 显隐（Phase 1 仅解析存储，未接 Overlay）。</summary>
         public bool? OverlayHint;
+
+        /// <summary>基线保存路径（-axuBaselineSave；宿主收尾按 scenarioId 写 &lt;目录&gt;/&lt;scenarioId&gt;.baseline.json）。</summary>
+        public string BaselineSavePath;
     }
 }

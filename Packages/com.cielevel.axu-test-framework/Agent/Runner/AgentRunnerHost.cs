@@ -4,9 +4,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using AxuTestFramework.Agent.Bootstrap;
+using AxuTestFramework.Agent.Metrics;
 using AxuTestFramework.Agent.Reports;
 using AxuTestFramework.Agent.Tools;
 using AxuTestFramework.Core;
+using AxuTestFramework.Core.Baseline;
+using AxuTestFramework.Core.Budget;
 using AxuTestFramework.Core.Json;
 using AxuTestFramework.Core.Report;
 using AxuTestFramework.Core.Scenarios;
@@ -151,6 +154,13 @@ namespace AxuTestFramework.Agent.Runner
                     ? (bool)root["quitOnDone"]
                     : false;
                 launch.QuitOnDone = Application.isEditor ? false : quitOnDone; // Editor 源下一律不退出
+
+                // 基线保存目录（Phase 2）：与 CLI -axuBaselineSave 等价的 Editor 通道
+                if (root["baselineSavePath"] != null)
+                {
+                    var save = root["baselineSavePath"].ToString();
+                    if (!string.IsNullOrWhiteSpace(save)) launch.BaselineSavePath = save;
+                }
                 return launch;
             }
             catch (Exception ex)
@@ -173,6 +183,7 @@ namespace AxuTestFramework.Agent.Runner
                 WarnAsFail = cli.WarnAsFail ?? false,
                 Seed = cli.Seed,
                 OverlayHint = cli.OverlayHint,
+                BaselineSavePath = cli.BaselineSavePath,
                 Source = "cli",
             };
         }
@@ -213,7 +224,7 @@ namespace AxuTestFramework.Agent.Runner
                 try
                 {
                     suite = LoadSuiteFromPath(launch.SuitePath);
-                    resolved = SuiteLoader.Resolve(suite, launch.ScenarioIds);
+                    resolved = SuiteLoader.Resolve(suite, launch.ScenarioIds, ResolveSuiteDirectory(launch.SuitePath));
                 }
                 catch (Exception ex)
                 {
@@ -247,7 +258,9 @@ namespace AxuTestFramework.Agent.Runner
                         Unbudgeted = scenario.Budgets == null || scenario.Budgets.Count == 0,
                     };
 
-                    yield return StartCoroutine(RunSingle(scenario, handle, timeoutSec));
+                    var metricsSession = StartMetricSession(scenario, handle);
+                    yield return StartCoroutine(RunSingle(scenario, handle, timeoutSec, metricsSession));
+                    FinalizeMetrics(scenario, handle, result, metricsSession);
 
                     result.Status = MapStatus(handle.Status);
                     result.DurationMs = handle.ElapsedMilliseconds;
@@ -297,6 +310,18 @@ namespace AxuTestFramework.Agent.Runner
                     yield break;
                 }
 
+                if (!string.IsNullOrEmpty(launch.BaselineSavePath))
+                {
+                    try
+                    {
+                        SaveBaselines(results, launch.BaselineSavePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        AgentLog.Instance.Warning("基线保存失败（不影响报告）：" + ex.Message);
+                    }
+                }
+
                 _exitCode = (int)exitCode; // Player 退出码经 Quit(int) 携带；Editor 无进程退出码语义
                 ScenarioStatusFile.WriteCompleted(suite.Id, startedUtc, results.Count, resolved.Count, finalPath, summary, (int)exitCode);
                 AgentLog.Instance.Info(
@@ -310,8 +335,8 @@ namespace AxuTestFramework.Agent.Runner
             }
         }
 
-        /// <summary>执行单个 scenario：能力分发 → Runner 协程 + 超时看门狗 + 异常兜底。</summary>
-        IEnumerator RunSingle(ResolvedScenario scenario, ScenarioRunHandle handle, double timeoutSec)
+        /// <summary>执行单个 scenario：能力分发 → Runner 协程 + 超时看门狗 + 异常兜底（度量节拍由 Supervise 驱动）。</summary>
+        IEnumerator RunSingle(ResolvedScenario scenario, ScenarioRunHandle handle, double timeoutSec, MetricSession metricsSession)
         {
             if (!AxuCapabilityRegistry.TryGet(scenario.Capability, out var capability))
             {
@@ -347,18 +372,42 @@ namespace AxuTestFramework.Agent.Runner
             if (runner == null || execution == null) yield break;
             // 显式 StartCoroutine：保证 Supervise 的每步 yield（含 WaitForSecondsRealtime 段）真正进入
             // Unity 协程调度——裸 yield return IEnumerator 的展开语义不可靠，实测等待会被吞掉。
-            yield return StartCoroutine(Supervise(execution, handle, timeoutSec));
+            yield return StartCoroutine(Supervise(execution, handle, timeoutSec, metricsSession, ResolveSampleIntervalMs(scenario)));
         }
 
         /// <summary>
         /// 监督执行循环：逐步推进 Runner 迭代器；嵌套迭代器（如 AgentWait 分段等待）手动代步，
         /// 其产出的等待指令交给 Unity（≤0.25s 段），每段结束复查超时/取消——保证看门狗按真实时间介入。
+        /// 度量节拍（Phase 2）：外层/嵌套两处循环每帧开头驱动 MetricSession.OnFrame（同帧去重），
+        /// 并按 sampleIntervalMs 累计驱动 OnInterval——采样节拍由宿主逐帧推进，不依赖 YieldInstruction 计时。
         /// </summary>
-        IEnumerator Supervise(IEnumerator execution, ScenarioRunHandle handle, double timeoutSec)
+        IEnumerator Supervise(IEnumerator execution, ScenarioRunHandle handle, double timeoutSec,
+            MetricSession metricsSession, double sampleIntervalMs)
         {
             var stop = false;
+            var lastMetricsTime = -1d; // 同帧去重：外层/嵌套循环都可能在同一帧走到度量推进
+            var intervalAccumulator = 0.0;
+
+            void AdvanceMetrics()
+            {
+                if (metricsSession == null) return;
+                var now = Time.realtimeSinceStartupAsDouble;
+                if (now <= lastMetricsTime) return;
+                lastMetricsTime = now;
+
+                metricsSession.OnFrame(now, Time.unscaledDeltaTime);
+                intervalAccumulator += Time.unscaledDeltaTime;
+                if (intervalAccumulator * 1000.0 >= sampleIntervalMs)
+                {
+                    intervalAccumulator = 0.0;
+                    metricsSession.OnInterval(now);
+                }
+            }
+
             while (!stop)
             {
+                AdvanceMetrics();
+
                 if (handle.CancelRequested || IsTimedOut(handle, timeoutSec))
                 {
                     if (!handle.CancelRequested) Timeout(handle, timeoutSec);
@@ -390,6 +439,8 @@ namespace AxuTestFramework.Agent.Runner
                     // 嵌套迭代器：手动代步（不递归），段间复查看门狗
                     while (true)
                     {
+                        AdvanceMetrics();
+
                         if (handle.CancelRequested || IsTimedOut(handle, timeoutSec))
                         {
                             if (!handle.CancelRequested) Timeout(handle, timeoutSec);
@@ -452,6 +503,262 @@ namespace AxuTestFramework.Agent.Runner
         static bool IsTimedOut(ScenarioRunHandle handle, double timeoutSec)
         {
             return timeoutSec > 0 && handle.ElapsedSeconds > timeoutSec;
+        }
+
+        // ---------------------------------------------------------------- 度量层（Phase 2）
+
+        /// <summary>params.collectors 未指定时的缺省采集器清单（DOC §4）。</summary>
+        internal static readonly string[] DefaultCollectorIds = { "fps", "frameTime", "memory", "rendering", "gc" };
+
+        /// <summary>sampleIntervalMs 缺省值（DOC §4）。</summary>
+        internal const double DefaultSampleIntervalMs = 250.0;
+
+        /// <summary>suite/scenario 文件所在目录（scenario.baseline 相对路径的解析基准）。</summary>
+        static string ResolveSuiteDirectory(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return null;
+            var dir = Path.GetDirectoryName(Path.GetFullPath(path));
+            return string.IsNullOrEmpty(dir) ? null : dir;
+        }
+
+        /// <summary>创建并启动度量会话（采集器清单取自 params；未知 id 记 COLLECTOR_UNKNOWN Finding）。</summary>
+        static MetricSession StartMetricSession(ResolvedScenario scenario, ScenarioRunHandle handle)
+        {
+            MetricSession session = null;
+            try
+            {
+                session = MetricSession.Begin(ParseCollectorIds(scenario.Params), Time.realtimeSinceStartupAsDouble);
+                foreach (var missing in session.MissingCollectorIds)
+                {
+                    handle.AddFinding(FindingSeverity.Warning, "COLLECTOR_UNKNOWN",
+                        $"采集器 \"{missing}\" 未注册（scenario \"{scenario.Id}\"）");
+                }
+                session.StartCollectors(new ScenarioContext(handle, AgentLog.Instance));
+            }
+            catch (Exception ex)
+            {
+                handle.AddFinding(FindingSeverity.Error, "RUNTIME_EXCEPTION",
+                    $"度量会话创建失败：{ex.GetType().Name}: {ex.Message}");
+                MetricSession.EndCurrent();
+                session = null;
+            }
+            return session;
+        }
+
+        /// <summary>解析 params.collectors（JArray→string[]；缺省全 5 个；custom 打点为会话内建通道恒可用）。</summary>
+        static List<string> ParseCollectorIds(JObject parameters)
+        {
+            var ids = new List<string>();
+            if (parameters != null && parameters["collectors"] is JArray array)
+            {
+                foreach (var token in array)
+                {
+                    var id = token != null ? token.ToString() : null;
+                    if (!string.IsNullOrWhiteSpace(id)) ids.Add(id.Trim());
+                }
+            }
+            if (ids.Count == 0) ids.AddRange(DefaultCollectorIds);
+            ids.Add(MetricSession.CustomCollectorId);
+            return ids;
+        }
+
+        /// <summary>解析 params.sampleIntervalMs（缺省 250；非法/非正值回落默认）。</summary>
+        static double ResolveSampleIntervalMs(ResolvedScenario scenario)
+        {
+            var token = scenario.Params != null ? scenario.Params["sampleIntervalMs"] : null;
+            if (token == null) return DefaultSampleIntervalMs;
+
+            try
+            {
+                var value = token.Value<double>();
+                return value > 0 ? value : DefaultSampleIntervalMs;
+            }
+            catch (Exception)
+            {
+                return DefaultSampleIntervalMs;
+            }
+        }
+
+        /// <summary>
+        /// runner 结束后的度量收尾：Complete → 采集器 Finding → BuildSummary → 预算判定 → 基线对比。
+        /// status 只升级不覆盖错误态：budget/baseline fail → Failed（Pass/Warn 时），warn → Warn（Pass 时）。
+        /// </summary>
+        static void FinalizeMetrics(ResolvedScenario scenario, ScenarioRunHandle handle,
+            ScenarioReportResult result, MetricSession session)
+        {
+            if (session == null) return;
+
+            try
+            {
+                // 收尾补采：不足一个采样窗的短 scenario（如 @fast 200ms < 250ms 间隔）也保证 ≥1 个样本，
+                // 否则预算会因指标缺失被误判 fail
+                session.OnInterval(Time.realtimeSinceStartupAsDouble);
+                session.CompleteCollectors(Time.realtimeSinceStartupAsDouble);
+                session.CollectFindings(handle);
+                result.Metrics = session.BuildSummary();
+            }
+            catch (Exception ex)
+            {
+                AgentLog.Instance.Warning($"scenario \"{scenario.Id}\" 度量汇总异常：{ex.GetType().Name}: {ex.Message}");
+            }
+            finally
+            {
+                MetricSession.EndCurrent();
+            }
+
+            // ---- 预算判定 ----
+            if (scenario.Budgets != null && scenario.Budgets.Count > 0)
+            {
+                List<BudgetOutcome> outcomes;
+                try
+                {
+                    outcomes = BudgetEvaluator.Evaluate(result.Metrics, scenario.Budgets);
+                }
+                catch (Exception ex)
+                {
+                    handle.AddFinding(FindingSeverity.Error, "RUNTIME_EXCEPTION",
+                        $"预算判定异常：{ex.GetType().Name}: {ex.Message}");
+                    outcomes = null;
+                }
+
+                if (outcomes != null)
+                {
+                    result.Budgets = outcomes;
+                    foreach (var outcome in outcomes)
+                    {
+                        if (outcome == null) continue;
+
+                        if (outcome.Missing)
+                        {
+                            handle.AddFinding(FindingSeverity.Error, "BUDGET_METRIC_MISSING",
+                                $"预算指标 \"{outcome.Metric}\" 未产出（collector 或 stat 缺失），按 fail 判定");
+                            UpgradeStatus(handle, RunStatus.Failed);
+                        }
+                        else if (outcome.Verdict == "fail")
+                        {
+                            handle.AddFinding(FindingSeverity.Error, "BUDGET_FAIL",
+                                $"{outcome.Metric}={FormatValue(outcome.Actual)} 违反预算 {outcome.Op} {FormatThreshold(outcome)}");
+                            UpgradeStatus(handle, RunStatus.Failed);
+                        }
+                        else if (outcome.Verdict == "warn")
+                        {
+                            handle.AddFinding(FindingSeverity.Warning, "BUDGET_WARN",
+                                $"{outcome.Metric}={FormatValue(outcome.Actual)} 违反预算 {outcome.Op} {FormatThreshold(outcome)}（severity=warn）");
+                            UpgradeStatus(handle, RunStatus.Warned);
+                        }
+                    }
+                }
+            }
+
+            // ---- 基线对比（scenario.baseline 相对 suite/scenario 文件目录）----
+            if (!string.IsNullOrEmpty(scenario.Baseline) && !string.IsNullOrEmpty(scenario.SuiteDirectory))
+            {
+                var baselinePath = Path.Combine(scenario.SuiteDirectory, scenario.Baseline);
+                if (!File.Exists(baselinePath))
+                {
+                    // 首跑/基线未生成属正常状态：静默跳过，不产出 Finding、不影响判定
+                    return;
+                }
+                try
+                {
+                    var baseline = BaselineFile.Load(baselinePath);
+                    var entries = BaselineDiff.Compare(baseline.Metrics, BaselineDiff.Flatten(result.Metrics));
+                    if (entries.Count > 0) result.BaselineDiff = entries;
+
+                    foreach (var entry in entries)
+                    {
+                        if (entry.Verdict == "fail")
+                        {
+                            handle.AddFinding(FindingSeverity.Error, "BASELINE_REGRESSION",
+                                $"{entry.Metric} 较基线劣化：base={FormatValue(entry.Base)} → current={FormatValue(entry.Current)}");
+                            UpgradeStatus(handle, RunStatus.Failed);
+                        }
+                        else if (entry.Verdict == "warn")
+                        {
+                            handle.AddFinding(FindingSeverity.Warning, "BASELINE_DRIFT",
+                                $"{entry.Metric} 较基线漂移：base={FormatValue(entry.Base)} → current={FormatValue(entry.Current)}");
+                            UpgradeStatus(handle, RunStatus.Warned);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    handle.AddFinding(FindingSeverity.Warning, "BASELINE_LOAD_FAILED",
+                        $"基线加载/对比失败：{scenario.Baseline}（{ex.Message}）");
+                }
+            }
+        }
+
+        /// <summary>status 只升不降：warn 仅从 Pass 升；fail 从 Pass/Warn 升；Error/Cancelled 等错误态不覆盖。</summary>
+        static void UpgradeStatus(ScenarioRunHandle handle, RunStatus minimum)
+        {
+            if (minimum == RunStatus.Warned)
+            {
+                if (handle.Status == RunStatus.Passed) handle.Status = RunStatus.Warned;
+            }
+            else if (minimum == RunStatus.Failed)
+            {
+                if (handle.Status == RunStatus.Passed || handle.Status == RunStatus.Warned)
+                    handle.Status = RunStatus.Failed;
+            }
+        }
+
+        /// <summary>
+        /// -axuBaselineSave 收尾：每个 result 的 metrics 扁平化为两段键，
+        /// 写 &lt;目录&gt;/&lt;scenarioId&gt;.baseline.json（schema axu-baseline/1；scenario.baseline 字段即指向该文件）。
+        /// </summary>
+        static void SaveBaselines(List<ScenarioReportResult> results, string baselineSavePath)
+        {
+            var dir = ResolveBaselineDirectory(baselineSavePath);
+            foreach (var result in results)
+            {
+                if (result == null || result.Metrics == null || string.IsNullOrEmpty(result.ScenarioId)) continue;
+
+                var file = Path.Combine(dir, AgentPaths.SanitizeFileName(result.ScenarioId) + ".baseline.json");
+                BaselineFile.Save(file, new BaselineFile
+                {
+                    ScenarioId = result.ScenarioId,
+                    Metrics = BaselineDiff.Flatten(result.Metrics),
+                });
+                AgentLog.Instance.Info($"基线已保存：{file}");
+            }
+        }
+
+        /// <summary>把 -axuBaselineSave 值解析为输出目录：.json 结尾视为文件路径（取其目录分量），
+        /// 其余一律视为目录（不存在则创建——基线输出目录随用随建，不能因目录未建而误判为文件路径）。</summary>
+        static string ResolveBaselineDirectory(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return ".";
+
+            if (path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                var fileDir = Path.GetDirectoryName(path);
+                return string.IsNullOrEmpty(fileDir) ? "." : fileDir;
+            }
+
+            try { Directory.CreateDirectory(path); }
+            catch (Exception ex)
+            {
+                AgentLog.Instance.Warning($"基线输出目录创建失败（{path}）：{ex.Message}");
+            }
+            return path;
+        }
+
+        static string FormatValue(double? value)
+        {
+            return value != null ? value.Value.ToString("0.###", CultureInfo.InvariantCulture) : "(missing)";
+        }
+
+        static string FormatValue(double value)
+        {
+            return value.ToString("0.###", CultureInfo.InvariantCulture);
+        }
+
+        static string FormatThreshold(BudgetOutcome outcome)
+        {
+            if (outcome.Threshold != null)
+                return outcome.Threshold.Value.ToString("0.######", CultureInfo.InvariantCulture);
+            return outcome.Op == "range" ? "[valueMin..valueMax]" : "(missing)";
         }
 
         /// <summary>基础设施错误：写 error 报告 + 状态文件 + 退出码 3。</summary>

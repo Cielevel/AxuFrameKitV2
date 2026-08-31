@@ -2,8 +2,17 @@
 
 All notable changes to this package will be documented in this file.
 
-## [0.2.0] - 2026-08-31（场景测试平台建设启动，Phase 0/1 已落地）
+## [0.2.0] - 2026-08-31（场景测试平台建设启动，Phase 0/1/2 已落地）
 
+- **Phase 2 度量层落地**：Core 层 `RingBuffer`/`MetricStats`（百分位线性插值 + 最小二乘斜率）/`BudgetEvaluator`
+  （budget 键 `<collector>.<stat>`，缺失指标按 fail 并出 `BUDGET_METRIC_MISSING`）/`BaselineFile`（schema
+  `axu-baseline/1`）+ `BaselineDiff`（**方向感知**：fps=越高越好、frameTime/memory/custom.scope=越低越好、
+  未知 collector 对称；改善不计回归）；Agent 层 `AxuMetrics` 门面（Scope/Counter/Gauge，无会话零分配 no-op）、
+  `MetricSession` + 5 个采集器（fps/frameTime/memory/rendering/gc，宿主逐帧驱动、250ms 窗口聚合、环境不可用出
+  `COLLECTOR_UNAVAILABLE` 警告不静默 0 值、收尾补采保证短 scenario ≥1 样本）；宿主集成预算判定（结果 status
+  只升不降）与基线 diff（`scenario.baseline` 相对 suite 目录；首跑缺基线静默跳过；`@profile` 扇出实例不继承
+  源场景基线）；CLI/桥文件新增 `-axuBaselineSave`/`baselineSavePath`（按 scenarioId 写
+  `<目录>/<scenarioId>.baseline.json`）。包单测扩至 57 个（`Axu/TestFramework`）。
 - **Phase 1 Agent 骨架落地**：Core 层 scenario/suite 模型（内联场景、`ref+profile` 扇出 `@profile` 后缀、深合并）、
   `ScenarioCli` 命令行解析（`-axuSuite/-axuScenario/-axuQuitOnDone/-axuReport/...`）、Agent 层
   `AgentBootstrap`（RuntimeInitializeOnLoad + 场景组件双入口）+ `AgentRunnerHost`（顺序执行、真实时间看门狗、

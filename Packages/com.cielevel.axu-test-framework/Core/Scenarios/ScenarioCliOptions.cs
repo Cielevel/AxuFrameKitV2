@@ -31,6 +31,12 @@ namespace AxuTestFramework.Core.Scenarios
         /// <summary>游戏内 Overlay 显隐（-axuOverlay / -axuNoOverlay；Phase 1 仅解析存储）。</summary>
         public bool? OverlayHint;
 
+        /// <summary>
+        /// 基线保存路径（-axuBaselineSave；宿主收尾按 scenarioId 写 &lt;目录&gt;/&lt;scenarioId&gt;.baseline.json）。
+        /// 用属性而非字段：契约测试（ScenarioCliTests）以 GetProperty("BaselineSavePath") 探测落地状态。
+        /// </summary>
+        public string BaselineSavePath { get; set; }
+
         /// <summary>无法识别的 -axu* 参数原样记录（非 -axu* 参数一律忽略，不记录）。</summary>
         public List<string> IgnoredArgs = new List<string>();
     }

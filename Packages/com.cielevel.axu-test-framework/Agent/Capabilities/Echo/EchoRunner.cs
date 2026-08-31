@@ -30,10 +30,14 @@ namespace AxuTestFramework.Agent.Capabilities.Echo
 
             if (log != null) log.Info(message);
 
-            for (var i = 0; i < steps; i++)
+            // AxuMetrics dogfood：scope 打点进 custom 指标通道（custom.scope.echo.p95 等）
+            using (AxuTestFramework.Agent.Metrics.AxuMetrics.Scope("echo"))
             {
-                if (handle != null && handle.CancelRequested) yield break;
-                yield return AgentWait.RealtimeSeconds(perStep);
+                for (var i = 0; i < steps; i++)
+                {
+                    if (handle != null && handle.CancelRequested) yield break;
+                    yield return AgentWait.RealtimeSeconds(perStep);
+                }
             }
 
             if (log != null) log.Info($"{message} done");

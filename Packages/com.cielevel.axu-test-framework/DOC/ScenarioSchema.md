@@ -15,7 +15,7 @@ axu-suite/1 ──引用──▶ axu-scenario/1 ──运行产生──▶ axu
 
 - JSON 编码 UTF-8，无 BOM；时间一律 UTC ISO 8601；
 - 所有 schema 带 `schema` 字段做自描述，读取时校验，不认识的**附加字段忽略**（向前兼容）；
-- `id` 全小写点分（`perf.combat.fhd`）， suite 内唯一；指标键命名 `<collector>.<metric>.<agg>`（如 `fps.avg`）。
+- `id` 全小写点分（`perf.combat.fhd`）， suite 内唯一；指标键为 `<collector>.<stat>` 两段式（stat 名即报告 metrics 内层键，如 `fps.avg`、`frameTime.cpuP95`、`memory.allocatedMax`）。
 
 ---
 
@@ -30,9 +30,9 @@ axu-suite/1 ──引用──▶ axu-scenario/1 ──运行产生──▶ axu
   "enabled": true,                           // 可选，默认 true；false 时 suite 跳过
   "params": { /* 各 capability 自定参数，见第 4 节通用参数 */ },
   "budgets": [                               // 可选；无 budgets 时结果标 unbudgeted=true
-    { "metric": "fps.avg",              "op": ">=", "value": 45 },
-    { "metric": "frameTime.p95",        "op": "<=", "value": 25,  "unit": "ms", "severity": "warn" },
-    { "metric": "memory.allocated.max", "op": "<=", "value": 2048, "unit": "MB" }
+    { "metric": "fps.avg",             "op": ">=", "value": 45 },
+    { "metric": "frameTime.cpuP95",    "op": "<=", "value": 25,  "unit": "ms", "severity": "warn" },
+    { "metric": "memory.allocatedMax", "op": "<=", "value": 2048, "unit": "MB" }
   ],
   "baseline": "baselines/combat-fhd.json"    // 可选；相对 suite 文件的路径，存在则自动 diff
 }
@@ -49,6 +49,9 @@ axu-suite/1 ──引用──▶ axu-scenario/1 ──运行产生──▶ axu
 | `severity` |  | 违约判定级别，`fail`（默认）/ `warn` |
 
 scenario 总判定 = 最严 budget 结果（fail > warn > pass）。
+
+指标键 = `<collector>.<stat>` 两段式（stat 名与报告 metrics 内层键一致）。custom 打点通道的 stat 名本身可含点，
+此时预算键按第一个 '.' 分段解析，如 `custom.scope.AI.Tick.p95`、`custom.gauge.Room.EnemyCount.max`。
 
 ---
 
@@ -106,13 +109,12 @@ scenario 总判定 = 最严 budget 结果（fail > warn > pass）。
         "memory": { "allocatedMax": 1832.4, "monoUsedMax": 210.7 }
       },
       "budgets": [
-        { "metric": "fps.avg",       "op": ">=", "threshold": 45, "actual": 46.2, "verdict": "pass" },
-        { "metric": "frameTime.p95", "op": "<=", "threshold": 25, "actual": 26.1, "unit": "ms", "verdict": "warn" }
+        { "metric": "fps.avg",          "op": ">=", "threshold": 45, "actual": 46.2, "verdict": "pass" },
+        { "metric": "frameTime.cpuP95", "op": "<=", "threshold": 25, "actual": 26.1, "unit": "ms", "verdict": "warn" }
       ],
-      "baselineDiff": {                        // 有 baseline 时存在
-        "ref": "baselines/combat-fhd.json",
-        "entries": [ { "metric": "fps.avg", "base": 48.1, "delta": "-3.9%", "verdict": "pass" } ]
-      },
+      "baselineDiff": [                        // 有 baseline 且对比成功时存在；条目语义见 §5
+        { "metric": "fps.avg", "base": 48.1, "current": 46.2, "deltaRatio": -0.0395, "verdict": "pass" }
+      ],
       "series": { "dir": "series/perf.combat.fhd/", "files": ["fps.csv", "memory.csv"] },
       "artifacts": [ "artifacts/perf.combat.fhd_end.png" ],
       "log": { "errorCount": 0, "warningCount": 3, "samples": [] },
@@ -141,9 +143,45 @@ scenario 总判定 = 最严 budget 结果（fail > warn > pass）。
 | `resolution` | [w,h] | 不改 | 覆盖分辨率 |
 | `qualityLevel` | int | 不改 | 覆盖 `QualitySettings.selectedQualityLevel` |
 | `seed` | int | 0 | 随机种子（0 = 时间派生）；写进报告便于复现 |
-| `sampleIntervalMs` | int | 250 | 采样聚合间隔 |
-| `collectors` | string[] | capability 默认 | 启用的采集器清单 |
+| `sampleIntervalMs` | int | 250 | 采样聚合间隔（宿主逐帧累计驱动采集器 OnInterval） |
+| `collectors` | string[] | capability 默认 | 启用的采集器清单；Phase 2 宿主缺省启用全部 5 个（fps/frameTime/memory/rendering/gc），custom 打点通道恒可用、无需配置 |
 | `timeoutSec` | float | suite.settings | scenario 级超时覆盖 |
 
 > capability 专属参数（如 stress 的 `phases`、soak 的 `durationMinutes`）在各能力的 DOC 中定义，
 > 保留键之外的键由 capability 自行解释，未知键忽略。
+
+---
+
+## 5. axu-baseline/1 —— 指标基线
+
+单 scenario 的指标基线文件。`-axuBaselineSave <path>` 运行收尾时为每个 scenario 写
+`<path目录>/<scenarioId>.baseline.json`（`<path>` 给目录或文件路径均可，取其目录分量）；
+scenario 的 `baseline` 字段（相对 suite/scenario 文件的路径）指向基线文件后，每次运行自动 diff
+并把 `baselineDiff[]` 写入报告（fail → Finding `BASELINE_REGRESSION` 并升 status 为 fail，warn → `BASELINE_DRIFT` 升 warn）。
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `schema` | string | 恒 `axu-baseline/1`，读取时校验（缺失/不符抛 AxuSchemaException） |
+| `scenarioId` | string | 基线所属 scenario id |
+| `createdAtUtc` | string | 生成时间（UTC ISO 8601；Save 时空缺自动补当前时间） |
+| `metrics` | object | 扁平两段键（`<collector>.<stat>`，如 `fps.avg`）→ 聚合值 |
+
+最小示例：
+
+```json
+{
+  "schema": "axu-baseline/1",
+  "scenarioId": "perf.combat.fhd",
+  "createdAtUtc": "2026-09-01T12:00:00.000Z",
+  "metrics": {
+    "fps.avg": 46.2,
+    "frameTime.cpuP95": 24.8,
+    "memory.allocatedMax": 1832.4
+  }
+}
+```
+
+对比分级（`BaselineDiff.Compare`，双侧对称，方向性判定留后续阶段按采集器元数据细化）：
+`|deltaRatio| ≤ 0.10 → pass`；`0.10 < |deltaRatio| ≤ 0.25 → warn`；`> 0.25 → fail`（阈值可配，边界含端点）。
+基线值为 0 时退化为绝对差分支：同一阈值作用于 `|current - base|`。
+仅比较两侧都存在的键，基线独有键忽略；报告 metrics 中基线没有的键不产生条目。
