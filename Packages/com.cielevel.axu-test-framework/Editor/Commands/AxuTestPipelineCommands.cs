@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Unity.Pipeline.Commands;
 using UnityEngine;
 
@@ -28,11 +30,33 @@ namespace AxuTestFramework.Editor
             [CliArg("filter_type", "Filter type: testName, assembly, category (default: testName)")] string filter_type = "testName",
             [CliArg("category", "Category filter shortcut (equals filter_type=category); comma-separated for multiple")] string category = "",
             [CliArg("assembly", "Assembly filter shortcut (equals filter_type=assembly); partial match against the safe assembly list")] string assembly = "",
+            [CliArg("test_names", "JSON array string of exact test full names for the 'selected tests' channel, e.g. [\\\"Ns.Class.Method\\\",\\\"Ns.Class.Method(1,2)\\\"]; non-empty takes priority over filter/filter_type=testName, AND-intersected with the safe assembly list")] string test_names = "",
             [CliArg("clear_console", "Clear the Editor Console window before the run (default true)")] bool clear_console = true,
             [CliArg("report", "Write the JSON report (schema axu-test-report/1) to Library/AxuTestReports (default true)")] bool report = true,
             [CliArg("out_path", "Optional report file path override (relative to project root or absolute; ending with .json = file, otherwise = directory)")] string out_path = "",
             [CliArg("timeout_ms", "EditMode completion wait budget in milliseconds (default 120000); keep the HTTP request timeout above it")] int timeout_ms = 120000)
         {
+            // "选定测试"通道：JSON 数组字符串解析（不做逗号分隔——参数化用例全名含逗号会劈错）；
+            // 解析失败立即返回错误信封，不进入运行编排
+            List<string> testNames = null;
+            if (!string.IsNullOrWhiteSpace(test_names))
+            {
+                try
+                {
+                    testNames = JsonConvert.DeserializeObject<List<string>>(test_names);
+                }
+                catch (Exception ex)
+                {
+                    return new AxuTestRunOutcome
+                    {
+                        Success = false,
+                        Status = "error",
+                        Mode = mode,
+                        Error = $"test_names 解析失败：需为用例全名的 JSON 数组字符串（如 [\"Ns.C.M\",\"Ns.C.M(1,2)\"]）。{ex.Message}"
+                    };
+                }
+            }
+
             var request = new AxuTestRunRequest
             {
                 Mode = mode,
@@ -40,6 +64,7 @@ namespace AxuTestFramework.Editor
                 FilterType = filter_type,
                 Category = category,
                 Assembly = assembly,
+                TestNames = testNames,
                 ClearConsole = clear_console,
                 Report = report,
                 OutPath = out_path,

@@ -53,6 +53,8 @@ com.cielevel.axu-test-framework/
 │   ├── Reports/AxuTestReportPaths.cs        # 路径约定
 │   ├── Window/AxuTestRunnerWindow.cs        # UITK 看板（AxuFrameKit/AxuTestRunner）
 │   └── UI/AxuTestTokens.uss                 # 窗口样式 token（独立自持，仿 KitBox 意象）
+├── Tests/Editor/                            # asmdef: AxuTestFramework.Tests.Editor（包自身测试）
+│   └── AxuTestRunSelectionTests.cs          #   "选定测试"通道解析/FilterInfo/并发闸语义
 └── Samples~/
     └── Tests/
         ├── Editor/                   # SampleEditMode（PM → Samples 导入）
@@ -73,7 +75,7 @@ Library/AxuTestReports/artifacts/*.png                    # AxuCapture 截图产
 | 节 | 内容 |
 |---|---|
 | `schema` / `startedAt` / `endedAt` / `mode` | 标识与时间（UTC ISO 8601；mode = editor / playmode / unknown） |
-| `filter` | `{type, value}`：assembly / category / testName / none |
+| `filter` | `{type, value}`：assembly / category / testName / **testNames**（选定运行，Value 为用例数描述）/ none |
 | `summary` | `{total, passed, failed, skipped, inconclusive}` |
 | `results[]` | 叶子用例：`fullName / status(NUnit ResultState) / durationMs / message / stackTrace / assembly / categories` |
 | `console` | 运行期 Console 采样：`errorCount`（Error+Exception+Assert）/ `warningCount` / `samples[]`（≤20 条，单条截断 500 字） |
@@ -92,10 +94,11 @@ POST /api/exec  {"command":"axu_test_run","parameters":{...},"timeout":150000}
 | 参数 | 默认 | 说明 |
 |---|---|---|
 | `mode` | `editor` | `editor` / `playmode` / `all`（all = EditMode 同步完成后接 PlayMode 异步） |
-| `filter` | 空 | 过滤值；`filter_type=testName` 时为**大小写不敏感的全名包含匹配** |
+| `filter` | 空 | 过滤值；`filter_type=testName` 时为**大小写不敏感的全名包含匹配**（`test_names` 非空时不参与） |
 | `filter_type` | `testName` | `testName` / `assembly` / `category` |
 | `category` | 空 | 便捷参数，等价 `filter_type=category`；逗号分隔多个 |
 | `assembly` | 空 | 便捷参数，等价 `filter_type=assembly`；对安全程序集清单做包含匹配 |
+| `test_names` | 空 | **"选定测试"通道**：用例**精确全名**的 JSON 数组字符串（如 `["Ns.Class.Method","Ns.Class.Method(1,2)"]`；不要用逗号分隔——参数化用例全名含逗号）。非空时优先于 `filter`（testName 子串），与安全程序集清单 AND 收敛；0 匹配直接报错（含"勾选用例不属于当前模式"提示）。注意：经 `testNames` 点名的 `[Explicit]` 用例会被执行（UTF 语义：点名即跑），全量跑时仍跳过 |
 | `clear_console` | `true` | 运行前清空 Editor Console 窗口 |
 | `report` | `true` | 是否落盘报告 JSON |
 | `out_path` | 空 | 报告路径覆盖：`.json` 结尾视为文件，否则视为目录；相对工程根或绝对路径。artifacts 同步重定向到 `<报告目录>/artifacts/` |
@@ -129,6 +132,9 @@ curl -s ... -d '{"command":"axu_test_status","parameters":{}}' ...
 
 # 按类别
 ... {"mode":"editor","category":"Axu/Smoke"} ...
+
+# 选定测试：精确全名 JSON 数组（优先于 filter；与安全程序集清单取交集）
+... {"mode":"editor","test_names":"[\"AxuFrameKit.Tests.Editor.AxuFrameKit.Tests.Editor.CoreMathEaseTests\",\"AxuFrameKit.Tests.Runtime.SomeClass.SomeTest\"]","timeout_ms":120000} ...
 ```
 
 ### axu_test_report / axu_test_status
@@ -158,7 +164,14 @@ curl -s ... -d '{"command":"axu_test_status","parameters":{}}' ...
 
 菜单 **`AxuFrameKit/AxuTestRunner`**（与 AxuKitBox 同级；样式仿 KitBox 但包内自持独立 USS，无任何代码引用）：
 左侧测试套件树（按程序集/类分组，顶部过滤输入做全名包含匹配），右侧最近报告结果树（FAIL 默认展开，消息/堆栈/类别可看），
-顶栏 EditMode/PlayMode 切换 + Run + 刷新 + 最近报告路径（点击 Reveal）。窗口 Run 与 `axu_test_run` 走同一内部服务。
+顶栏 EditMode/PlayMode 切换 + **Run 全部 / Run 选定（N）** 双按钮 + 刷新 + 最近报告路径（点击 Reveal）。
+窗口 Run 与 `axu_test_run` 走同一内部服务。
+
+- **Run 全部**：当前模式全量（过滤输入非空时作为 testName 子串过滤收窄）。
+- **Run 选定**：左侧树勾选用例经 `test_names` 精确通道执行（按当前模式；勾选用例不属于当前模式时被预检 0 匹配拦下）。
+  用例行带勾选框；程序集/命名空间/类各级 Foldout 头部带**三态勾选框**——点击批量勾选/取消其下当前可见用例
+  （全选态点击=全不选，其余态点击=全选；部分勾选显示为橙色填充态），勾选框拦截冒泡不连带折叠层级。
+  勾选集合按 FullName 键控，跨树重建/模式切换保留；过滤输入触发的树重建后三态按可见叶子重算（所见即所勾）。
 
 ### 与 pipeline 自带 run_tests 的关系
 

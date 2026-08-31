@@ -5,7 +5,7 @@ namespace AxuTestFramework
     /// </summary>
     public class FilterInfo
     {
-        /// <summary>过滤类型："assembly" / "testName" / "category" / "fullPath"；无过滤时为 "none"。</summary>
+        /// <summary>过滤类型："assembly" / "testName" / "category" / "testNames"（选定运行，Value 为用例数描述）；无过滤时为 "none"。</summary>
         public string Type { get; set; }
 
         /// <summary>过滤值；无过滤时为 null 或空字符串。</summary>

@@ -15,7 +15,8 @@ namespace AxuTestFramework.Editor
     /// axu_test_run 的编排核心（pipeline 命令与看板窗口共用的内部服务，不经 HTTP）。
     /// <para>安全规则（硬性，源自 M0"token 中毒"事故）：构建 UTF Filter 时 <c>assemblyNames</c> 恒为
     /// <see cref="AxuTestAssemblyScanner.GetSafeTestAssemblies"/> 的清单（已剔除 Unity.Pipeline.Tests*），
-    /// 绝不发出无程序集范围的裸跑；用户给定的 assembly / category / testName 过滤与安全清单取交集。</para>
+    /// 绝不发出无程序集范围的裸跑；用户给定的 assembly / category / testName 过滤与安全清单取交集，
+    /// "选定测试"通道（testNames 精确全名）经 UTF 的 AND 语义同样被安全清单收敛。</para>
     /// <para>编排规则：PlayMode 一律异步（启动后立即返回 running，供轮询状态文件）；EditMode 同步等待
     /// （轮询状态文件至 completed/error，步长 250ms）后返回完整结果；mode=all 先同步跑 EditMode 再异步启动
     /// PlayMode。运行参数经 Temp 上下文文件跨域重载传递给报告器（见 <see cref="AxuTestRunContext"/>）。</para>
@@ -91,12 +92,21 @@ namespace AxuTestFramework.Editor
                 if (filterTypeError != null)
                     return ErrorOutcome(request, filterTypeError, safeAssemblies, excluded);
 
+                var testNames = ResolveTestNames(request, out var testNamesError);
+                if (testNamesError != null)
+                    return ErrorOutcome(request, testNamesError, safeAssemblies, excluded);
+
+                // 选定通道优先：给定了精确名单时 testName 子串过滤不参与（两组全名条件叠加必 0 匹配）
+                if (testNames != null)
+                    groupNames = null;
+
                 // ---- 测试树预检：既防止 0 匹配的无效运行（PlayMode 空跑要浪费一次域重载），也给出运行规模 ----
-                var matched = await CountMatchedTestsAsync(firstPhase, effectiveAssemblies, categoryNames, groupNames);
+                var matched = await CountMatchedTestsAsync(firstPhase, effectiveAssemblies, categoryNames, groupNames, testNames);
                 if (matched == 0)
                 {
                     return ErrorOutcome(request,
-                        "过滤条件未匹配到任何测试（已按安全程序集清单过滤）。请检查 filter/category/assembly 参数。",
+                        "过滤条件未匹配到任何测试（已按安全程序集清单过滤）。请检查 filter/category/assembly/test_names 参数；" +
+                        "选定运行时确认勾选用例属于当前模式（EditMode/PlayMode 树不同）。",
                         safeAssemblies, excluded, effectiveAssemblies);
                 }
 
@@ -111,7 +121,7 @@ namespace AxuTestFramework.Editor
                 var context = new AxuTestRunContext
                 {
                     Mode = requestedMode,
-                    Filter = BuildFilterInfo(request),
+                    Filter = BuildFilterInfo(request, testNames),
                     Report = request.Report,
                     OutPath = request.OutPath,
                     ArtifactsDirectory = artifactsDirectory,
@@ -123,7 +133,7 @@ namespace AxuTestFramework.Editor
                 WriteRunContextAndStatus(context);
 
                 // ---- 启动运行（主线程） ----
-                ExecuteRun(firstPhase, effectiveAssemblies, categoryNames, groupNames);
+                ExecuteRun(firstPhase, effectiveAssemblies, categoryNames, groupNames, testNames);
 
                 if (mode == "playmode")
                 {
@@ -152,7 +162,7 @@ namespace AxuTestFramework.Editor
                 context.Mode = "playmode";
                 context.StartedAtUtc = DateTime.UtcNow.ToString("o");
                 WriteRunContextAndStatus(context);
-                ExecuteRun(TestMode.PlayMode, effectiveAssemblies, categoryNames, groupNames);
+                ExecuteRun(TestMode.PlayMode, effectiveAssemblies, categoryNames, groupNames, testNames);
 
                 outcome.Status = "playmode_running";
                 outcome.StatusPath = AxuTestReportPaths.ToFullPath(AxuTestReportPaths.StatusFilePath);
@@ -293,9 +303,35 @@ namespace AxuTestFramework.Editor
             return new[] { "(?i)^.*" + Regex.Escape(filter) + ".*$" };
         }
 
-        /// <summary>枚举过滤描述（写进上下文与返回值）。</summary>
-        private static FilterInfo BuildFilterInfo(AxuTestRunRequest request)
+        /// <summary>解析"选定测试"精确全名清单（去空白去重）。非空即启用 testNames 通道；
+        /// 安全性无需在此校验——UTF Filter 中 assemblyNames（安全清单）与 testNames 为 AND 语义，
+        /// 不在安全程序集内的名单自动无效（预检按 0 匹配报错）。</summary>
+        private static List<string> ResolveTestNames(AxuTestRunRequest request, out string error)
         {
+            error = null;
+            var raw = request.TestNames;
+            if (raw == null || raw.Count == 0)
+                return null;
+
+            var names = raw
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Select(n => n.Trim())
+                .Distinct()
+                .ToList();
+            if (names.Count == 0)
+            {
+                error = "test_names 清单全为空白，未指定任何有效用例。";
+                return null;
+            }
+            return names;
+        }
+
+        /// <summary>枚举过滤描述（写进上下文与返回值；选定运行记录用例数，明细以报告 results 为准）。</summary>
+        private static FilterInfo BuildFilterInfo(AxuTestRunRequest request, List<string> testNames = null)
+        {
+            if (testNames != null && testNames.Count > 0)
+                return new FilterInfo { Type = "testNames", Value = $"{testNames.Count} selected tests" };
+
             var raw = !string.IsNullOrWhiteSpace(request.Category)
                 ? request.Category
                 : (string.Equals(request.FilterType, "category", StringComparison.OrdinalIgnoreCase)
@@ -321,7 +357,7 @@ namespace AxuTestFramework.Editor
 
         /// <summary>RetrieveTestList 桥接（主线程回调经 TCS 转 Task，带超时防挂）。</summary>
         private static async Task<int> CountMatchedTestsAsync(
-            TestMode testMode, List<string> assemblies, string[] categoryNames, string[] groupNames)
+            TestMode testMode, List<string> assemblies, string[] categoryNames, string[] groupNames, List<string> testNames)
         {
             var api = ScriptableObject.CreateInstance<TestRunnerApi>();
             var tcs = new TaskCompletionSource<ITestAdaptor>();
@@ -338,20 +374,21 @@ namespace AxuTestFramework.Editor
 
             var root = tcs.Task.Result;
             var count = 0;
-            CountMatches(root, assemblies, categoryNames, groupNames, ref count);
+            CountMatches(root, assemblies, categoryNames, groupNames, testNames, ref count);
             return count;
         }
 
         /// <summary>按与 UTF Filter 相同语义（AND 各组；类别含祖先继承）统计匹配的叶子用例数。</summary>
         private static void CountMatches(
-            ITestAdaptor node, List<string> assemblies, string[] categoryNames, string[] groupNames, ref int count)
+            ITestAdaptor node, List<string> assemblies, string[] categoryNames, string[] groupNames,
+            List<string> testNames, ref int count)
         {
             if (node == null)
                 return;
 
             if (!node.HasChildren && !node.IsSuite)
             {
-                if (IsMatch(node, assemblies, categoryNames, groupNames))
+                if (IsMatch(node, assemblies, categoryNames, groupNames, testNames))
                     count++;
                 return;
             }
@@ -359,10 +396,11 @@ namespace AxuTestFramework.Editor
             if (node.Children == null)
                 return;
             foreach (var child in node.Children)
-                CountMatches(child, assemblies, categoryNames, groupNames, ref count);
+                CountMatches(child, assemblies, categoryNames, groupNames, testNames, ref count);
         }
 
-        private static bool IsMatch(ITestAdaptor leaf, List<string> assemblies, string[] categoryNames, string[] groupNames)
+        private static bool IsMatch(
+            ITestAdaptor leaf, List<string> assemblies, string[] categoryNames, string[] groupNames, List<string> testNames)
         {
             var assemblyName = leaf.TypeInfo?.Assembly?.GetName()?.Name;
             if (!string.IsNullOrEmpty(assemblyName) && !assemblies.Contains(assemblyName))
@@ -382,6 +420,10 @@ namespace AxuTestFramework.Editor
                 if (groupNames.All(g => leaf.FullName == null || !Regex.IsMatch(leaf.FullName, g)))
                     return false;
             }
+
+            if (testNames != null && testNames.Count > 0 &&
+                (leaf.FullName == null || !testNames.Contains(leaf.FullName)))
+                return false;
 
             return true;
         }
@@ -434,8 +476,10 @@ namespace AxuTestFramework.Editor
                 : full;
         }
 
-        /// <summary>构建 UTF Filter 并立即启动运行（主线程）。</summary>
-        private static void ExecuteRun(TestMode testMode, List<string> assemblies, string[] categoryNames, string[] groupNames)
+        /// <summary>构建 UTF Filter 并立即启动运行（主线程）。testNames 为"选定测试"精确全名通道，
+        /// 与 assemblyNames（安全清单）AND 收敛；选定运行时调用方保证 groupNames 已置空。</summary>
+        private static void ExecuteRun(
+            TestMode testMode, List<string> assemblies, string[] categoryNames, string[] groupNames, List<string> testNames)
         {
             var api = ScriptableObject.CreateInstance<TestRunnerApi>();
             var filter = new Filter
@@ -443,7 +487,8 @@ namespace AxuTestFramework.Editor
                 testMode = testMode,
                 assemblyNames = assemblies.ToArray(),
                 categoryNames = categoryNames,
-                groupNames = groupNames
+                groupNames = groupNames,
+                testNames = testNames?.ToArray()
             };
             api.Execute(new ExecutionSettings(filter));
 

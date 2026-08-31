@@ -14,10 +14,13 @@ namespace AxuTestFramework.Editor
 {
     /// <summary>
     /// AxuTestRunner 测试看板窗口（纯 UI Toolkit，布局语言仿 AxuKitBox，样式 token 独立自持、
-    /// 不引用 AxuFrameKit.Editor）。左侧为测试套件树（按程序集/类分组，TestRunnerApi.RetrieveTestList），
-    /// 右侧为最近报告的结果树（状态/耗时/失败消息与堆栈可展开），顶栏为模式切换 + Run + 过滤输入 +
+    /// 不引用 AxuFrameKit.Editor）。左侧为测试套件树（按程序集/类分组，TestRunnerApi.RetrieveTestList，
+    /// 用例行带勾选框、程序集/命名空间/类各级头部带三态勾选框：点击批量勾选/取消其下当前可见用例，
+    /// 全选=打勾、部分=填充态、无=空；勾选集合按 FullName 键控、跨树重渲染保留），右侧为最近报告的
+    /// 结果树（状态/耗时/失败消息与堆栈可展开），顶栏为模式切换 + Run 全部 / Run 选定 + 过滤输入 +
     /// 最近报告路径（点击 reveal）。左右分栏经 TwoPaneSplitView 可拖拽调比例（viewDataKey 持久化）。
-    /// 运行直接调用 <see cref="AxuTestRunService"/>（不经 HTTP）。
+    /// 运行直接调用 <see cref="AxuTestRunService"/>（不经 HTTP）；"Run 选定"经 testNames 精确通道
+    /// 只跑勾选用例（按当前模式执行，勾选用例不属于当前模式时被预检 0 匹配拦下）。
     /// </summary>
     public class AxuTestRunnerWindow : EditorWindow
     {
@@ -26,7 +29,8 @@ namespace AxuTestFramework.Editor
         private string _mode = "editor";
         private bool _running;
 
-        private Button _runButton;
+        private Button _runAllButton;
+        private Button _runSelectedButton;
         private Button _editorModeButton;
         private Button _playModeButton;
         private TextField _filterField;
@@ -35,6 +39,17 @@ namespace AxuTestFramework.Editor
         private Label _summaryLabel;
         private ScrollView _testsScroll;
         private ScrollView _resultsScroll;
+
+        /// <summary>左侧树勾选的用例全名集合（"Run 选定"的数据源；键控 FullName，与渲染分离，
+        /// 过滤输入触发的树重建与模式切换都不清空——跨模式的失效名单由服务层预检拦下）。</summary>
+        private readonly HashSet<string> _selectedTestNames = new HashSet<string>();
+
+        /// <summary>树内层级勾选框（程序集/命名空间/类头部）与其可见叶子清单；用于勾选变化后重算三态。
+        /// 叶子清单是渲染时的"过滤后可见"集合，批量勾选因此只作用于当前所见。</summary>
+        private readonly List<(Toggle toggle, List<string> leaves)> _treeChecks = new List<(Toggle, List<string>)>();
+
+        /// <summary>树内用例行勾选框与其全名；用于层级勾选变化后回填叶子勾选态。</summary>
+        private readonly List<(Toggle toggle, string leafName)> _leafChecks = new List<(Toggle, string)>();
 
         /// <summary>本域最近一次成功加载的报告路径（供 reveal 与 axu_test_report latest 兜底对照）。</summary>
         private string _loadedReportPath;
@@ -81,15 +96,25 @@ namespace AxuTestFramework.Editor
             _playModeButton = new Button(() => SetMode("playmode")) { text = "PlayMode", name = "ax-mode-play" };
             _playModeButton.AddToClassList("ax-mode-button");
 
-            _runButton = new Button(RunTests) { text = "Run", name = "ax-run-button" };
-            _runButton.AddToClassList("ax-run-button");
+            _runAllButton = new Button(() => RunTests(runSelectedOnly: false))
+            {
+                text = "Run 全部",
+                name = "ax-run-all-button"
+            };
+            _runAllButton.AddToClassList("ax-run-button");
+
+            _runSelectedButton = new Button(() => RunTests(runSelectedOnly: true))
+            {
+                name = "ax-run-selected-button"
+            };
+            _runSelectedButton.AddToClassList("ax-run-button");
 
             var refreshButton = new Button(() => _ = RefreshTestsAsync()) { text = "刷新列表", name = "ax-refresh-button" };
             refreshButton.AddToClassList("ax-secondary-button");
 
             _filterField = new TextField { name = "ax-filter-field" };
             _filterField.AddToClassList("ax-filter-field");
-            _filterField.tooltip = "测试全名包含匹配（大小写不敏感），Run 时作为 testName 过滤下发";
+            _filterField.tooltip = "测试全名包含匹配（大小写不敏感），只影响左侧树的显示与\"Run 全部\"的 testName 过滤；\"Run 选定\"按勾选集合执行";
             _filterField.RegisterValueChangedCallback(_ => RenderTestsTree());
 
             _reportPathButton = new Button(RevealReport) { text = "（尚无报告）", name = "ax-report-path" };
@@ -99,13 +124,15 @@ namespace AxuTestFramework.Editor
 
             topBar.Add(_editorModeButton);
             topBar.Add(_playModeButton);
-            topBar.Add(_runButton);
+            topBar.Add(_runAllButton);
+            topBar.Add(_runSelectedButton);
             topBar.Add(refreshButton);
             topBar.Add(_filterField);
             topBar.Add(_reportPathButton);
 
             rootVisualElement.Add(topBar);
             SetMode(_mode);
+            UpdateSelectionUi();
         }
 
         private void BuildMainArea()
@@ -127,7 +154,7 @@ namespace AxuTestFramework.Editor
             var testsPane = new VisualElement { name = "ax-tests-pane" };
             testsPane.AddToClassList("ax-pane");
             testsPane.style.minWidth = 220f;
-            var testsHeader = new Label("测试套件（按程序集 / 类分组）");
+            var testsHeader = new Label("测试套件（按程序集/类分组，勾选后可 Run 选定）");
             testsHeader.AddToClassList("ax-pane-header");
             _testsScroll = new ScrollView { name = "ax-tests-scroll", viewDataKey = "ax-tests-scroll" };
             _testsScroll.AddToClassList("ax-scroll");
@@ -249,6 +276,8 @@ namespace AxuTestFramework.Editor
             if (_testsScroll == null)
                 return;
             _testsScroll.Clear();
+            _treeChecks.Clear();
+            _leafChecks.Clear();
 
             var needle = (_filterField.value ?? "").Trim();
             var excludedNote = AxuTestAssemblyScanner.ForbiddenAssemblyPrefix;
@@ -257,9 +286,10 @@ namespace AxuTestFramework.Editor
             {
                 var foldout = new Foldout { text = assembly.Name, value = true };
                 foldout.AddToClassList("ax-group-foldout");
-                var hasContent = RenderFixtureLevel(assembly, foldout, needle);
+                var (hasContent, leaves) = RenderFixtureLevel(assembly, foldout, needle);
                 if (!hasContent)
                     continue;
+                AttachTreeCheck(foldout, leaves);
                 _testsScroll.Add(foldout);
             }
 
@@ -273,15 +303,22 @@ namespace AxuTestFramework.Editor
             var note = new Label($"安全过滤：程序集名以 {excludedNote} 开头的测试始终被排除（防 pipeline 自带测试毒化本地 API 鉴权）。");
             note.AddToClassList("ax-footnote");
             _testsScroll.Add(note);
+
+            var note2 = new Label("勾选用例后可\"Run 选定\"（按当前模式执行，经精确全名通道）；点类/程序集级勾选框批量勾选其下当前可见用例——全选态点击=全不选，其余态点击=全选。");
+            note2.AddToClassList("ax-footnote");
+            _testsScroll.Add(note2);
+
+            RefreshTreeCheckStates();
         }
 
-        /// <summary>递归渲染套件层级；返回该子树是否有可见内容。</summary>
-        private bool RenderFixtureLevel(ITestAdaptor node, Foldout parent, string needle)
+        /// <summary>递归渲染套件层级；返回该子树是否有可见内容与其可见叶子全名清单（供父级三态勾选框批量操作）。</summary>
+        private (bool hasContent, List<string> leafNames) RenderFixtureLevel(ITestAdaptor node, Foldout parent, string needle)
         {
             if (node.Children == null)
-                return false;
+                return (false, new List<string>());
 
             var hasContent = false;
+            var leafNames = new List<string>();
             foreach (var child in node.Children)
             {
                 if (!child.HasChildren && !child.IsSuite)
@@ -293,23 +330,100 @@ namespace AxuTestFramework.Editor
                         continue;
                     }
 
-                    var testLabel = new Label(child.Name);
-                    testLabel.AddToClassList("ax-test-row");
-                    testLabel.tooltip = child.FullName + (child.RunState == RunState.Explicit ? "\n[Explicit]" : "");
-                    parent.Add(testLabel);
+                    // 勾选集合按 FullName 键控，树重建（过滤输入/模式切换）时从集合回填勾选态
+                    var fullName = child.FullName ?? child.Name;
+                    var row = new VisualElement { name = "ax-test-row" };
+                    row.AddToClassList("ax-test-row");
+                    row.tooltip = child.FullName + (child.RunState == RunState.Explicit ? "\n[Explicit]" : "");
+
+                    var checkbox = new Toggle { value = _selectedTestNames.Contains(fullName) };
+                    checkbox.AddToClassList("ax-test-check");
+                    checkbox.RegisterValueChangedCallback(evt =>
+                    {
+                        if (evt.newValue)
+                            _selectedTestNames.Add(fullName);
+                        else
+                            _selectedTestNames.Remove(fullName);
+                        RefreshTreeCheckStates();
+                        UpdateSelectionUi();
+                    });
+
+                    var testLabel = new Label(child.Name) { name = "ax-test-row-label" };
+                    testLabel.AddToClassList("ax-test-row-label");
+
+                    row.Add(checkbox);
+                    row.Add(testLabel);
+                    parent.Add(row);
+                    _leafChecks.Add((checkbox, fullName));
+                    leafNames.Add(fullName);
                     hasContent = true;
                     continue;
                 }
 
                 var childFoldout = new Foldout { text = GetDisplayName(child), value = false };
                 childFoldout.AddToClassList("ax-fixture-foldout");
-                if (RenderFixtureLevel(child, childFoldout, needle))
+                var (childOk, childLeaves) = RenderFixtureLevel(child, childFoldout, needle);
+                if (childOk)
                 {
+                    AttachTreeCheck(childFoldout, childLeaves);
                     parent.Add(childFoldout);
                     hasContent = true;
+                    leafNames.AddRange(childLeaves);
                 }
             }
-            return hasContent;
+            return (hasContent, leafNames);
+        }
+
+        /// <summary>在 Foldout 头部行挂三态勾选框：点击批量勾选/取消其下当前可见用例
+        /// （全选态点击=全不选，部分/全无态点击=全选）；三态展示由 <see cref="RefreshTreeCheckStates"/> 统一回填。
+        /// 勾选框上拦截 PointerDown/Click 冒泡，避免点勾选框时连带折叠/展开 Foldout。</summary>
+        private void AttachTreeCheck(Foldout foldout, List<string> leaves)
+        {
+            if (leaves.Count == 0)
+                return;
+
+            var header = foldout.Q(className: "unity-foldout__toggle");
+            if (header == null)
+                return;
+
+            var checkbox = new Toggle();
+            checkbox.AddToClassList("ax-tree-check");
+            checkbox.RegisterCallback<PointerDownEvent>(e => e.StopPropagation());
+            checkbox.RegisterCallback<ClickEvent>(e => e.StopPropagation());
+            checkbox.RegisterValueChangedCallback(_ =>
+            {
+                if (leaves.All(_selectedTestNames.Contains))
+                {
+                    foreach (var name in leaves)
+                        _selectedTestNames.Remove(name);
+                }
+                else
+                {
+                    foreach (var name in leaves)
+                        _selectedTestNames.Add(name);
+                }
+                RefreshTreeCheckStates();
+                UpdateSelectionUi();
+            });
+
+            header.Add(checkbox);
+            _treeChecks.Add((checkbox, leaves));
+        }
+
+        /// <summary>按勾选集合重算全树勾选态：叶子行回填真值；层级框回填三态
+        /// （全选=勾、部分=mixed 填充态、无=空），全部经 SetValueWithoutNotify 防递归触发回调。</summary>
+        private void RefreshTreeCheckStates()
+        {
+            foreach (var (toggle, leafName) in _leafChecks)
+                toggle.SetValueWithoutNotify(_selectedTestNames.Contains(leafName));
+
+            foreach (var (toggle, leaves) in _treeChecks)
+            {
+                var selected = leaves.Count(_selectedTestNames.Contains);
+                var all = selected >= leaves.Count;
+                toggle.SetValueWithoutNotify(all);
+                toggle.EnableInClassList("ax-check-mixed", selected > 0 && !all);
+            }
         }
 
         private static string GetDisplayName(ITestAdaptor node)
@@ -324,22 +438,40 @@ namespace AxuTestFramework.Editor
 
         // ------------------------------------------------------------------ 运行
 
-        private async void RunTests()
+        /// <summary>同步勾选相关 UI：按钮文案带选中计数，无勾选或运行中时"Run 选定"禁用。</summary>
+        private void UpdateSelectionUi()
+        {
+            if (_runSelectedButton == null)
+                return;
+            _runSelectedButton.text = $"Run 选定（{_selectedTestNames.Count}）";
+            _runSelectedButton.SetEnabled(!_running && _selectedTestNames.Count > 0);
+        }
+
+        private async void RunTests(bool runSelectedOnly)
         {
             if (_running)
                 return;
 
+            // 选定运行：快照勾选集合（运行期间用户仍可改勾选，不影响本次请求）
+            var selectedNames = runSelectedOnly ? _selectedTestNames.ToList() : null;
+            if (runSelectedOnly && (selectedNames == null || selectedNames.Count == 0))
+                return;
+
             _running = true;
-            _runButton.SetEnabled(false);
-            UpdateStatus($"正在运行 {_mode} 测试…");
+            _runAllButton.SetEnabled(false);
+            UpdateSelectionUi();
+            UpdateStatus(runSelectedOnly
+                ? $"正在运行 {_mode} 选定用例（{selectedNames.Count} 个）…"
+                : $"正在运行 {_mode} 全部测试…");
 
             try
             {
                 var request = new AxuTestRunRequest
                 {
                     Mode = _mode,
-                    Filter = _filterField.value ?? "",
+                    Filter = runSelectedOnly ? "" : (_filterField.value ?? ""),
                     FilterType = "testName",
+                    TestNames = selectedNames,
                     ClearConsole = true,
                     Report = true,
                     TimeoutMs = 600000
@@ -369,7 +501,8 @@ namespace AxuTestFramework.Editor
             finally
             {
                 _running = false;
-                _runButton.SetEnabled(true);
+                _runAllButton.SetEnabled(true);
+                UpdateSelectionUi();
                 TryLoadLatestReport();
             }
         }
@@ -569,9 +702,17 @@ namespace AxuTestFramework.Editor
             return row;
         }
 
+        /// <summary>是否未通过：非 Passed 且非 Skipped 的终态（Failed/Error/Cancelled/Inconclusive）
+        /// 都按未通过着色，防止 Error 之类的非绿色行被归入通过。</summary>
         private static bool IsFailed(ReportResult result)
         {
-            return result.Status != null && result.Status.StartsWith("Failed", StringComparison.OrdinalIgnoreCase);
+            if (result.Status == null)
+                return false;
+            if (result.Status.StartsWith("Passed", StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (result.Status.StartsWith("Skipped", StringComparison.OrdinalIgnoreCase))
+                return false;
+            return true;
         }
 
         private void UpdateStatus(string message)

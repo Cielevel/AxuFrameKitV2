@@ -30,6 +30,10 @@
     --ax-warn-soft: rgba(255, 193, 7, 0.12);
     --ax-bad: #e05252;
     --ax-bad-soft: rgba(224, 82, 82, 0.13);
+    /* 结果树行头浅色三态：通过=浅绿 / 未通过=浅红 / 跳过=浅蓝（比基色调浅一档，深底可读） */
+    --ax-ok-light: #8ed19a;
+    --ax-bad-light: #ec8a8a;
+    --ax-skip-light: #7fb0e8;
     --ax-r-s: 4px;
     --ax-r-m: 8px;
     --ax-s2: 8px;
@@ -218,16 +222,52 @@
     margin-left: 8px;
 }
 
+/* 用例行 = 勾选框 + 名称（横向行容器）；勾选态由窗口内 HashSet 按 FullName 回填 */
 .ax-test-row {
-    color: var(--ax-text);
-    padding: 2px 0 2px 12px;
-    -unity-text-align: middle-left;
+    flex-direction: row;
+    align-items: center;
+    padding: 1px 4px 1px 12px;
+    border-radius: var(--ax-r-s);
 }
 
 .ax-test-row:hover {
-    color: var(--ax-accent);
     background-color: var(--ax-hover);
-    border-radius: var(--ax-r-s);
+}
+
+.ax-test-row-label {
+    color: var(--ax-text);
+    -unity-text-align: middle-left;
+}
+
+.ax-test-row:hover .ax-test-row-label {
+    color: var(--ax-accent);
+}
+
+.ax-test-check {
+    margin-right: 4px;
+}
+
+/* fixture/程序集头部的层级三态勾选框：推到头部行右侧；全选=打勾、部分=mixed 填充（无勾图形）、无=空。
+   注意 Unity 6 的 Toggle 内部为 unity-toggle__input > unity-toggle__checkmark（勾选框视觉在 checkmark 上，
+   无 unity-toggle__check 这个类），必须用后代选择器定位 checkmark（> 子选择器与旧类名实测均不命中）。 */
+.ax-tree-check {
+    margin-left: auto;
+    margin-right: 4px;
+}
+
+.ax-tree-check .unity-toggle__checkmark {
+    min-width: 14px;
+    height: 14px;
+}
+
+.ax-tree-check.ax-check-mixed .unity-toggle__checkmark {
+    background-image: none;
+    background-color: var(--ax-accent);
+    border-radius: 2px;
+}
+
+.ax-tree-check.ax-check-mixed:hover .unity-toggle__checkmark {
+    background-color: var(--ax-accent-2);
 }
 
 .ax-footnote {
@@ -256,21 +296,27 @@
     margin-left: 8px;
 }
 
-.ax-result-row > .unity-toggle__text {
+/* 行头文本允许换行（长全名/耗时后缀）。
+   行头着色的目标层（Unity 6 实测结构，三层都要考虑）：
+   ① Foldout 头部是 Toggle（unity-foldout__toggle），着色它只影响箭头附近、文本不受影响；
+   ② 文本由内层 Label 渲染，类链 unity-text-element.unity-label.unity-toggle__text.unity-foldout__text，
+      主题规则 .axu-theme-ue5 .unity-label (0,2,0) 直接命中它、显式规则压过继承——
+      故行色必须落在 .unity-foldout__text 上且带 .axu-theme-ue5 前缀（0,3,0）才能生效。 */
+.ax-result-row .unity-toggle__text {
     white-space: normal;
     flex-shrink: 1;
 }
 
-.ax-row-pass > .unity-toggle__text {
-    color: var(--ax-ok);
+.axu-theme-ue5 .ax-row-pass .unity-foldout__text {
+    color: var(--ax-ok-light);
 }
 
-.ax-row-skip > .unity-toggle__text {
-    color: var(--ax-warn);
+.axu-theme-ue5 .ax-row-skip .unity-foldout__text {
+    color: var(--ax-skip-light);
 }
 
-.ax-row-fail > .unity-toggle__text {
-    color: var(--ax-bad);
+.axu-theme-ue5 .ax-row-fail .unity-foldout__text {
+    color: var(--ax-bad-light);
     -unity-font-style: bold;
 }
 
