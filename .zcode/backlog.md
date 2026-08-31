@@ -18,11 +18,8 @@
   - (b) 修订文档：表述改为"Core 基本无 Unity 依赖（个别文件使用 UnityEngine 数学工具），可在非渲染场景使用"。
 - 建议与 `_Core` 后续演进一起处理；在处理前，涉及 `_Core` 可移植性的新代码应避免引入新的 UnityEngine 依赖。
 
-## 3. 构建/导入会反复产生设置资产漂移 【P3 级，反复出现】
+## 3. ~~构建/导入会反复产生设置资产漂移~~ 【已按选项 1 处理 2026-09-01：一次性刻意提交为基线】
 
-- **现象**：Player 构建（有时含域重载导入）后，以下文件会反复出现非交付性改动，需在提交前甄别还原：
-  - `ProjectSettings/ProjectSettings.asset`：`preloadedAssets` 被自动加回一项（guid `052faaac586de48259a63d0c4782560b`，疑为 InputSystem 的默认 Actions 资产，Unity 会自动重挂）；
-  - `Assets/URP/Settings/PC_RPAsset.asset` + `UniversalRenderPipelineGlobalSettings.asset`：URP schema 重序列化（含字段增删与枚举值位移，如 `m_PrefilteringModeAdditionalLight` 4→0）；
-  - `ProjectSettings/GraphicsSettings.asset`：纯 YAML 换行格式漂移。
-- **来源**：2026-08-31 M0 事故与出包验证两次实证；均已还原保持提交干净，但**下次构建大概率复发**。
-- **建议**：要么刻意提交一次这些资产的当前序列化状态（之后稳定），要么在构建工作流中固定"构建后检查 git status"步骤；同时排查该 guid 资产来源决定 preloadedAssets 的期望值。
+- **处理**：工程所有者选定方案 1——把三份资产的当前序列化状态**刻意提交**为基线（URP schema 翻新 + YAML 格式），使磁盘形态与 Unity 产出对齐，此后构建/导入的 diff 应稳定为干净（见"设置资产基线"提交）。
+- **判读**：`PC_RPAsset`/`GlobalSettings` 的新增字段（`m_AllowPostProcessAlphaOutput`/`m_PrefilterAlphaOutput` 等）与枚举值位移是 URP 17.0.3 把资产翻新到当前 schema，语义不变；`GraphicsSettings` 为纯 YAML 换行格式。
+- **遗留观察点**：① 若此后构建仍反复出现同类漂移，说明 Unity 每次都会重写（届时改用方案 2：构建后检查还原）；② `ProjectSettings.asset` 的 `preloadedAssets` 自动重挂（guid `052faaac586de48259a63d0c4782560b`，疑为 InputSystem 默认 Actions）未随本次基线入库（当前工作区该文件干净），复发时单独决策。
