@@ -126,7 +126,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/
 | `axu_test_run` | `mode`(editor/playmode/all，默认 editor)、`assembly`、`category`(逗号分隔，**区分大小写**)、`filter`+`filter_type`(testName/assembly/category)、`clear_console`(默认 true)、`report`(默认 true)、`out_path`(可选留档；不以 .json 结尾视为目录)、`timeout_ms`(默认 120000) | 发起测试运行。**安全内置**：未显式指定 assembly 时自动限定"工程测试程序集"并**排除 `Unity.Pipeline.Tests*`**（返回值含 `ExcludedAssemblies`） |
 | `axu_test_status` | 无 | 轮询运行状态（读 `Temp/axu_test_run_status.json`）；PlayMode 必用。running 超过 15 分钟视为陈旧不阻塞新运行 |
 | `axu_test_report` | `latest`(bool) 或 `path` | 返回报告 JSON 原文；超过 256KB 返回 `{status:"too_large"}` 信封 |
-| `axu_window_screenshot` | `window`(必填，EditorWindow 标题精确匹配)、`menu`(可选，窗口不存在时经此菜单自动打开)、`output`(可选 PNG 路径) | **Windows 专属、仅适用于没有 CaptureToRenderTexture 能力的 Unity 版本（< 6000.7，6000.7+ 不编译，请用 `capture_editor_element`）**。后台无感截取任意浮动 EditorWindow（PrintWindow 离屏渲染）：窗口可被遮挡/失焦，不抢焦点不置顶；限制：最小化/关闭(可经 menu 重开)/停靠状态无法截取。成功返回 `=> OK bytes=... path=...` |
+| `axu_window_screenshot` | `window`(必填，EditorWindow 标题精确匹配)、`menu`(可选，窗口不存在时经此菜单自动打开)、`output`(可选 PNG 路径) | **Windows 专属、仅适用于没有 CaptureToRenderTexture 能力的 Unity 版本（< 6000.7，6000.7+ 不编译，请用 `capture_editor_element`）**。后台无感截取任意浮动 EditorWindow（PrintWindow 离屏渲染）：窗口可被遮挡/失焦，不抢焦点不置顶；限制：最小化/关闭(可经 menu 重开)/停靠状态无法截取。成功返回 `=> OK bytes=... path=...`。**macOS 无需实现**（2026-08-31 决策）：运行时平台守卫在任何 Win32 调用前返回说明文本，不崩溃无副作用；Mac 截图走跨平台路径（`AxuCapture` + `capture_game_view`/`capture_scene_view`/`screenshot`），不规划 CGWindowListCreateImage 变体 |
 
 ### 调用示例
 

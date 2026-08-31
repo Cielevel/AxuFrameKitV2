@@ -146,9 +146,14 @@ curl -s ... -d '{"command":"axu_test_status","parameters":{}}' ...
 
 ### axu_window_screenshot（Windows 专属回退：后台无感窗口截图）
 
-> **适用范围**：① 仅 **Windows**（macOS 需基于 CGWindowListCreateImage 另行实现，未提供）；② 仅适用于**没有
-> CaptureToRenderTexture 能力的 Unity 版本（< 6000.7）**——本实现在 6000.7+ 不参与编译，届时请改用 pipeline
-> 自带的 `capture_editor_element`（引擎级离屏渲染，跨平台、无需窗口可见）。
+> **适用范围**：① 仅 **Windows**；② 仅适用于**没有 CaptureToRenderTexture 能力的 Unity 版本（< 6000.7）**——
+> 本实现在 6000.7+ 不参与编译，届时请改用 pipeline 自带的 `capture_editor_element`（引擎级离屏渲染，跨平台、无需窗口可见）。
+>
+> **macOS 无需对应实现（2026-08-31 决策）**：命令入口有运行时平台守卫，非 WindowsEditor 在任何 Win32 调用之前
+> 即返回一句说明文本，不崩溃、无副作用。Mac 截图能力不缺：测试内截图走 `AxuCapture`（跨平台引擎 API），
+> pipeline 侧 `capture_game_view` / `capture_scene_view` / `screenshot` 亦跨平台。若未来 <6000.7 的 Mac
+> 确需任意 EditorWindow 后台截图，优先升级 Unity 到 6000.7+ 使用 `capture_editor_element`，
+> **不要**另写 CGWindowListCreateImage 变体。
 
 - `POST /api/exec {"command":"axu_window_screenshot","parameters":{...}}`
 - `window`（必填）：EditorWindow 标题（titleContent.text 精确匹配）

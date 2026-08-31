@@ -3,7 +3,10 @@
 // axu_window_screenshot —— Windows 专属的后台无感窗口截图命令
 // ============================================================================
 // 【适用范围 / 重要】
-//   1. 仅 Windows。macOS 需另行基于 CGWindowListCreateImage 实现（当前未提供）；
+//   1. 仅 Windows。macOS 无需对应实现（2026-08-31 决策）：下方平台守卫先于任何 Win32 调用返回
+//      说明文本，不崩溃无副作用；Mac 截图由跨平台路径覆盖（AxuCapture + pipeline 的
+//      capture_game_view/capture_scene_view/screenshot）。若 <6000.7 的 Mac 确需任意窗口后台截图，
+//      优先升级 6000.7+ 改用 capture_editor_element，勿另写 CGWindowListCreateImage 变体；
 //   2. 仅适用于没有 CaptureToRenderTexture 能力的 Unity 版本（< 6000.7）。
 //      6000.7+ 存在引擎级离屏渲染 API（VisualElementCaptureExtensions）与
 //      pipeline 自带的 capture_editor_element 命令（跨平台、无需窗口可见），
@@ -119,7 +122,7 @@ namespace AxuTestFramework.Editor
             [CliArg("output", "Optional PNG path (absolute or relative to project root); defaults to a timestamped file under Temp/pipeline-screenshots/")] string output = "")
         {
             if (Application.platform != RuntimePlatform.WindowsEditor)
-                return "Error: axu_window_screenshot is Windows-only (on macOS implement a CGWindowListCreateImage variant).";
+                return "Error: axu_window_screenshot is Windows-only. macOS needs no equivalent: screenshots are covered cross-platform (AxuCapture, capture_game_view/capture_scene_view/screenshot); for arbitrary EditorWindows use capture_editor_element on Unity 6000.7+.";
             if (string.IsNullOrWhiteSpace(window))
                 return "Error: 'window' (exact EditorWindow title) is required.";
 

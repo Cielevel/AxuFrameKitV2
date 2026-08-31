@@ -25,8 +25,10 @@ All notable changes to this package will be documented in this file.
 - 新增 `axu_window_screenshot` pipeline 命令（**Windows 专属**，适用于**没有 CaptureToRenderTexture 能力的
   Unity 版本 < 6000.7**，6000.7+ 不参与编译、请改用 `capture_editor_element`）：经 `PrintWindow(PW_RENDERFULLCONTENT)`
   离屏渲染实现**后台无感窗口截图**——目标窗口可被遮挡/失焦，不抢焦点、不置顶、不干扰用户；支持 `window`/
-  `menu`(自动开窗)/`output` 参数，`GetDIBits` 失败时自动回退 `GetBitmapBits` 并统一翻转行序。macOS 未实现
-  （需 CGWindowListCreateImage 变体）。
+  `menu`(自动开窗)/`output` 参数，`GetDIBits` 失败时自动回退 `GetBitmapBits` 并统一翻转行序。
+  **macOS 无需对应实现**（2026-08-31 决策）：非 WindowsEditor 由运行时平台守卫先于任何 Win32 调用返回说明文本
+  （不崩溃无副作用），Mac 截图由跨平台路径覆盖（`AxuCapture` + pipeline `capture_game_view`/`capture_scene_view`/
+  `screenshot`）；不规划 CGWindowListCreateImage 变体，确需时优先升 6000.7+ 用 `capture_editor_element`。
 - `AxuTestRunnerWindow`：左右分栏改为 `TwoPaneSplitView`（Horizontal），中间分隔条可拖拽调整两侧比例，
   经 viewDataKey 跨窗口重开保留；左右栏设 minWidth 下限防拖没，USS 补 dragline 悬停高亮。
 
