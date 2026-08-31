@@ -114,7 +114,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/
 主线程只见空闲事件循环（非模态卡死），`osascript quit` 无效，但 `kill -TERM` 可 2 秒内优雅退出，
 重启后完整包解析/编译/服务启动即恢复正常。
 
-## 9. 工程侧自定义命令：`axu_test_*`（AxuTestFramework，2026-08-31 新增）
+## 9. 工程侧自定义命令：`axu_test_*` / `axu_window_screenshot`（AxuTestFramework，2026-08-31 新增）
 
 来源：嵌入式包 `Packages/com.cielevel.axu-test-framework/Editor/`（AxuTestFramework.Editor 程序集）经
 `[CliCommand]` 由 TypeCache 自动发现注册，**pipeline 包源码零改动**。测试框架完整说明见包内 README。
@@ -126,6 +126,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/
 | `axu_test_run` | `mode`(editor/playmode/all，默认 editor)、`assembly`、`category`(逗号分隔，**区分大小写**)、`filter`+`filter_type`(testName/assembly/category)、`clear_console`(默认 true)、`report`(默认 true)、`out_path`(可选留档；不以 .json 结尾视为目录)、`timeout_ms`(默认 120000) | 发起测试运行。**安全内置**：未显式指定 assembly 时自动限定"工程测试程序集"并**排除 `Unity.Pipeline.Tests*`**（返回值含 `ExcludedAssemblies`） |
 | `axu_test_status` | 无 | 轮询运行状态（读 `Temp/axu_test_run_status.json`）；PlayMode 必用。running 超过 15 分钟视为陈旧不阻塞新运行 |
 | `axu_test_report` | `latest`(bool) 或 `path` | 返回报告 JSON 原文；超过 256KB 返回 `{status:"too_large"}` 信封 |
+| `axu_window_screenshot` | `window`(必填，EditorWindow 标题精确匹配)、`menu`(可选，窗口不存在时经此菜单自动打开)、`output`(可选 PNG 路径) | **Windows 专属、仅适用于没有 CaptureToRenderTexture 能力的 Unity 版本（< 6000.7，6000.7+ 不编译，请用 `capture_editor_element`）**。后台无感截取任意浮动 EditorWindow（PrintWindow 离屏渲染）：窗口可被遮挡/失焦，不抢焦点不置顶；限制：最小化/关闭(可经 menu 重开)/停靠状态无法截取。成功返回 `=> OK bytes=... path=...` |
 
 ### 调用示例
 
@@ -142,6 +143,11 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/
 curl -s -X POST ... -d '{"command":"axu_test_run","parameters":{"mode":"playmode","assembly":"AxuFrameKit.Tests.Runtime"}}' ...
 curl -s -X POST ... -d '{"command":"axu_test_status","parameters":{}}' ...          # 循环至 completed
 curl -s -X POST ... -d '{"command":"axu_test_report","parameters":{"latest":true}}' ...
+```
+
+# 后台无感截取浮动 EditorWindow（窗口可被遮挡/失焦；menu 可省略则只截已打开的）
+curl -s -X POST ... -d '{"command":"axu_window_screenshot","parameters":{"window":"AxuTestRunner","menu":"AxuFrameKit/AxuTestRunner"}}' ...
+# => "pw=1 ... => OK bytes=... path=<工程>/Temp/pipeline-screenshots/axu_win_AxuTestRunner_<时间戳>.png"
 ```
 
 返回关键节：`Status`(completed/playmode_running/…)、`Summary{Total,Passed,Failed,Skipped,Inconclusive}`、

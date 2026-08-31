@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEditor.TestTools.TestRunner.Api;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -15,7 +16,8 @@ namespace AxuTestFramework.Editor
     /// AxuTestRunner 测试看板窗口（纯 UI Toolkit，布局语言仿 AxuKitBox，样式 token 独立自持、
     /// 不引用 AxuFrameKit.Editor）。左侧为测试套件树（按程序集/类分组，TestRunnerApi.RetrieveTestList），
     /// 右侧为最近报告的结果树（状态/耗时/失败消息与堆栈可展开），顶栏为模式切换 + Run + 过滤输入 +
-    /// 最近报告路径（点击 reveal）。运行直接调用 <see cref="AxuTestRunService"/>（不经 HTTP）。
+    /// 最近报告路径（点击 reveal）。左右分栏经 TwoPaneSplitView 可拖拽调比例（viewDataKey 持久化）。
+    /// 运行直接调用 <see cref="AxuTestRunService"/>（不经 HTTP）。
     /// </summary>
     public class AxuTestRunnerWindow : EditorWindow
     {
@@ -111,9 +113,20 @@ namespace AxuTestFramework.Editor
             var main = new VisualElement { name = "ax-main" };
             main.AddToClassList("ax-main");
 
+            // 左右分栏用 TwoPaneSplitView：中间分隔条可拖拽调比例，viewDataKey 让比例跨窗口重开保留。
+            // Orientation.Horizontal = 两面板水平排列（左右布局、竖直分隔线）；Vertical 则是上下堆叠。
+            // 首子元素（左栏）为固定宽度侧。viewDataKey 换新避免还原竖排实验期存下的脏状态。
+            var split = new TwoPaneSplitView(0, 380f, TwoPaneSplitViewOrientation.Horizontal)
+            {
+                name = "ax-split",
+                viewDataKey = "ax-split-h"
+            };
+            split.AddToClassList("ax-split");
+
             // 左：测试套件树
             var testsPane = new VisualElement { name = "ax-tests-pane" };
             testsPane.AddToClassList("ax-pane");
+            testsPane.style.minWidth = 220f;
             var testsHeader = new Label("测试套件（按程序集 / 类分组）");
             testsHeader.AddToClassList("ax-pane-header");
             _testsScroll = new ScrollView { name = "ax-tests-scroll", viewDataKey = "ax-tests-scroll" };
@@ -125,6 +138,7 @@ namespace AxuTestFramework.Editor
             var resultsPane = new VisualElement { name = "ax-results-pane" };
             resultsPane.AddToClassList("ax-pane");
             resultsPane.AddToClassList("ax-pane-last");
+            resultsPane.style.minWidth = 260f;
             var resultsHeader = new Label("最近报告结果");
             resultsHeader.AddToClassList("ax-pane-header");
             _summaryLabel = new Label("（尚无结果——先 Run 一次）");
@@ -135,8 +149,9 @@ namespace AxuTestFramework.Editor
             resultsPane.Add(_summaryLabel);
             resultsPane.Add(_resultsScroll);
 
-            main.Add(testsPane);
-            main.Add(resultsPane);
+            split.Add(testsPane);
+            split.Add(resultsPane);
+            main.Add(split);
             rootVisualElement.Add(main);
         }
 

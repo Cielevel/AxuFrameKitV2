@@ -45,7 +45,8 @@ com.cielevel.axu-test-framework/
 │   ├── Commands/AxuTestAssemblyScanner.cs   # 安全测试程序集枚举（剔除 Unity.Pipeline.Tests*）
 │   ├── Commands/AxuTestRunRequest.cs        # 运行请求模型
 │   ├── Commands/AxuTestRunOutcome.cs        # 运行结果模型
-│   ├── Reports/AxuTestReportWriter.cs       # [TestRunCallback] 报告落盘（schema axu-test-report/1）
+│   ├── Commands/AxuWindowScreenshotCommand.cs # [Windows/<6000.7] axu_window_screenshot 后台窗口截图（PrintWindow）
+├── Reports/AxuTestReportWriter.cs       # [TestRunCallback] 报告落盘（schema axu-test-report/1）
 │   ├── Reports/AxuConsoleRing.cs            # 运行期 Console 环形缓冲（Error/Warning 采样）
 │   ├── Reports/AxuTestRunContext.cs         # 跨域重载运行上下文（Temp 文件）
 │   ├── Reports/AxuTestRunStatus.cs          # 运行状态文件模型
@@ -136,6 +137,22 @@ curl -s ... -d '{"command":"axu_test_status","parameters":{}}' ...
   返回报告 JSON **原文**。超过 256KB 返回 `{status:"too_large", path, sizeBytes, limitBytes}`，请直接读文件。
 - `axu_test_status`：读 `Temp/axu_test_run_status.json` 原文；`status` 为 `running` / `completed` / `error`，
   含 `summary`、`reportPath`、`startedAtUtc`（判断陈旧状态）；无文件返回 `{status:"idle"}`。
+
+### axu_window_screenshot（Windows 专属回退：后台无感窗口截图）
+
+> **适用范围**：① 仅 **Windows**（macOS 需基于 CGWindowListCreateImage 另行实现，未提供）；② 仅适用于**没有
+> CaptureToRenderTexture 能力的 Unity 版本（< 6000.7）**——本实现在 6000.7+ 不参与编译，届时请改用 pipeline
+> 自带的 `capture_editor_element`（引擎级离屏渲染，跨平台、无需窗口可见）。
+
+- `POST /api/exec {"command":"axu_window_screenshot","parameters":{...}}`
+- `window`（必填）：EditorWindow 标题（titleContent.text 精确匹配）
+- `menu`（可选）：窗口不存在时经此菜单路径自动打开（如 `AxuFrameKit/AxuTestRunner`）
+- `output`（可选）：PNG 路径，默认 `Temp/pipeline-screenshots/axu_win_<标题>_<时间戳>.png`
+- 原理：`PrintWindow(PW_RENDERFULLCONTENT)` 离屏渲染 + `GetDIBits`/`GetBitmapBits` 读回。
+  **窗口可处于被遮挡/失焦状态，全程不抢焦点、不置顶**；限制：最小化或已关闭无法截取（可经 menu 重开）、
+  停靠（docked）窗口没有独立 OS 窗口无法截取
+- 实现说明：`GetDIBits` 在部分系统组合下静默失败，命令内建 `GetBitmapBits` 兜底并统一翻转行序；
+  原生窗口按 进程PID + 客户区尺寸最优匹配 定位（Unity 浮动窗口的 Win32 标题可能为空）
 
 ### 看板窗口
 

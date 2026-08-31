@@ -59,9 +59,25 @@
     flex-direction: row;
 }
 
-.ax-pane {
+.ax-split {
     flex-grow: 1;
-    flex-basis: 0;
+}
+
+/* 左右分栏的拖拽分隔条：默认 hairline，悬停转主题橙提示可拖拽 */
+.ax-split .unity-two-pane-split-view__dragline {
+    background-color: var(--ax-line-2);
+}
+
+.ax-split .unity-two-pane-split-view__dragline:hover {
+    background-color: var(--ax-accent);
+}
+
+/* 两栏在 TwoPaneSplitView 内，尺寸由控件接管（固定侧内联 width / 活动侧内联 flexGrow）。
+   此处绝不可写 flex-basis/flex-grow —— 样式表 flex-basis 会压过控件设的内联 width，
+   导致拖拽条移动而面板不跟随。左栏固定宽（flex-shrink:0），右栏弹性填充。 */
+.ax-pane {
+    flex-grow: 0;
+    flex-shrink: 0;
     border-radius: var(--ax-r-m);
     background-color: var(--ax-surface);
     border-width: 1px;
@@ -71,6 +87,8 @@
 }
 
 .ax-pane-last {
+    flex-grow: 1;
+    flex-shrink: 0;
     margin-right: 0;
     margin-left: var(--ax-s2);
 }
