@@ -1,0 +1,31 @@
+{
+    "name": "AxuTestFramework.Editor.Pipeline",
+    "rootNamespace": "AxuTestFramework.Editor",
+    "references": [
+        "Unity.Pipeline",
+        "AxuTestFramework",
+        "AxuTestFramework.Editor",
+        "Unity.Nuget.Newtonsoft-Json"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "AXU_PIPELINE_PRESENT"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.pipeline",
+            "expression": "0.5.0-exp",
+            "define": "AXU_PIPELINE_PRESENT"
+        }
+    ],
+    "noEngineReferences": false
+}

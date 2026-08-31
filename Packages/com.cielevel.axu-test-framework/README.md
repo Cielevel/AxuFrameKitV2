@@ -9,9 +9,18 @@ AxuFrameKit 体系之外的**通用测试框架包**：覆盖 EditMode 与 PlayM
 
 - **Runtime 程序集 `AxuTestFramework`**：测试编写工具层（等待 / 场景 / 截图 / 日志监视 / 静态重置 / 报告模型）。
   全平台可编译，`defineConstraints: [UNITY_INCLUDE_TESTS]` 保证正常出包时**不参与编译**，运行时零影响。
+- **Core 程序集 `AxuTestFramework.Core`**（0.2.0 新增，建设中）：场景测试平台的纯 C# 基座（scenario/suite 模型、
+  指标统计、预算/基线/趋势、报告模型）。`noEngineReferences: true`，唯一外部依赖 Newtonsoft.Json。
+  schema 见 [`DOC/ScenarioSchema.md`](DOC/ScenarioSchema.md)。
+- **Agent 程序集 `AxuTestFramework.Agent`**（0.2.0 新增，建设中）：Player 可编译的场景测试运行时
+  （Bootstrap / Runner / 采集器 / Overlay）。只依赖 Core；公开入口以 `AXU_TEST_AGENT` define 守护（不开启则不产生激活代码）。
 - **Editor 程序集 `AxuTestFramework.Editor`**：报告落盘（`[TestRunCallback]` → `AxuTestReportWriter`）、
-  pipeline 自定义命令（`axu_test_run` / `axu_test_report` / `axu_test_status`，经 TypeCache 自动注册、
-  pipeline 包零改动）、UITK 看板窗口（菜单 `AxuFrameKit/AxuTestRunner`）。`autoReferenced: false`，仅 Editor 参与。
+  运行编排与看板窗口（菜单 `AxuFrameKit/AxuTestRunner`）。`autoReferenced: false`，仅 Editor 参与；
+  **0.2.0 起零 pipeline 引用**。
+- **Editor 程序集 `AxuTestFramework.Editor.Pipeline`**（0.2.0 新增）：全部引用 pipeline 的 `[CliCommand]` 命令
+  （`axu_test_*` / `axu_window_screenshot`，后续 + `axu_scenario_*`）经 TypeCache 自动注册。`defineConstraints:
+  [AXU_PIPELINE_PRESENT]`（由本程序集 versionDefines 按 `com.unity.pipeline ≥0.5.0-exp` 注入）——**未装 pipeline
+  包的工程该程序集整体不编译，包内其余功能不受影响**。
 - **Samples~**：EditMode / PlayMode 各一组最小示例，经 Package Manager → Samples 导入。
 
 ## 依赖
@@ -20,13 +29,16 @@ AxuFrameKit 体系之外的**通用测试框架包**：覆盖 EditMode 与 PlayM
 |---|---|
 | `com.unity.test-framework` 1.4.6 | UTF（Unity Test Framework），必需 |
 | `com.unity.nuget.newtonsoft-json` 3.2.2 | 报告 JSON 序列化，必需（asmdef 引用名 `Unity.Nuget.Newtonsoft-Json`） |
-| `com.unity.pipeline` 0.5.0-exp.1 | **必需依赖**（已声明在 dependencies 中；实验版，本工程以嵌入式包 `Packages/com.unity.pipeline` 提供）。`AxuTestFramework.Editor` 经 TypeCache 自动注册 `axu_test_*` 自定义命令到 pipeline 本地 HTTP API，获得"命令行跑测试 + 收报告"能力。在其他工程使用本包需一并拷入该包，并注意 macOS 端口探测补丁（升级该包版本时补丁会丢失，按工程 `.zcode/08-unity-pipeline-api.md` 第 8 节重打） |
+| `com.unity.pipeline` 0.5.0-exp.1 | **可选**（0.2.0 起不再声明在 dependencies）。安装时 `AxuTestFramework.Editor.Pipeline` 程序集经 TypeCache 自动注册 `axu_test_*` 自定义命令到 pipeline 本地 HTTP API，获得"命令行跑测试 + 收报告"能力；未安装则该程序集整体不编译，包内其余功能（工具层 / 报告 / 看板）完整可用。其他工程如需命令驱动再自行拷入该包（升级版本注意 macOS 端口探测补丁，按使用工程内文档重打） |
 
 ## 目录结构
 
 ```
 com.cielevel.axu-test-framework/
 ├── package.json / README.md / CHANGELOG.md
+├── DOC/ScenarioSchema.md             # v2 场景测试 schema 草案（axu-scenario/1、axu-suite/1、axu-scenario-report/1）
+├── Core/                             # asmdef: AxuTestFramework.Core（纯 C#，noEngineReferences；0.2.0 新增，建设中）
+├── Agent/                            # asmdef: AxuTestFramework.Agent（Player 可编译，AXU_TEST_AGENT 守护；0.2.0 新增，建设中）
 ├── Runtime/                          # asmdef: AxuTestFramework（全平台，UNITY_INCLUDE_TESTS）
 │   ├── Wait/AxuWait.cs               #   帧 / 条件 / 秒等待（[UnityTest] 协程 yield）
 │   ├── Scene/AxuTestScene.cs         #   场景按路径加载 / 卸载 / 重载
@@ -39,22 +51,24 @@ com.cielevel.axu-test-framework/
 │       ├── AxuTestReport.cs / FilterInfo.cs / ReportSummary.cs
 │       ├── ReportResult.cs / ReportConsole.cs
 │       └── ReportArtifact.cs / ReportEnvironment.cs
-├── Editor/                           # asmdef: AxuTestFramework.Editor（Editor-only, autoReferenced:false）
-│   ├── Commands/AxuTestPipelineCommands.cs  # [CliCommand] axu_test_run / axu_test_report / axu_test_status
+├── Editor/                           # asmdef: AxuTestFramework.Editor（Editor-only, autoReferenced:false；0.2.0 起零 pipeline 引用）
 │   ├── Commands/AxuTestRunService.cs        # 运行编排核心（命令与窗口共用）
 │   ├── Commands/AxuTestAssemblyScanner.cs   # 安全测试程序集枚举（剔除 Unity.Pipeline.Tests*）
 │   ├── Commands/AxuTestRunRequest.cs        # 运行请求模型
 │   ├── Commands/AxuTestRunOutcome.cs        # 运行结果模型
-│   ├── Commands/AxuWindowScreenshotCommand.cs # [Windows/<6000.7] axu_window_screenshot 后台窗口截图（PrintWindow）
-├── Reports/AxuTestReportWriter.cs       # [TestRunCallback] 报告落盘（schema axu-test-report/1）
+│   ├── Reports/AxuTestReportWriter.cs       # [TestRunCallback] 报告落盘（schema axu-test-report/1）
 │   ├── Reports/AxuConsoleRing.cs            # 运行期 Console 环形缓冲（Error/Warning 采样）
 │   ├── Reports/AxuTestRunContext.cs         # 跨域重载运行上下文（Temp 文件）
 │   ├── Reports/AxuTestRunStatus.cs          # 运行状态文件模型
 │   ├── Reports/AxuTestReportPaths.cs        # 路径约定
 │   ├── Window/AxuTestRunnerWindow.cs        # UITK 看板（AxuFrameKit/AxuTestRunner）
 │   └── UI/AxuTestTokens.uss                 # 窗口样式 token（独立自持，仿 KitBox 意象）
-├── Tests/Editor/                            # asmdef: AxuTestFramework.Tests.Editor（包自身测试）
-│   └── AxuTestRunSelectionTests.cs          #   "选定测试"通道解析/FilterInfo/并发闸语义
+├── Editor.Pipeline/                  # asmdef: AxuTestFramework.Editor.Pipeline（0.2.0 新增；AXU_PIPELINE_PRESENT 守护）
+│   └── Commands/
+│       ├── AxuTestPipelineCommands.cs       # [CliCommand] axu_test_run / axu_test_report / axu_test_status
+│       └── AxuWindowScreenshotCommand.cs    # [Windows/<6000.7] axu_window_screenshot 后台窗口截图（PrintWindow）
+├── Tests/Editor/                     # asmdef: AxuTestFramework.Tests.Editor（包自身测试）
+│   └── AxuTestRunSelectionTests.cs   #   "选定测试"通道解析/FilterInfo/并发闸语义
 └── Samples~/
     └── Tests/
         ├── Editor/                   # SampleEditMode（PM → Samples 导入）

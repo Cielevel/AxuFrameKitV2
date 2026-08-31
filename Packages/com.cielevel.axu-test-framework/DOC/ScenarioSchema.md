@@ -1,0 +1,149 @@
+# Scenario Schema（v2 场景测试数据模型）
+
+> **状态：草案（0.2.0，Phase 0 落稿）**——本文档定义的 schema 是场景测试平台的数据契约；
+> JSON 读写实现于 `AxuTestFramework.Core`（Phase 1），预算判定实现于 Phase 2，能力运行器实现于 Phase 3。
+> 字段以本文档为准，实现必须与本文档同步更新。
+
+三个 schema 构成数据链路：
+
+```
+axu-suite/1 ──引用──▶ axu-scenario/1 ──运行产生──▶ axu-scenario-report/1
+（一次批量计划）        （单个测试情景定义）            （结构化结果 + 预算判定）
+```
+
+通用约定：
+
+- JSON 编码 UTF-8，无 BOM；时间一律 UTC ISO 8601；
+- 所有 schema 带 `schema` 字段做自描述，读取时校验，不认识的**附加字段忽略**（向前兼容）；
+- `id` 全小写点分（`perf.combat.fhd`）， suite 内唯一；指标键命名 `<collector>.<metric>.<agg>`（如 `fps.avg`）。
+
+---
+
+## 1. axu-scenario/1 —— 单个测试情景
+
+```jsonc
+{
+  "schema": "axu-scenario/1",
+  "id": "perf.combat.fhd",
+  "capability": "perf",                      // 必填；须是注册表中的 capability id
+  "title": "战斗场景 1080p 基准",              // 可选，展示用
+  "enabled": true,                           // 可选，默认 true；false 时 suite 跳过
+  "params": { /* 各 capability 自定参数，见第 4 节通用参数 */ },
+  "budgets": [                               // 可选；无 budgets 时结果标 unbudgeted=true
+    { "metric": "fps.avg",              "op": ">=", "value": 45 },
+    { "metric": "frameTime.p95",        "op": "<=", "value": 25,  "unit": "ms", "severity": "warn" },
+    { "metric": "memory.allocated.max", "op": "<=", "value": 2048, "unit": "MB" }
+  ],
+  "baseline": "baselines/combat-fhd.json"    // 可选；相对 suite 文件的路径，存在则自动 diff
+}
+```
+
+### budgets 规则
+
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| `metric` | ✔ | 指标键，须为本次运行实际产出的指标 |
+| `op` | ✔ | `>=` / `<=` / `==` / `range`（range 时用 `valueMin`/`valueMax` 替代 `value`） |
+| `value` | ✔（range 除外） | 阈值 |
+| `unit` |  | 展示单位（`ms`/`MB`/`fps`…），不参与换算——写入方负责单位一致 |
+| `severity` |  | 违约判定级别，`fail`（默认）/ `warn` |
+
+scenario 总判定 = 最严 budget 结果（fail > warn > pass）。
+
+---
+
+## 2. axu-suite/1 —— 批量运行计划
+
+```jsonc
+{
+  "schema": "axu-suite/1",
+  "id": "nightly-perf",
+  "title": "每夜性能套件",
+  "scenarios": [
+    "perf.combat.fhd",                        // 字符串形式：引用同文件内联定义或已注册场景
+    { "ref": "perf.combat.fhd", "profile": "low-end" }   // 对象形式：引用 + 环境档扇出
+  ],
+  "profiles": {                               // 可选；环境档 = 对 scenario.params 的深合并覆盖
+    "low-end": { "resolution": [1280, 720], "qualityLevel": 0 }
+  },
+  "settings": {
+    "stopOnFailure": false,                   // 某 scenario fail 后是否中断剩余
+    "warnAsFail": false,                      // warn 计入 fail（影响退出码）
+    "scenarioTimeoutSec": 600                 // 单 scenario 看门狗超时
+  }
+}
+```
+
+扇出规则：`ref + profile` 生成派生 scenario，`id` 追加档名后缀（`perf.combat.fhd@low-end`），报告独立成条。
+
+---
+
+## 3. axu-scenario-report/1 —— 运行报告
+
+```jsonc
+{
+  "schema": "axu-scenario-report/1",
+  "suiteId": "nightly-perf",
+  "startedAt": "2026-08-31T12:00:00Z",
+  "endedAt": "2026-08-31T12:05:00Z",
+  "environment": {
+    "unityVersion": "6000.0.23f1", "agentVersion": "0.2.0",
+    "isEditor": false, "developmentBuild": true,
+    "deviceModel": "iPhone 14 Pro", "os": "iOS 18.5",
+    "graphicsDevice": "Apple A16", "graphicsApi": "Metal",
+    "systemMemoryMB": 6144, "qualityLevel": 2, "resolution": [2556, 1179],
+    "buildGuid": "…"
+  },
+  "summary": { "total": 3, "passed": 2, "warned": 1, "failed": 0 },
+  "exitCode": 0,                               // 0=全 pass；1=有 fail；2=仅 warn；3=基础设施错误
+  "results": [
+    {
+      "scenarioId": "perf.combat.fhd", "capability": "perf", "status": "warn",
+      "durationMs": 71234, "unbudgeted": false,
+      "metrics": {                             // 每指标聚合值（p50/p95/min/max/avg/slope 按采集器能力）
+        "fps": { "avg": 46.2, "p50": 47.9, "p95": 41.0, "min": 33.5 },
+        "frameTime": { "cpuP95": 24.8, "gpuP95": 26.1 },
+        "memory": { "allocatedMax": 1832.4, "monoUsedMax": 210.7 }
+      },
+      "budgets": [
+        { "metric": "fps.avg",       "op": ">=", "threshold": 45, "actual": 46.2, "verdict": "pass" },
+        { "metric": "frameTime.p95", "op": "<=", "threshold": 25, "actual": 26.1, "unit": "ms", "verdict": "warn" }
+      ],
+      "baselineDiff": {                        // 有 baseline 时存在
+        "ref": "baselines/combat-fhd.json",
+        "entries": [ { "metric": "fps.avg", "base": 48.1, "delta": "-3.9%", "verdict": "pass" } ]
+      },
+      "series": { "dir": "series/perf.combat.fhd/", "files": ["fps.csv", "memory.csv"] },
+      "artifacts": [ "artifacts/perf.combat.fhd_end.png" ],
+      "log": { "errorCount": 0, "warningCount": 3, "samples": [] },
+      "findings": [
+        { "severity": "warn", "code": "BUDGET_WARN", "message": "frameTime.p95=26.1ms > 25ms" }
+      ]
+    }
+  ]
+}
+```
+
+`results[].status` 取值：`pass` / `warn` / `fail` / `error`（error = scenario 执行异常，区别于预算 fail）。
+
+---
+
+## 4. 通用 params（各 capability 共享的保留键）
+
+| 键 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `scene` | string | 无 | 目标场景路径（Editor 支持 `Assets/…` 完整路径；Player 需在构建清单内） |
+| `warmupSeconds` | float | 0 | 预热期，期间不采样 |
+| `measureSeconds` | float | 按 capability | 度量期时长 |
+| `timeScale` | float | 1.0 | `Time.timeScale` 覆盖 |
+| `vsync` | int | 不改 | 覆盖 `QualitySettings.vSyncCount` |
+| `targetFrameRate` | int | 不改 | 覆盖 `Application.targetFrameRate` |
+| `resolution` | [w,h] | 不改 | 覆盖分辨率 |
+| `qualityLevel` | int | 不改 | 覆盖 `QualitySettings.selectedQualityLevel` |
+| `seed` | int | 0 | 随机种子（0 = 时间派生）；写进报告便于复现 |
+| `sampleIntervalMs` | int | 250 | 采样聚合间隔 |
+| `collectors` | string[] | capability 默认 | 启用的采集器清单 |
+| `timeoutSec` | float | suite.settings | scenario 级超时覆盖 |
+
+> capability 专属参数（如 stress 的 `phases`、soak 的 `durationMinutes`）在各能力的 DOC 中定义，
+> 保留键之外的键由 capability 自行解释，未知键忽略。

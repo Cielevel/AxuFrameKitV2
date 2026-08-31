@@ -3,7 +3,8 @@
     "rootNamespace": "AxuTestFramework.Editor",
     "references": [
         "AxuTestFramework",
-        "Unity.Pipeline",
+        "AxuTestFramework.Core",
+        "AxuTestFramework.Agent",
         "Unity.Nuget.Newtonsoft-Json",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

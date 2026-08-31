@@ -97,7 +97,7 @@ AxuTestFramework.Editor.Pipeline（可选新增）axu_scenario_* 等依赖 pipel
 | `AxuTestFramework.Core` | 无 | `Unity.Nuget.Newtonsoft-Json`（唯一例外，见决策 D1） | 场景模型/指标统计/预算/基线/趋势/报告 POCO/JSON 读写/种子工具 |
 | `AxuTestFramework.Agent` | 无（内部用 `#if AXU_TEST_AGENT` 守护公开入口，见 D2） | Core + Newtonsoft | Player 可编译；`noEngineReferences:false`；IL2CPP 安全 |
 | `AxuTestFramework`（现状） | `UNITY_INCLUDE_TESTS`（不变） | 现状不变 | 零回归风险 |
-| `AxuTestFramework.Editor`（现状+） | Editor-only（不变） | + Agent、Core；pipeline 移除硬引用 | versionDefines 注入 `AXU_PIPELINE_PRESENT` |
+| `AxuTestFramework.Editor`（现状+） | Editor-only（不变） | + Agent、Core；pipeline 硬引用移除 | 0.2.0 起零 pipeline 引用；`AXU_PIPELINE_PRESENT` 由 Editor.Pipeline **自身** versionDefines 注入（versionDefines 为程序集级作用域，不能跨程序集供给 define） |
 | `AxuTestFramework.Editor.Pipeline`（新增） | `AXU_PIPELINE_PRESENT` | Unity.Pipeline + Editor + Agent | 所有 `[CliCommand]` 新命令放这里；未装 pipeline 包则不编译 |
 
 ### 2.2 关键技术决策（先定盘，后实施）
@@ -485,7 +485,7 @@ AxuMetrics.Gauge("Room.EnemyCount", enemies.Count);       // 瞬时值（采样�
 
 | Phase | 状态 | 完成日期 | 收尾提交 | 问答记录 |
 |---|---|---|---|---|
-| 0 架构基座 | 未开始 | — | — | — |
+| 0 架构基座 | **已完成（2026-08-31）** | 2026-08-31 | `axu-test-v2: Phase 0 架构基座`（本条目所在提交） | **开工问答（2026-08-31，一次性作答）**：① pipeline 解除方式 = v1 两个命令文件（axu_test_*、axu_window_screenshot，连 .meta）迁入 `Editor.Pipeline/`，Editor 主程序集零 pipeline 引用；② `AXU_TEST_AGENT` = 开发期 Standalone 常开，ProjectSettings 随本 Phase 收尾提交定版；③ 包版本 = Phase 0 即升 0.2.0；④ schema 草案 = 新建包根 `DOC/`。**实施记录**：新增 Core/Agent/Editor.Pipeline 三 asmdef + `SchemaNames.cs`/`AgentInfo.cs`（空程序集不产出 dll，以 Phase 1 反正需要的最小文件填充）；实施勘误：versionDefines 注入点为 Editor.Pipeline 自身（程序集级作用域，不能跨程序集供给）；expression `0.5.0-exp` 实证匹配 0.5.0-exp.1。**DoD 验证**：编译零 error；`Library/ScriptAssemblies/` 5 dll 齐全；`axu_test_run/status/report` 在册且归属 `AxuTestFramework.Editor.Pipeline`；回归 包测试 6/6 + Axu/Smoke 7/7 全绿；AXU_TEST_AGENT 开/关两形态在 Phase 0 因尚无 `#if` 守护代码而编译等价（按构造成立），真实验证移至 Phase 1 DoD。**零影响红线**：①②③④ 全过（Runtime asmdef 未动；Editor asmdef 仅按方案调整 references） |
 | 1 Agent 骨架 | 未开始 | — | — | — |
 | 2 度量层 | 未开始 | — | — | — |
 | 3 首批能力 | 未开始 | — | — | — |

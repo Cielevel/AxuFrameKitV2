@@ -2,8 +2,21 @@
 
 All notable changes to this package will be documented in this file.
 
-## [Unreleased]
+## [0.2.0] - 2026-08-31（场景测试平台建设启动，Phase 0 架构基座已落地）
 
+- **程序集拓扑扩展**：新增 `AxuTestFramework.Core`（纯 C# 基座，`noEngineReferences: true`，唯一外部依赖
+  Newtonsoft.Json）、`AxuTestFramework.Agent`（Player 可编译的场景测试运行时，公开入口由 `AXU_TEST_AGENT`
+  define 守护）、`AxuTestFramework.Editor.Pipeline`（Editor-only）。三者 0.2.0 先落程序集与契约，实现按
+  场景测试平台方案（Phase 1–5）逐步填充。
+- **pipeline 依赖可选化**：`com.unity.pipeline` 从 dependencies 移除；全部 `[CliCommand]` 命令
+  （`axu_test_run` / `axu_test_report` / `axu_test_status` / `axu_window_screenshot`）迁入新程序集
+  `AxuTestFramework.Editor.Pipeline`（`Editor.Pipeline/Commands/`，命名空间不变），该程序集以
+  `defineConstraints: [AXU_PIPELINE_PRESENT]` + versionDefines（`com.unity.pipeline ≥0.5.0-exp`）守护——
+  **未装 pipeline 包的工程整体不编译该程序集，包内其余功能不受影响**；`AxuTestFramework.Editor`
+  主程序集自此零 pipeline 引用。
+- 新增 `DOC/ScenarioSchema.md`：场景测试数据契约草案（`axu-scenario/1`、`axu-suite/1`、`axu-scenario-report/1`
+  字段表、预算规则、通用 params 保留键）。
+- 以下 v1 条目随 0.2.0 一并发布（0.1.0 后的未发版积累）：
 - `AxuTestRunnerWindow` 右侧结果树行头按终态着色：**通过=浅绿**（`--ax-ok-light`）/ **未通过=浅红加粗**
   （`--ax-bad-light`）/ **跳过=浅蓝**（`--ax-skip-light`，取代原琥珀色）；着色选择器改为可命中的
   `.unity-foldout__toggle` 后代形式（旧 `>` 子选择器实际未命中）。`IsFailed` 拓宽为"非 Passed 且非 Skipped"，

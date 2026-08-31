@@ -1,8 +1,8 @@
 {
   "name": "com.cielevel.axu-test-framework",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "AxuTestFramework",
-  "description": "AxuTestFramework：覆盖 EditMode 与 PlayMode 的通用测试框架与工具层（等待/场景/截图/日志监视/静态重置/结构化报告），经 Unity Pipeline 本地 API 驱动形成测试闭环。",
+  "description": "AxuTestFramework：通用测试框架包。v1：EditMode/PlayMode 测试工具层（等待/场景/截图/日志监视/静态重置/结构化报告），经 Unity Pipeline 本地 API（可选）驱动测试闭环；0.2.0 起：场景测试平台（Core 纯 C# 模型 + Player 可编译 Agent，perf/smoke/soak/stress/monkey 等游戏级测试能力，建设中）。",
   "author": {
     "name": "Cielevel",
     "url": "https://github.com/Cielevel"
@@ -10,8 +10,7 @@
   "unity": "6000.0",
   "dependencies": {
     "com.unity.test-framework": "1.4.6",
-    "com.unity.nuget.newtonsoft-json": "3.2.2",
-    "com.unity.pipeline": "0.5.0-exp.1"
+    "com.unity.nuget.newtonsoft-json": "3.2.2"
   },
   "samples": [
     {
