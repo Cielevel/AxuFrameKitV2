@@ -17,16 +17,16 @@
 | 代理 | 职责 | 工具姿态 |
 |---|---|---|
 | `unity-architect` | 架构/方案设计、asmdef 与包边界决策、任务拆解 | 只读 |
-| `unity-runtime-dev` | 运行时 C#（_Core/Common 层组件、工具、模式） | 写代码 |
-| `unity-editor-dev` | Editor 扩展（KitBox 页面/Inspector/窗口/UI Toolkit） | 写代码 |
+| `unity-runtime-dev` | 运行时 C#（_Core/Common 层组件、工具、模式；含测试基建包 Core/Agent 层） | 写代码 |
+| `unity-editor-dev` | Editor 扩展（KitBox 页面/Inspector/窗口/UI Toolkit；含测试基建包 Editor 与 Editor.Pipeline 层） | 写代码 |
 | `unity-ui-dev` | UI 框架（Manager→Area→Panel→Page）、UIBind* 绑定、UIListView | 写代码 |
 | `unity-asset-scene` | 资产组织/导入设置/场景搭建/Prefab/.meta 纪律 | 设计+经 API 执行 |
 | `unity-pipeline` | **Editor 执行器**：驱动运行中 Editor（编译/测试/资产/场景/烘焙/构建/截图），唯一可执行写命令的代理 | 可执行（副作用） |
 | `unity-pipeline-observe` | Editor 只读观测：状态/Console/进度 | 只读 |
-| `unity-tester` | 测试编写（EditMode/PlayMode）与运行解读 | 写代码+跑测试 |
+| `unity-tester` | 测试编写（EditMode/PlayMode）与运行解读（v2 起 + Scenario 场景测试） | 写代码+跑测试 |
 | `unity-debugger` | 报错/异常/编译错误根因诊断与最小修复 | 读+定点修 |
-| `unity-build` | 构建配置、无头/Pipeline 构建、包版本与 CHANGELOG | 配置+执行 |
-| `unity-reviewer` | 交付前规范审查（分层红线/命名/.meta/性能） | 只读 |
+| `unity-build` | 构建配置、无头/Pipeline 构建、Player 产物运行验证、包版本与 CHANGELOG | 配置+执行 |
+| `unity-reviewer` | 交付前规范审查（分层红线/命名/.meta/性能；含测试基建包专项） | 只读 |
 
 ## 3. 派发矩阵（主代理按此路由）
 
@@ -48,3 +48,4 @@
 
 - Pipeline API 细节（端点/命令/鉴权/实测示例）→ [08-unity-pipeline-api.md](08-unity-pipeline-api.md)
 - 分层/命名/包结构规范 → 根目录 `AGENTS.md`、[02-package-structure.md](02-package-structure.md)
+- AxuTestFramework v2 扩展方案（游戏级测试平台；2026-08-31 起上表 runtime-dev / editor-dev / tester / build / reviewer 五个代理的工程版 charter 已按其扩充）→ [plans/axu-test-framework-game-test-platform-plan.md](plans/axu-test-framework-game-test-platform-plan.md)

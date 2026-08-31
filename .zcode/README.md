@@ -25,7 +25,7 @@
 | [07-docs-and-history.md](07-docs-and-history.md) | 全项目文档清单与状态、AGENTS.md 过时条目、git 演进时间线 | 判断文档可信度、了解历史决策 |
 | [08-unity-pipeline-api.md](08-unity-pipeline-api.md) | **Unity Pipeline 本地 API**（HTTP 直连运行中 Editor：142 个命令、鉴权、示例） | **需要编译/测试/读 Console/操作资产时优先用这个** |
 | [09-unity-subagents.md](09-unity-subagents.md) | **Unity 全流程子代理体系**（11 个代理的分工、派发矩阵、全局/工程双层覆盖机制） | **派发子代理前、调整代理定义时先读这个** |
-| [plans/](plans/) | **进行中/已完成工作的方案与交接文档**。AxuTestFramework 测试框架：**已于 2026-08-31 全部完成交付**（M0-M5；交接文档转为归档，见 [plans/axu-test-framework-resume.md](plans/axu-test-framework-resume.md)） | 了解该工作的决策与过程时阅读 |
+| [plans/](plans/) | **进行中/已完成工作的方案与交接文档**。AxuTestFramework v1 测试框架：已于 2026-08-31 全部完成交付（M0-M5；交接归档见 [plans/axu-test-framework-resume.md](plans/axu-test-framework-resume.md)）。**v2 游戏级测试平台扩展方案（已评审通过 2026-08-31，待实施，按 Phase 0–6 推进）**：[plans/axu-test-framework-game-test-platform-plan.md](plans/axu-test-framework-game-test-platform-plan.md)——相关子代理 charter 已按其对齐（2026-08-31） | 实施/评审 v2 扩展、了解场景测试平台设计时阅读 |
 | [backlog.md](backlog.md) | **待办事项**：已识别暂缓处理的问题（含发现来源与建议方案） | 动工前先看有无相关待办；发现新问题记入此处 |
 
 ## 重要提醒（信息时效性）
