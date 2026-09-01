@@ -1,0 +1,40 @@
+{
+  "schema": "axu-suite/1",
+  "id": "monkey-demo",
+  "title": "monkey 能力演示（seed 复现验证：两个同 seed scenario 流水应一致）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "monkey.run-a",
+      "capability": "monkey",
+      "title": "猴子随机点按 20s（seed=42，第一次）",
+      "params": {
+        "scene": "Assets/TestAndSample/Sample_AxuTest/SC AxuTest PerfBench.unity",
+        "durationSec": 20,
+        "actionsPerSecond": 3,
+        "seed": 42,
+        "stopOnError": false,
+        "hangThresholdSec": 5
+      }
+    },
+    {
+      "schema": "axu-scenario/1",
+      "id": "monkey.run-b",
+      "capability": "monkey",
+      "title": "猴子随机点按 20s（seed=42，复现验证）",
+      "params": {
+        "scene": "Assets/TestAndSample/Sample_AxuTest/SC AxuTest PerfBench.unity",
+        "durationSec": 20,
+        "actionsPerSecond": 3,
+        "seed": 42,
+        "stopOnError": false,
+        "hangThresholdSec": 5
+      }
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 120
+  }
+}

@@ -29,5 +29,12 @@ namespace AxuTestFramework.Core.Report
 
         /// <summary>逐 scenario 结果。</summary>
         [JsonProperty("results")] public List<ScenarioReportResult> Results = new List<ScenarioReportResult>();
+
+        /// <summary>
+        /// 是否为部分报告（soak 等长跑能力定期 flush 的中间快照）：true = 运行尚未结束、数据可能不完整；
+        /// null（默认，序列化省略）= 完整报告。
+        /// </summary>
+        [JsonProperty("truncated", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? Truncated;
     }
 }

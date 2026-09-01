@@ -1,0 +1,17 @@
+{
+    "name": "AxuGameHookE2e",
+    "rootNamespace": "TestAndSample.Scenarios",
+    "references": [
+        "AxuTestFramework.Agent",
+        "AxuTestFramework.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

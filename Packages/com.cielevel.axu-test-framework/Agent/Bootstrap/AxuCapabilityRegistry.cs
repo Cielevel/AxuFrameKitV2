@@ -12,7 +12,7 @@ namespace AxuTestFramework.Agent.Bootstrap
     {
         static readonly Dictionary<string, IAxuTestCapability> Capabilities = new Dictionary<string, IAxuTestCapability>();
 
-        /// <summary>注册能力；重复 Id 记警告并忽略（首个生效）。</summary>
+        /// <summary>注册能力；重复 Id 记 warning 并**后者覆盖**（游戏侧可借此替换内建能力实现）。</summary>
         public static void Register(IAxuTestCapability capability)
         {
             if (capability == null || string.IsNullOrEmpty(capability.Id))
@@ -22,12 +22,9 @@ namespace AxuTestFramework.Agent.Bootstrap
             }
 
             if (Capabilities.ContainsKey(capability.Id))
-            {
-                Debug.LogWarning($"[AxuTestAgent] 能力 \"{capability.Id}\" 重复注册，忽略（首个生效）");
-                return;
-            }
+                Debug.LogWarning($"[AxuTestAgent] 能力 \"{capability.Id}\" 重复注册，后者覆盖");
 
-            Capabilities.Add(capability.Id, capability);
+            Capabilities[capability.Id] = capability;
         }
 
         /// <summary>按 id 查找能力。</summary>

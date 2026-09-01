@@ -1,0 +1,46 @@
+{
+  "schema": "axu-suite/1",
+  "id": "stress-demo",
+  "title": "stress 能力演示（容量探测 + churn + flood 三相）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "stress.capacity",
+      "capability": "stress",
+      "title": "PerfBench 靶场容量探测（目标 30fps 下最大实体数）",
+      "params": {
+        "phases": [
+            {
+            "tool": "capacity",
+            "prefabPath": "",
+            "startCount": 50,
+            "rampStep": 50,
+            "rampIntervalSec": 1,
+            "settleSec": 1,
+            "maxCount": 2000,
+            "targetFps": 30,
+            "belowThresholdSec": 2,
+            "convergeTolerancePercent": 10
+          }
+        ]
+      }
+    },
+    {
+      "schema": "axu-scenario/1",
+      "id": "stress.mix",
+      "capability": "stress",
+      "title": "churn（50/s × 6s）+ 事件洪峰（2000/帧 × 3s）",
+      "params": {
+        "phases": [
+          { "tool": "churn", "createPerSec": 50, "durationSec": 6 },
+          { "tool": "flood", "eventsPerFrame": 2000, "subscribers": 8, "durationSec": 3 }
+        ]
+      }
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 600
+  }
+}

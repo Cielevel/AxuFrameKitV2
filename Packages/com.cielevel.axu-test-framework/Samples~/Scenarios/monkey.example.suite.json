@@ -1,0 +1,25 @@
+{
+  "schema": "axu-suite/1",
+  "id": "monkey.example",
+  "title": "monkey 能力示例（当前场景随机点按 30s，seed 可复现）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "monkey.run",
+      "capability": "monkey",
+      "title": "猴子随机点按 30s（seed=42）",
+      "params": {
+        "durationSec": 30,
+        "actionsPerSecond": 2,
+        "seed": 42,
+        "stopOnError": true,
+        "hangThresholdSec": 5
+      }
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 120
+  }
+}

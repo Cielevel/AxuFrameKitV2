@@ -216,6 +216,11 @@ namespace AxuTestFramework.Agent.Runner
                 : launch.ReportPath;
             var startedUtc = DateTime.UtcNow;
 
+            // 让出一帧再解析 suite：宿主引导在 BeforeSceneLoad 启动本协程，而 StartCoroutine 会同步
+            // 执行到首个 yield——不在此让步，能力/scenario 注册表快照会早于 AfterSceneLoad 的
+            // 游戏侧注册（gamehook DOC 承诺的注册时序），造成 CAPABILITY_MISSING 假阴性。
+            yield return null;
+
             try
             {
                 // ---- 阶段 A：加载与解析（无协程让步，可安全 try/catch）----
@@ -224,7 +229,8 @@ namespace AxuTestFramework.Agent.Runner
                 try
                 {
                     suite = LoadSuiteFromPath(launch.SuitePath);
-                    resolved = SuiteLoader.Resolve(suite, launch.ScenarioIds, ResolveSuiteDirectory(launch.SuitePath));
+                    resolved = SuiteLoader.Resolve(suite, launch.ScenarioIds,
+                        ResolveSuiteDirectory(launch.SuitePath), AxuScenarioRegistry.Snapshot());
                 }
                 catch (Exception ex)
                 {
@@ -374,9 +380,24 @@ namespace AxuTestFramework.Agent.Runner
             }
 
             IScenarioRunner runner = null;
+            var context = new ScenarioContext(handle, AgentLog.Instance, artifactsDir, seed);
+            var setupFailed = false;
             try
             {
-                runner = capability.CreateRunner(new ScenarioContext(handle, AgentLog.Instance, artifactsDir, seed));
+                // gamehook 同步 setup（FromCode）：在能力分发前以本次 context 调用一次
+                scenario.CodeSetup?.Invoke(context);
+            }
+            catch (Exception ex)
+            {
+                Fault(handle, "RUNTIME_EXCEPTION", ex);
+                setupFailed = true;
+            }
+
+            if (setupFailed) yield break;
+
+            try
+            {
+                runner = capability.CreateRunner(context);
             }
             catch (Exception ex)
             {
@@ -396,6 +417,22 @@ namespace AxuTestFramework.Agent.Runner
                 }
             }
 
+            // gamehook 准备协程（FromCodeRoutine）：拼在 Runner 协程之前、同一看门狗内执行
+            if (execution != null && scenario.CodePrepare != null)
+            {
+                IEnumerator prepare = null;
+                try
+                {
+                    prepare = scenario.CodePrepare();
+                }
+                catch (Exception ex)
+                {
+                    Fault(handle, "RUNTIME_EXCEPTION", ex);
+                }
+
+                if (prepare != null) execution = ChainPrepared(prepare, execution);
+            }
+
             if (runner == null || execution == null) yield break;
             // 显式 StartCoroutine：保证 Supervise 的每步 yield（含 WaitForSecondsRealtime 段）真正进入
             // Unity 协程调度——裸 yield return IEnumerator 的展开语义不可靠，实测等待会被吞掉。
@@ -403,15 +440,24 @@ namespace AxuTestFramework.Agent.Runner
         }
 
         /// <summary>
-        /// 监督执行循环：逐步推进 Runner 迭代器；嵌套迭代器（如 AgentWait 分段等待）手动代步，
-        /// 其产出的等待指令交给 Unity（≤0.25s 段），每段结束复查超时/取消——保证看门狗按真实时间介入。
+        /// gamehook 准备协程拼接（FromCodeRoutine）：先跑 prepare、再跑能力 Runner 协程，
+        /// 等待指令原样上抛给 Supervise（看门狗/取消对两段一致生效）。
+        /// </summary>
+        static IEnumerator ChainPrepared(IEnumerator prepare, IEnumerator runnerExecution)
+        {
+            while (prepare.MoveNext()) yield return prepare.Current;
+            while (runnerExecution.MoveNext()) yield return runnerExecution.Current;
+        }
+
+        /// <summary>
+        /// 监督执行循环：以显式栈逐步推进 Runner 迭代器及其任意深度嵌套迭代器（如 AgentWait 分段等待），
+        /// 其产出的等待指令交给 Unity（≤0.25s 段），每步复查超时/取消——保证看门狗按真实时间介入。
         /// 度量节拍（Phase 2）：外层/嵌套两处循环每帧开头驱动 MetricSession.OnFrame（同帧去重），
         /// 并按 sampleIntervalMs 累计驱动 OnInterval——采样节拍由宿主逐帧推进，不依赖 YieldInstruction 计时。
         /// </summary>
         IEnumerator Supervise(IEnumerator execution, ScenarioRunHandle handle, double timeoutSec,
             MetricSession metricsSession, double sampleIntervalMs)
         {
-            var stop = false;
             var lastMetricsTime = -1d; // 同帧去重：外层/嵌套循环都可能在同一帧走到度量推进
             var intervalAccumulator = 0.0;
 
@@ -431,78 +477,69 @@ namespace AxuTestFramework.Agent.Runner
                 }
             }
 
-            while (!stop)
+            // 显式栈驱动任意深度嵌套迭代器：旧实现只代步一层，更深的迭代器
+            // （如 capacity phase → CapacityProbe.Probe → AgentWait.RealtimeSeconds）会被整段丢弃，
+            // 表现为 phase 秒退、零实体、无曲线产出。栈顶完成即弹回上一层继续，段间复查看门狗。
+            var stack = new Stack<IEnumerator>();
+            stack.Push(execution);
+
+            while (stack.Count > 0)
             {
                 AdvanceMetrics();
 
                 if (handle.CancelRequested || IsTimedOut(handle, timeoutSec))
                 {
                     if (!handle.CancelRequested) Timeout(handle, timeoutSec);
-                    stop = true;
                     break;
                 }
 
+                var top = stack.Peek();
                 bool moved;
                 try
                 {
-                    moved = execution.MoveNext();
+                    moved = top.MoveNext();
                 }
                 catch (Exception ex)
                 {
                     Fault(handle, "RUNTIME_EXCEPTION", ex);
-                    stop = true;
                     break;
                 }
 
                 if (!moved)
                 {
-                    stop = true;
-                    break;
+                    stack.Pop(); // 本段迭代器结束：回到上一层（无需等帧，同帧继续）
+                    continue;
                 }
 
-                var current = execution.Current;
+                var current = top.Current;
                 if (current is IEnumerator nested)
                 {
-                    // 嵌套迭代器：手动代步（不递归），段间复查看门狗
-                    while (true)
-                    {
-                        AdvanceMetrics();
-
-                        if (handle.CancelRequested || IsTimedOut(handle, timeoutSec))
-                        {
-                            if (!handle.CancelRequested) Timeout(handle, timeoutSec);
-                            stop = true;
-                            break;
-                        }
-
-                        bool nestedMoved;
-                        try
-                        {
-                            nestedMoved = nested.MoveNext();
-                        }
-                        catch (Exception ex)
-                        {
-                            Fault(handle, "RUNTIME_EXCEPTION", ex);
-                            stop = true;
-                            break;
-                        }
-
-                        if (!nestedMoved) break;
-
-                        var nestedCurrent = nested.Current;
-                        if (nestedCurrent != null && !(nestedCurrent is IEnumerator))
-                            yield return nestedCurrent; // 等待指令交给 Unity（WaitForSecondsRealtime 段）
-                        else
-                            yield return null;
-                    }
+                    stack.Push(nested); // 嵌套迭代器入栈（任意深度均被驱动）
                 }
                 else if (current != null)
                 {
-                    yield return current; // 其余指令交 Unity（注：长等待指令期间看门狗不介入）
+                    yield return current; // 等待指令交 Unity（WaitForSecondsRealtime 段；长等待期间看门狗不介入）
                 }
                 else
                 {
                     yield return null; // 帧推进
+                }
+            }
+
+            // 中断路径（超时/取消/异常 break）残留的栈内迭代器必须 Dispose：
+            // 编译器生成迭代器的 Dispose 会执行其 finally 链（如 StressRunner 各 phase 的
+            // finally { spawner.Dispose() }），否则 spawned 实体泄漏污染后续 scenario。
+            // 自然完成时栈已空，此清理为空操作。
+            while (stack.Count > 0)
+            {
+                var leftover = stack.Pop();
+                try
+                {
+                    if (leftover is IDisposable disposable) disposable.Dispose();
+                }
+                catch
+                {
+                    // 清理路径不抛：中断场景下的 Dispose 异常不应掩盖原始错误
                 }
             }
 

@@ -2,6 +2,18 @@
 
 All notable changes to this package will be documented in this file.
 
+## [Unreleased]（Phase 3 P1 批次：soak/stress/monkey/gamehook；验收后随 Phase 3 收尾升 0.3.0）
+
+- **四能力落地**（Agent 层，均 Player 可编译，各带 DOC.md 与 Samples~/Scenarios/ 示例）：
+  - `soak`（浸泡/泄漏）：durationMinutes/sampleIntervalSec/gcCollectBeforeSample/screenshotEveryMinutes/leakSlopeMBPerMin/fpsDecayPercent/flushEveryMinutes；内存序列滑窗最小二乘斜率判"泄漏嫌疑"（warn+CSV 取证）、前后半程 p50 FPS 衰减判定、周期截图；**partial report 定期覆盖写**（`{报告名}.partial.json`，`truncated:true`，正常结束删除——崩溃/中断保留前段数据，ScenarioReport 增可空 `Truncated` 字段）。
+  - `stress`（压力/承载，组合 phases）：`capacity` 容量探测（ramp + 60 帧滑窗 fps 判超载 + 二分收敛，输出 `capacity.maxEntities` 与承载曲线 CSV）、`spawner`（prefab 可空回落内置替身）、`churn`（每秒建毁 N × M 秒）、`flood`（自建托管事件洪峰吞吐基准，零框架依赖）；StressSpawner/StressCollector 配套。
+  - `monkey` v1（猴子测试）：坐标随机点按（`AgentInput`：Input System `QueueStateEvent` 注入，`AXU_INPUTSYSTEM_PRESENT` versionDefines 守护；未装/无设备降级 UGUI ExecuteEvents + info finding）、seed 可复现、JSONL 操作流水、错误即截图可配即停、卡死检测（frameCount 停滞 → 截图 + error finding + 终止）。
+  - `gamehook`（游戏适配器，显式注册 API）：`AxuTestAgent.RegisterCapability/RegisterScenario` + `ScenarioDef.FromCode`（Core 纯委托）/`FromCodeRoutine`（Agent 协程形态）+ `AxuScenarioRegistry`（进程内注册表，同 id 后者覆盖）；宿主 suite 解析推迟到 AfterSceneLoad 后首帧，保证游戏侧 RuntimeInitializeOnLoad 注册可见（时序契约见 DOC）。
+- **宿主修复 2 项（DoD 实测暴露）**：① `AgentRunnerHost.Supervise` 改 Stack 驱动任意深度嵌套迭代器（旧实现只代步一层，capacity/churn 深层等待被整段吞掉致秒退零实体）；中断路径（超时/取消/异常）统一 Dispose 栈内迭代器（清场 finally 链生效，防 stress 实体泄漏）；② CapacityProbe FpsWindow 启动判据缺陷（`_filled` 自锁恒 NaN）修复。
+- Agent asmdef：references 增 `Unity.InputSystem`（versionDefines 可选）与 `UnityEngine.UI`（降级路径）。
+- 单测 155 → **209**（四能力参数/FromCode/SuiteLoader externalById 契约 +45 例，含 clamp/混排/覆盖语义）。
+- macOS DoD：stress 容量探测（maxEntities=2000 下界/40 点曲线/churn 300 对/flood 295 万事件）、monkey 同 seed 双跑流水逐行一致、gamehook e2e pass、soak 10min（partial 每 2min 一刷×5、中断保留 truncated、结束删除）与 2min Player 抽验（isEditor=false）全过；零影响回归 209/209 + Axu/Smoke 7/7。
+
 ## [Unreleased]（Phase 4 工具链：axu_scenario_*/axu_player_*/axu_trend_* 六命令 + 趋势 + 看板页签 + 导出器）
 
 - **Core/Trend**（纯 C#）：`TrendPoint` / `TrendStore`（schema `axu-trend/1` 追加式长表 CSV，RFC 4180 转义、

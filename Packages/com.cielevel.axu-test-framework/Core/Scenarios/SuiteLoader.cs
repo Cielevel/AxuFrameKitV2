@@ -37,8 +37,11 @@ namespace AxuTestFramework.Core.Scenarios
         /// enabled=false 跳过；selectedIds 非空时仅保留 SourceId 或 Id 命中的条目。
         /// suiteDirectory：suite/scenario 文件所在目录，写入每条 ResolvedScenario.SuiteDirectory
         /// （baseline 相对路径的解析基准；单 scenario 文件路径同样传其目录）。
+        /// externalById：进程内注册的代码态 scenario（gamehook，方案 §4.8）：同 id 优先于 suite 内联/ref
+        /// 定义（覆盖语义），且可为纯 ref 条目供定义（补充语义）；null = 无进程内注册。
         /// </summary>
-        public static List<ResolvedScenario> Resolve(SuiteDef suite, IList<string> selectedIds = null, string suiteDirectory = null)
+        public static List<ResolvedScenario> Resolve(SuiteDef suite, IList<string> selectedIds = null,
+            string suiteDirectory = null, IDictionary<string, ScenarioDef> externalById = null)
         {
             var results = new List<ResolvedScenario>();
             if (suite == null || suite.Scenarios == null) return results;
@@ -68,10 +71,18 @@ namespace AxuTestFramework.Core.Scenarios
                 else
                 {
                     if (string.IsNullOrEmpty(entry.Ref)) continue; // 已由 Validate 拦截
-                    if (!inlineById.TryGetValue(entry.Ref, out baseDef))
-                        throw new InvalidOperationException($"suite \"{suite.Id}\" 引用的 scenario \"{entry.Ref}\" 未在内联定义中找到");
                     sourceId = entry.Ref;
+                    if (externalById != null && externalById.TryGetValue(entry.Ref, out var hookDef) && hookDef != null)
+                        baseDef = hookDef; // gamehook 补充：ref 命中进程内注册定义
+                    else if (inlineById.TryGetValue(entry.Ref, out baseDef))
+                        { /* suite 内联定义 */ }
+                    else
+                        throw new InvalidOperationException($"suite \"{suite.Id}\" 引用的 scenario \"{entry.Ref}\" 未在内联定义/进程内注册中找到");
                 }
+
+                // gamehook 覆盖：进程内注册的同 id 定义优先于 suite 内联定义（后者覆盖语义）
+                if (externalById != null && externalById.TryGetValue(sourceId, out var registered) && registered != null)
+                    baseDef = registered;
 
                 if (baseDef == null || !baseDef.Enabled) continue; // enabled=false 跳过（DOC §1）
 
@@ -96,6 +107,8 @@ namespace AxuTestFramework.Core.Scenarios
                     Baseline = hasProfile ? null : baseDef.Baseline,
                     SuiteDirectory = suiteDirectory,
                     SourceId = sourceId,
+                    CodeSetup = baseDef.CodeSetup,
+                    CodePrepare = baseDef.CodePrepare,
                 };
 
                 if (selectedIds != null && selectedIds.Count > 0)

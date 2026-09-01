@@ -1,0 +1,29 @@
+{
+  "schema": "axu-suite/1",
+  "id": "soak-demo",
+  "title": "soak 能力演示（10 分钟浸泡 + 2 分钟 partial flush + 每 3 分钟截图）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "soak.demo",
+      "capability": "soak",
+      "title": "PerfBench 靶场 10 分钟浸泡（泄漏斜率 + FPS 衰减判定）",
+      "params": {
+        "durationMinutes": 10,
+        "sampleIntervalSec": 30,
+        "flushEveryMinutes": 2,
+        "screenshotEveryMinutes": 3,
+        "leakSlopeMBPerMin": 5,
+        "fpsDecayPercent": 15
+      },
+      "budgets": [
+        { "metric": "memory.allocatedMax", "op": "<=", "value": 16384, "unit": "MB" }
+      ]
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 900
+  }
+}

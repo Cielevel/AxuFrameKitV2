@@ -14,6 +14,9 @@ namespace AxuTestFramework.Agent.Bootstrap
             AxuCapabilityRegistry.Register(new Capabilities.Perf.PerfCapability());
             AxuCapabilityRegistry.Register(new Capabilities.LoadTime.LoadTimeCapability());
             AxuCapabilityRegistry.Register(new Capabilities.Smoke.SmokeCapability());
+            AxuCapabilityRegistry.Register(new Capabilities.Soak.SoakCapability());
+            AxuCapabilityRegistry.Register(new Capabilities.Stress.StressCapability());
+            AxuCapabilityRegistry.Register(new Capabilities.Monkey.MonkeyCapability());
         }
     }
 }

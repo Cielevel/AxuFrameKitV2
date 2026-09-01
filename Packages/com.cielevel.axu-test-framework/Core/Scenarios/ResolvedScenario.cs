@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
@@ -28,5 +30,11 @@ namespace AxuTestFramework.Core.Scenarios
 
         /// <summary>源 id（不含 @profile 后缀，供过滤与追溯）。</summary>
         public string SourceId;
+
+        /// <summary>代码态 setup 委托（FromCode 路径透传；宿主在能力分发前同步调用，可空）。</summary>
+        public Action<ScenarioContext> CodeSetup;
+
+        /// <summary>代码态准备协程工厂（FromCodeRoutine 路径透传；宿主拼在 Runner 协程前执行，可空）。</summary>
+        public Func<IEnumerator> CodePrepare;
     }
 }

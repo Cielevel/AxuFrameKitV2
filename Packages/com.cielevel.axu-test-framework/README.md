@@ -207,7 +207,7 @@ scenario / player / UTF 三类运行禁止在同一 Editor 并发驱动。
 
 | 命令 | 参数 | 说明 |
 |---|---|---|
-| `axu_scenario_list` | — | 枚举内建能力（echo/perf/loadtime/smoke）+ Assets 下 `*.suite.json` / `*.scenario.json`（含 scenarioIds 摘要） |
+| `axu_scenario_list` | — | 枚举内建能力（echo/perf/loadtime/smoke + P1：soak/stress/monkey）+ Assets 下 `*.suite.json` / `*.scenario.json`（含 scenarioIds 摘要） |
 | `axu_scenario_run` | `suite`（必填，工程相对/绝对）、`scenario`（可选，逗号分隔 id） | Editor PlayMode 内驱动 Agent Runner；**异步启动即返**，经 `axu_scenario_status` 轮询 `Temp/axu_scenario_status.json`（running/completed/error + reportPath/exitCode）；完成后看门狗自动趋势入库并退 Play |
 | `axu_scenario_status` | — | 读运行状态文件原文（idle 时返回 idle 信封） |
 | `axu_player_suite_build` | `output`（默认 `Builds/AxuScenarioPlayer/<产品名>.app`） | macOS Development Build；构建期临时确保 `AXU_TEST_AGENT` define 开启，`finally` 还原；场景 = Build Settings |
@@ -231,6 +231,21 @@ scenario / player / UTF 三类运行禁止在同一 Editor 并发驱动。
 - **导出器**：`JUnitExporter`（JUnit XML）与 `HtmlSummaryExporter`（单文件自包含 HTML 摘要）。
 - **define 预检**（Phase 1 遗留收口）：运行入口检查 `AXU_TEST_AGENT` 未开时弹可跳过警告。
 - **部署菜单**：`AxuTestFramework/Deploy Suite To StreamingAssets`（复制 suite JSON 到 `Assets/StreamingAssets/AxuSuites/`）与 `Remove Deployed Suites`。
+
+## 场景测试能力库（Agent 层，`AXU_TEST_AGENT` 守护）
+
+| 能力 id | 名称 | 一句话 | 文档 |
+|---|---|---|---|
+| `echo` | 链路自检 | 延时+日志最小闭环 | Agent/Capabilities/Echo/ |
+| `perf` | 性能基准 | warmup→度量→预算→截图 | Agent/Capabilities/Perf/DOC.md |
+| `loadtime` | 加载时长 | 场景矩阵加载计时 | Agent/Capabilities/LoadTime/DOC.md |
+| `smoke` | 冒烟矩阵 | 全场景可进+无报错+截图 | Agent/Capabilities/Smoke/DOC.md |
+| `soak` | 浸泡/泄漏 | 长跑内存斜率/FPS 衰减 + partial flush（崩溃不丢前段） | Agent/Capabilities/Soak/DOC.md |
+| `stress` | 压力/承载 | 容量探测（目标帧率最大实体数）+ churn + 事件洪峰 | Agent/Capabilities/Stress/DOC.md |
+| `monkey` | 猴子测试 | 随机点按（seed 可复现）+ 卡死检测 + JSONL 流水 | Agent/Capabilities/Monkey/DOC.md |
+| （gamehook） | 游戏适配器 | 游戏侧显式注册自定义能力/代码态 scenario（`AxuTestAgent.RegisterCapability/RegisterScenario`） | Agent/Capabilities/GameHook/DOC.md |
+
+示例 suite 见 `Samples~/Scenarios/`（每能力一份，Package Manager → Samples 导入）。
 
 ## Runtime 工具层速览
 

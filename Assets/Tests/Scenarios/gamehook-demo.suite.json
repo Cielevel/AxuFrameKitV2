@@ -1,0 +1,19 @@
+{
+  "schema": "axu-suite/1",
+  "id": "gamehook-demo",
+  "title": "gamehook 注册 API 演示（游戏侧注册 hook.sample 自定义能力后引用）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "hook.demo",
+      "capability": "hook.sample",
+      "title": "经 RegisterCapability 注册的自定义能力（GameHookE2eRegistration.cs）",
+      "params": {}
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 60
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "axu-suite/1",
+  "id": "gamehook.example",
+  "title": "gamehook 注册 API 示例（先在游戏工程注册能力，再在此引用；见 Agent/Capabilities/GameHook/DOC.md）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "hook.sample-run",
+      "capability": "hook.sample",
+      "title": "运行游戏侧注册的 hook.sample 能力（AxuTestAgent.RegisterCapability）",
+      "params": {
+        "message": "hello from gamehook example"
+      }
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 60
+  }
+}

@@ -32,12 +32,26 @@ namespace AxuTestFramework.Agent.Bootstrap
             }
         }
 
-        /// <summary>注册自定义能力（显式 API，IL2CPP 安全）；define 关闭时空操作。</summary>
+        /// <summary>注册自定义能力（显式 API，IL2CPP 安全）；define 关闭时空操作。同 id 后者覆盖（warn）。</summary>
         public static void RegisterCapability(IAxuTestCapability capability)
         {
 #if AXU_TEST_AGENT
             BuiltInCapabilities.RegisterAll();
             AxuCapabilityRegistry.Register(capability);
+#endif
+        }
+
+        /// <summary>
+        /// 注册代码态 scenario（方案 §4.8 gamehook，D7 决策：仅显式注册，不做 Attribute 烘焙）；define 关闭时空操作。
+        /// 注册表为**进程内非持久化**（域重载清空）：请在 RuntimeInitializeOnLoad（推荐 AfterSceneLoad）
+        /// 注册，且须早于 suite 运行触发（suite 在宿主协程首步才解析，同帧的 AfterSceneLoad 注册即可见）。
+        /// suite 解析时按 id 生效：覆盖 suite 内同名定义、或为 ref 条目供定义；同 id 后者覆盖（warn）。
+        /// </summary>
+        public static void RegisterScenario(ScenarioDef scenario)
+        {
+#if AXU_TEST_AGENT
+            BuiltInCapabilities.RegisterAll();
+            AxuScenarioRegistry.Register(scenario);
 #endif
         }
 

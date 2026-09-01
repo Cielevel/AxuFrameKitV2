@@ -1,0 +1,45 @@
+{
+  "schema": "axu-suite/1",
+  "id": "stress.example",
+  "title": "stress 能力示例（容量探测 + churn + flood；prefab 留空用内置替身）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "stress.capacity",
+      "capability": "stress",
+      "title": "容量探测（目标 30fps 最大实体数，替身立方体）",
+      "params": {
+        "phases": [
+          {
+            "tool": "capacity",
+            "startCount": 100,
+            "rampStep": 100,
+            "rampIntervalSec": 1,
+            "settleSec": 2,
+            "maxCount": 5000,
+            "targetFps": 30,
+            "belowThresholdSec": 2,
+            "convergeTolerancePercent": 10
+          }
+        ]
+      }
+    },
+    {
+      "schema": "axu-scenario/1",
+      "id": "stress.churnflood",
+      "capability": "stress",
+      "title": "churn（50/s × 10s）+ 事件洪峰（1000/帧 × 5s）",
+      "params": {
+        "phases": [
+          { "tool": "churn", "createPerSec": 50, "durationSec": 10 },
+          { "tool": "flood", "eventsPerFrame": 1000, "subscribers": 8, "durationSec": 5 }
+        ]
+      }
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 600
+  }
+}

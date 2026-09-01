@@ -3,7 +3,9 @@
     "rootNamespace": "AxuTestFramework.Agent",
     "references": [
         "AxuTestFramework.Core",
-        "Unity.Nuget.Newtonsoft-Json"
+        "Unity.Nuget.Newtonsoft-Json",
+        "Unity.InputSystem",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -14,6 +16,12 @@
     ],
     "autoReferenced": false,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "1.0",
+            "define": "AXU_INPUTSYSTEM_PRESENT"
+        }
+    ],
     "noEngineReferences": false
 }

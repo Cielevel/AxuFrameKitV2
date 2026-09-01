@@ -1,0 +1,27 @@
+{
+  "schema": "axu-suite/1",
+  "id": "soak.example",
+  "title": "soak 能力示例（2 分钟快速浸泡；正式长跑改 durationMinutes）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "soak.quick",
+      "capability": "soak",
+      "title": "2 分钟浸泡（10s 采样 / 1min partial flush，不截图）",
+      "params": {
+        "durationMinutes": 2,
+        "sampleIntervalSec": 10,
+        "flushEveryMinutes": 1,
+        "screenshotEveryMinutes": 0
+      },
+      "budgets": [
+        { "metric": "memory.allocatedMax", "op": "<=", "value": 16384, "unit": "MB" }
+      ]
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 300
+  }
+}
