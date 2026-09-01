@@ -1,0 +1,19 @@
+{
+    "name": "AxuTestFramework.Samples.Tests.Editor",
+    "rootNamespace": "AxuTestFramework.Samples",
+    "references": [
+        "AxuTestFramework",
+        "UnityEngine.TestRunner",
+        "UnityEngine.Editor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "overrideReferences": true,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ]
+}

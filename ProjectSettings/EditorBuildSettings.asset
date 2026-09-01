@@ -8,6 +8,100 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/TestAndSample/Sample_Common/Utility/UseMono/SC Sample UseMono.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_AxuTest/SC AxuTest PerfBench.unity
+    guid: dec34556718153947ab2d564c113618d
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/CustomAttribute/SC Sample ListDrawer.unity
+    guid: 254deafbfac05df4e916d5c90ff6177e
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/UI/Kit/DataBind/SC Sample Common UIBindData.unity
+    guid: 495adb9c5f43cab40a4e203a8d319694
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/UI/Kit/ListView/SC Sample Common ListView.unity
+    guid: 47d1d55b6c5c3e349b5f423e09dfc054
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/UI/Kit/Scroll/SC Sample Common Opt Scroll.unity
+    guid: 5f3da0ec270d24e59af57498c1f740aa
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/UI/Kit/ToggleBroup/SC Sample Common
+      Toggle Group.unity
+    guid: 61572d2cf16fadf459ca304f9687110d
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/UI/Kit/Typewriter/SC Sample Common Typewriter.unity
+    guid: 201147babfbe85f4b91660bc9ae00872
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/Utility/Analysis/SampleDebugger/SC SampleDebugger.unity
+    guid: a357f60368530fc409ccaabf7116e3ea
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/Utility/Auto/AutoSnapshot/SC Sample
+      Auto Timeline.unity
+    guid: dd545c3393230e34fa598ce6af58cb57
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/Utility/Event/SC Sample Common EventChannel.unity
+    guid: a9b9f2decf66f3643acae4f33755cf87
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/Utility/Event/SC Sample Common EventSystem.unity
+    guid: 2d53fe1492972ac4eb4e1e88555a0508
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/Utility/Math/Interpolation_Toast/SC
+      Sample Common AxuTween.unity
+    guid: 7e8809ff5d372604ca435e58355a83ee
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/Utility/Net/SC Sample Socket.unity
+    guid: 46e817b4d9ee18e469db876f42b1b527
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/Utility/ObjectPool/SC Sample GameObjectPools.unity
+    guid: ab69c9c7e68cb1142a4f1e1fa8d57a40
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/Utility/Save/SC Sample Common Save.unity
+    guid: 79bafea195d89ad4195ada9914acbfc6
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/Utility/Table/Csv/SC Sample Common Csv.unity
+    guid: 47a8008424cc18e429b45d6d4104ab23
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/Utility/Timer/SC Sampe TimerSeries.unity
+    guid: 46600a13cec2dd647bb16843fd9eb502
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Common/Utility/Trigger/SC Sample Common Trigger.unity
+    guid: f5ccd2f820dda4aceafdc4f049730b44
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Core/DesignPattern/SC Sample Core Design ChainOfResponsibility.unity
+    guid: 6aa6a3d77fa134641ae6e1df02095b6e
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Core/DesignPattern/SC Sample Core Design Memento.unity
+    guid: 7b1d3065292bc2844bbbc9987ce187d4
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Core/Structure/ReactiveProperty/SC Sample Core
+      Structure ReactiveProperty.unity
+    guid: ba39afe7479fcaf4b92ec0c47a3b9fcc
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Core/Utility/Computed/SC Sample Core Computed.unity
+    guid: e89e6f8f4cb4c9244b5df7938741f18d
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Core/Utility/Encrypt/SC SampleEncrypt.unity
+    guid: 835fff98084c3694695f751b9c1ff660
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Core/Utility/RandomX/SC Sample Core RandomAvatar.unity
+    guid: 8aabea57f7dff994cb3268079437ae99
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Experimental/BehaviorTree/SC Sample Modules
+      BehaviorTree.unity
+    guid: 9a2854b995df1bd4e98b072e4790c6af
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_Experimental/InGameConsole/SC Sample Common
+      InGameConsole.unity
+    guid: 9bcbf753133af4db49ff073700afdc15
+  - enabled: 1
+    path: Assets/TestAndSample/Sample_PackageDev/SC Sample PackageDev.unity
+    guid: 67547068974d4d54f9ab62fe3356f5fc
+  - enabled: 1
+    path: Assets/TestAndSample/_Sample_Inner/Sample_AnimationState/SC Sample Animation
+      State.unity
+    guid: b6e78d8972221c44eacd3ed6458c4ab2
+  - enabled: 1
+    path: Assets/TestAndSample/_Sample_Inner/Sample_ListIdTitle/SC Sample ListIdTitle.unity
+    guid: 5a3949c25f69ecd469259c1b33ecc122
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

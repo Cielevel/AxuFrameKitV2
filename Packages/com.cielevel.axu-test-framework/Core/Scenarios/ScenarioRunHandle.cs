@@ -25,6 +25,12 @@ namespace AxuTestFramework.Core.Scenarios
         /// <summary>本次执行收集到的结论。</summary>
         public List<Finding> Findings { get; } = new List<Finding>();
 
+        /// <summary>
+        /// runner 产出的工件（截图等）完整路径；宿主在收尾时转为相对报告目录的路径写入报告 artifacts。
+        /// （runner→宿主的加法式通道：runner 无法直接访问报告结果对象。）
+        /// </summary>
+        public List<string> Artifacts { get; } = new List<string>();
+
         /// <summary>取消是否已请求（Runner/宿主可在等待段间检查并尽快退出）。</summary>
         public bool CancelRequested { get; private set; }
 

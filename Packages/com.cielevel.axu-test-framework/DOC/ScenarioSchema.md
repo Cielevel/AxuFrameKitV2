@@ -134,7 +134,7 @@ scenario 总判定 = 最严 budget 结果（fail > warn > pass）。
 
 | 键 | 类型 | 默认 | 说明 |
 |---|---|---|---|
-| `scene` | string | 无 | 目标场景路径（Editor 支持 `Assets/…` 完整路径；Player 需在构建清单内） |
+| `scene` | string | 无 | 目标场景路径；**须已加入 Build Settings/Build Profile 场景清单**（Unity 6 起 Editor 与 Player 一致校验，Unity 6000.0.23f1 实测；Editor 曾有"任意 `Assets/…` 路径可载"的说明在本版本不成立） |
 | `warmupSeconds` | float | 0 | 预热期，期间不采样 |
 | `measureSeconds` | float | 按 capability | 度量期时长 |
 | `timeScale` | float | 1.0 | `Time.timeScale` 覆盖 |

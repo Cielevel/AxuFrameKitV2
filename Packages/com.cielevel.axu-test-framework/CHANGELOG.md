@@ -2,6 +2,54 @@
 
 All notable changes to this package will be documented in this file.
 
+## [Unreleased]（Phase 3 P0 批次：共享基建 + perf/loadtime/smoke；版本号待 Phase 3 收尾统一定）
+
+- **三个 P0 能力落地**（三件套 + 注册，均 Player 可编译）：
+  - `perf`（性能基准）：可选加载场景 → warmup 挂起采样丢弃 → 度量期 → 可选截图；指标由
+    `collectors` 采集器产出、宿主预算判定。加载失败出 `PERF_SCENE_LOAD_FAILED`；
+  - `loadtime`（加载时长）：场景矩阵逐个计时，产出 `loadtime.scene.<safe>.loadMs/.firstFrameMs/.stableMs`
+    + `sceneCount/loadMs.max/loadMs.avg/unstableCount`；加载失败 `LOAD_FAILED`（最终 fail）、
+    未达稳定 `SCENE_NOT_STABLE`（warn）；
+  - `smoke`（冒烟矩阵）：清单三来源（`list`/`buildsettings`/`directory`[仅 Editor]）→ 逐场景日志监视
+    加载 + 稳定窗错误计数 + 截图留证，产出 `smoke.scene.<safe>.loadMs/.errors` +
+    `sceneCount/loadMs.max/errors.total/loadFailed.total`；清单错误 `SMOKE_NO_SCENES`/
+    `SMOKE_DIRECTORY_UNAVAILABLE`；
+  - 每能力目录附 `DOC.md`（参数表含 clamp、指标键表、budget 示例、平台备注）。
+- **共享基建**（`Agent/Tools/`，Agent 层）：
+  - `AgentEnvironment`（+ Overrides/Snapshot POCO）：DOC §4 通用参数保留键（timeScale/vsync/targetFrameRate/
+    qualityLevel/resolution/seed）的解析（缺键/类型不符一律 null，绝不抛异常）、应用（越界 clamp；
+    **resolution 仅 Player**）与恢复（宿主在 finally 中调用，超时中断也还原）；
+  - `AgentScenes`：场景加载三级回退解析（原样路径 → 去 `.unity` → 纯文件名）+ 激活场景 isLoaded 确认；
+  - `AgentCapture`：截图原语（**移植自 v1 `Runtime/Capture/AxuCapture` 思路**：延迟生效帧等待 + 文件校验，
+    失败仅告警）+ artifacts 路径拼合；
+  - `AgentLogWatch`：日志监视（**移植自 v1 `Runtime/Logging/AxuLogWatch` 思路**：Error/Exception/Assert 与
+    Warning 分计数、最近 20 条 `"condition (asset:line)"` 快照、ResetCounts、线程安全、Dispose 退订）。
+- **度量会话扩展**（加法式）：`MetricSession` 新增 `Suspend()/Resume()`（引用计数挂起，挂起期采样/打点/
+  节拍全 no-op，perf warmup 用）与 `TryAttachCollector()`（runner 自有采集器挂入会话：loadtime/smoke 的
+  结果采集器随宿主节拍一并驱动，id 冲突拒绝）。
+- **Runner 契约扩展**（加法式）：`ScenarioContext` 新增 `ArtifactsDir`/`Seed`（构造参数带默认值，旧调用点
+  不破坏）；`ScenarioRunHandle` 新增 `Artifacts` 列表（runner→宿主工件通道）；宿主在逐 scenario 外层应用/
+  还原环境通用参数、支持 scenario 级 `timeoutSec` 覆盖、artifacts 目录默认落到报告同目录 `artifacts/`，
+  runner 截图经 `Handle.Artifacts` 转相对报告目录路径写入报告 `results[].artifacts`。
+- 内建能力注册追加三项（`BuiltInCapabilities.RegisterAll`，显式 API，无反射扫描）。
+- **契约单测扩至 130 个**（原 57 + 新增 73，`Axu/TestFramework`）：三能力参数默认值/clamp/JSON 反序列化、
+  `AgentEnvironmentOverrides.Parse` 纯解析、`MetricSession` 挂起/附加采集器语义、loadtime/smoke 采集器
+  产出键与聚合、`AgentCapture`/`AgentLogWatch` 纯逻辑。
+- **e2e 实测驱动的修复**（Windows，Editor PlayMode 桥文件链路实跑四套件）：
+  - `AgentLogWatch` 快照改 FIFO 环形淘汰（原实现达上限后不追加，与"最近 20 条"注释不符；`DroppedCount`
+    语义同步为"因淘汰未保留的总条数"）；
+  - **全 0 聚合恒产出**：smoke 的 `errors.total`/`loadFailed.total`、loadtime 的 `unstableCount`/`sceneCount`
+    在采集器 Start 播种 0 值采样——否则"零错误/零失败"这一合法状态会因指标缺失被预算按 fail 误判
+    （观测类聚合如 `loadMs.max` 仍不播种，保持"缺失=fail"哲学）；
+  - **Unity 6 场景清单校验实证与 `AgentScenes` 收口**：6000.0.23f1 实测 Editor 与 Player 一致强制校验
+    构建场景清单（"Editor 任意 Assets 路径可载"不成立；运行时临时注册对同会话加载校验不可见）——
+    收口为前置检查 + 可读报错指引，目标场景须加入 Build Settings/Build Profile，三能力 DOC 与
+    `DOC/ScenarioSchema.md` §4 同步更正。
+- **`Samples~` 目录补建（v1 悬空声明修复）**：根因为工程 `.gitignore` 的备份文件模式 `*~` 把 `Samples~`
+  目录整体忽略（0.1.0 起示例从未真正入库）；`.gitignore` 追加 `!**/Samples~/` 反选后补齐
+  `Tests/Editor`、`Tests/Runtime` 两示例与 package.json 声明对齐，新增 `Scenarios` 示例
+  （echo/perf/loadtime/smoke 四 suite + 接入一页纸 README），package.json samples 增设第三项。
+
 ## [0.2.0] - 2026-08-31（场景测试平台建设启动，Phase 0/1/2 已落地）
 
 - **Phase 2 度量层落地**：Core 层 `RingBuffer`/`MetricStats`（百分位线性插值 + 最小二乘斜率）/`BudgetEvaluator`

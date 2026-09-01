@@ -31,6 +31,7 @@ namespace AxuTestFramework.Agent.Metrics
         readonly Dictionary<string, MetricSeries> _scopes = new Dictionary<string, MetricSeries>(StringComparer.Ordinal);
         readonly double _startTimeSeconds;
         ScenarioContext _context;
+        int _suspendCount;
 
         MetricSession(IReadOnlyList<string> collectorIds, double startTimeSeconds)
         {
@@ -73,6 +74,50 @@ namespace AxuTestFramework.Agent.Metrics
             Current = null;
         }
 
+        // -------------------------------------------------------------- 挂起与追加采集器
+
+        bool IsSuspended => _suspendCount > 0;
+
+        /// <summary>
+        /// 挂起采样（引用计数；计数 &gt; 0 即挂起）。挂起期间 Record/RecordCounter/RecordGauge/BeginScope/
+        /// OnFrame/OnInterval/CompleteCollectors 全部 no-op。用途：perf warmup 等阶段丢弃采样。
+        /// </summary>
+        public void Suspend()
+        {
+            _suspendCount++;
+        }
+
+        /// <summary>恢复采样（引用计数减一；未挂起时调用为 no-op，不会减为负）。</summary>
+        public void Resume()
+        {
+            if (_suspendCount > 0) _suspendCount--;
+        }
+
+        /// <summary>
+        /// 把 runner 自有采集器（如 loadtime/smoke 的结果采集器）追加进会话；id 冲突返回 false。
+        /// 附加成功时立即对该采集器调 Start（用会话已存的 context，可能为 null——采集器须容忍），
+        /// 此后随宿主节拍（OnFrame/OnInterval/Complete/CollectFindings/Output）被一并驱动。
+        /// </summary>
+        public bool TryAttachCollector(MetricCollector collector)
+        {
+            if (collector == null || string.IsNullOrEmpty(collector.Id)) return false;
+
+            for (var i = 0; i < _collectors.Count; i++)
+            {
+                if (_collectors[i] != null
+                    && string.Equals(_collectors[i].Id, collector.Id, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            _collectors.Add(collector);
+            _disabled.Add(false);
+            try { collector.Start(_context, this); }
+            catch (Exception ex) { Disable(collector, _collectors.Count - 1, "Start", ex); }
+            return true;
+        }
+
         // -------------------------------------------------------------- 宿主驱动节拍
 
         /// <summary>启动全部采集器（每 scenario 一次）。</summary>
@@ -87,9 +132,10 @@ namespace AxuTestFramework.Agent.Metrics
             }
         }
 
-        /// <summary>帧节拍（宿主每帧驱动；采集器在此累计帧级计数，不直接写入序列）。</summary>
+        /// <summary>帧节拍（宿主每帧驱动；采集器在此累计帧级计数，不直接写入序列）。挂起期间 no-op。</summary>
         public void OnFrame(double timeSeconds, float unscaledDeltaTime)
         {
+            if (IsSuspended) return;
             for (var i = 0; i < _collectors.Count; i++)
             {
                 if (_disabled[i]) continue;
@@ -99,9 +145,10 @@ namespace AxuTestFramework.Agent.Metrics
             }
         }
 
-        /// <summary>采样节拍（宿主按 sampleIntervalMs 累计驱动；采集器在此把窗口聚合值写入序列）。</summary>
+        /// <summary>采样节拍（宿主按 sampleIntervalMs 累计驱动；采集器在此把窗口聚合值写入序列）。挂起期间 no-op。</summary>
         public void OnInterval(double timeSeconds)
         {
+            if (IsSuspended) return;
             for (var i = 0; i < _collectors.Count; i++)
             {
                 if (_disabled[i]) continue;
@@ -111,9 +158,10 @@ namespace AxuTestFramework.Agent.Metrics
             }
         }
 
-        /// <summary>收尾节拍（runner 结束后调用；采集器在此补录全程口径并释放资源）。</summary>
+        /// <summary>收尾节拍（runner 结束后调用；采集器在此补录全程口径并释放资源）。挂起期间 no-op。</summary>
         public void CompleteCollectors(double timeSeconds)
         {
+            if (IsSuspended) return;
             for (var i = 0; i < _collectors.Count; i++)
             {
                 if (_disabled[i]) continue;
@@ -137,33 +185,38 @@ namespace AxuTestFramework.Agent.Metrics
 
         /// <summary>
         /// 采集器写入一个采样。采样节拍由宿主驱动（OnInterval/Complete），序列容量由环形缓冲兜底，无需二次节流。
+        /// 挂起期间 no-op。
         /// </summary>
         public void Record(string collector, string stat, double value)
         {
+            if (IsSuspended) return;
             if (string.IsNullOrEmpty(collector) || string.IsNullOrEmpty(stat)) return;
             GetOrCreateSeries(collector, stat).Record(value, RealtimeSeconds());
         }
 
         // -------------------------------------------------------------- custom 打点（AxuMetrics 调用）
 
-        /// <summary>累计计数（汇总取 Sum，输出键 counter.&lt;key&gt;）。</summary>
+        /// <summary>累计计数（汇总取 Sum，输出键 counter.&lt;key&gt;）。挂起期间 no-op。</summary>
         public void RecordCounter(string key, double delta)
         {
+            if (IsSuspended) return;
             if (string.IsNullOrEmpty(key)) return;
             _counters.TryGetValue(key, out var current);
             _counters[key] = current + delta;
         }
 
-        /// <summary>瞬时值（汇总取 Avg/Max，输出键 gauge.&lt;key&gt;.avg/.max）。</summary>
+        /// <summary>瞬时值（汇总取 Avg/Max，输出键 gauge.&lt;key&gt;.avg/.max）。挂起期间 no-op。</summary>
         public void RecordGauge(string key, double value)
         {
+            if (IsSuspended) return;
             if (string.IsNullOrEmpty(key)) return;
             GetOrCreateCustom(_gauges, key).Record(value, RealtimeSeconds());
         }
 
-        /// <summary>开始计时作用域（Dispose 记毫秒；输出键 scope.&lt;name&gt;.avg/.p95/.max）。</summary>
+        /// <summary>开始计时作用域（Dispose 记毫秒；输出键 scope.&lt;name&gt;.avg/.p95/.max）。挂起期间返回不记录的空作用域。</summary>
         public IDisposable BeginScope(string name)
         {
+            if (IsSuspended || string.IsNullOrEmpty(name)) return NullScope.Instance;
             return new TimedScope(this, name, RealtimeMilliseconds());
         }
 
@@ -296,6 +349,16 @@ namespace AxuTestFramework.Agent.Metrics
         static double RealtimeMilliseconds()
         {
             return Time.realtimeSinceStartupAsDouble * 1000.0;
+        }
+
+        /// <summary>空作用域单例（挂起期 BeginScope 的返回值，零分配 no-op）。</summary>
+        sealed class NullScope : IDisposable
+        {
+            public static readonly NullScope Instance = new NullScope();
+
+            NullScope() { }
+
+            public void Dispose() { }
         }
 
         /// <summary>计时作用域（嵌套类型：单一用途，不单列文件；Dispose 幂等）。</summary>

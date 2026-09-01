@@ -1,0 +1,27 @@
+{
+  "schema": "axu-suite/1",
+  "id": "smoke.example",
+  "title": "smoke 能力示例（遍历 Build Settings 场景，进得去/无报错/截图）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "smoke.build-scenes",
+      "capability": "smoke",
+      "title": "构建场景冒烟矩阵",
+      "params": {
+        "source": "buildSettings",
+        "stabilitySeconds": 1,
+        "stabilityFrames": 10,
+        "screenshot": true
+      },
+      "budgets": [
+        { "metric": "smoke.loadFailed.total", "op": "==", "value": 0 }
+      ]
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 600
+  }
+}

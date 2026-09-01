@@ -1,6 +1,6 @@
 namespace AxuTestFramework.Agent.Bootstrap
 {
-    /// <summary>内建能力注册（Phase 1 仅 Echo 链路自检能力；后续 perf/loadtime/smoke 等在此追加）。</summary>
+    /// <summary>内建能力注册（Phase 3 起：echo 链路自检 + perf/loadtime/smoke 首批 P0 能力；后续 soak/stress/monkey 等在此追加）。</summary>
     public static class BuiltInCapabilities
     {
         static bool _registered;
@@ -11,6 +11,9 @@ namespace AxuTestFramework.Agent.Bootstrap
             if (_registered) return;
             _registered = true;
             AxuCapabilityRegistry.Register(new Capabilities.Echo.EchoCapability());
+            AxuCapabilityRegistry.Register(new Capabilities.Perf.PerfCapability());
+            AxuCapabilityRegistry.Register(new Capabilities.LoadTime.LoadTimeCapability());
+            AxuCapabilityRegistry.Register(new Capabilities.Smoke.SmokeCapability());
         }
     }
 }

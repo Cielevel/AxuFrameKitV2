@@ -239,6 +239,11 @@ namespace AxuTestFramework.Agent.Runner
 
                 ScenarioStatusFile.WriteRunning(suite.Id, startedUtc, 0, resolved.Count, reportPath);
 
+                // artifacts 目录（Phase 3）：launch 未指定时落到报告同目录 artifacts/，供 runner 截图等产出
+                var artifactsDir = string.IsNullOrEmpty(launch.ArtifactsDir)
+                    ? AgentPaths.DefaultArtifactsDir(reportPath)
+                    : launch.ArtifactsDir;
+
                 // ---- 阶段 B：逐条顺序执行（RunSingle 内部已兜底一切 runner 异常）----
                 var results = new List<ScenarioReportResult>();
                 var failureSeen = false;
@@ -258,9 +263,27 @@ namespace AxuTestFramework.Agent.Runner
                         Unbudgeted = scenario.Budgets == null || scenario.Budgets.Count == 0,
                     };
 
-                    var metricsSession = StartMetricSession(scenario, handle);
-                    yield return StartCoroutine(RunSingle(scenario, handle, timeoutSec, metricsSession));
-                    FinalizeMetrics(scenario, handle, result, metricsSession);
+                    // 通用参数（DOC §4 保留键）在度量会话之前应用；finally 保证超时/取消中断也还原。
+                    // 用 try/finally 而非 try/catch：C# 迭代器不允许 yield 位于带 catch 的 try 内。
+                    var envSnapshot = AgentEnvironment.Apply(scenario.Params, launch.Seed, AgentLog.Instance);
+                    try
+                    {
+                        var metricsSession = StartMetricSession(scenario, handle, artifactsDir, envSnapshot.AppliedSeed);
+                        var scenarioTimeoutSec = ResolveScenarioTimeoutSec(scenario.Params, timeoutSec);
+                        yield return StartCoroutine(RunSingle(scenario, handle, scenarioTimeoutSec, metricsSession, artifactsDir, envSnapshot.AppliedSeed));
+                        FinalizeMetrics(scenario, handle, result, metricsSession);
+                    }
+                    finally
+                    {
+                        AgentEnvironment.Restore(envSnapshot, AgentLog.Instance);
+                    }
+
+                    // runner 产出的工件：转相对报告目录路径写入报告 artifacts（转不动的保留原路径）
+                    foreach (var artifact in handle.Artifacts)
+                    {
+                        var formatted = FormatArtifactRelative(artifact, reportPath);
+                        if (!string.IsNullOrEmpty(formatted)) result.Artifacts.Add(formatted);
+                    }
 
                     result.Status = MapStatus(handle.Status);
                     result.DurationMs = handle.ElapsedMilliseconds;
@@ -335,8 +358,12 @@ namespace AxuTestFramework.Agent.Runner
             }
         }
 
-        /// <summary>执行单个 scenario：能力分发 → Runner 协程 + 超时看门狗 + 异常兜底（度量节拍由 Supervise 驱动）。</summary>
-        IEnumerator RunSingle(ResolvedScenario scenario, ScenarioRunHandle handle, double timeoutSec, MetricSession metricsSession)
+        /// <summary>
+        /// 执行单个 scenario：能力分发 → Runner 协程 + 超时看门狗 + 异常兜底（度量节拍由 Supervise 驱动）。
+        /// artifactsDir/seed 透传进 ScenarioContext（Phase 3：runner 截图落点与可复现种子）。
+        /// </summary>
+        IEnumerator RunSingle(ResolvedScenario scenario, ScenarioRunHandle handle, double timeoutSec,
+            MetricSession metricsSession, string artifactsDir, int? seed)
         {
             if (!AxuCapabilityRegistry.TryGet(scenario.Capability, out var capability))
             {
@@ -349,7 +376,7 @@ namespace AxuTestFramework.Agent.Runner
             IScenarioRunner runner = null;
             try
             {
-                runner = capability.CreateRunner(new ScenarioContext(handle, AgentLog.Instance));
+                runner = capability.CreateRunner(new ScenarioContext(handle, AgentLog.Instance, artifactsDir, seed));
             }
             catch (Exception ex)
             {
@@ -521,8 +548,10 @@ namespace AxuTestFramework.Agent.Runner
             return string.IsNullOrEmpty(dir) ? null : dir;
         }
 
-        /// <summary>创建并启动度量会话（采集器清单取自 params；未知 id 记 COLLECTOR_UNKNOWN Finding）。</summary>
-        static MetricSession StartMetricSession(ResolvedScenario scenario, ScenarioRunHandle handle)
+        /// <summary>创建并启动度量会话（采集器清单取自 params；未知 id 记 COLLECTOR_UNKNOWN Finding）。
+        /// artifactsDir/seed 填入会话侧 ScenarioContext（Phase 3）。</summary>
+        static MetricSession StartMetricSession(ResolvedScenario scenario, ScenarioRunHandle handle,
+            string artifactsDir, int? seed)
         {
             MetricSession session = null;
             try
@@ -533,7 +562,7 @@ namespace AxuTestFramework.Agent.Runner
                     handle.AddFinding(FindingSeverity.Warning, "COLLECTOR_UNKNOWN",
                         $"采集器 \"{missing}\" 未注册（scenario \"{scenario.Id}\"）");
                 }
-                session.StartCollectors(new ScenarioContext(handle, AgentLog.Instance));
+                session.StartCollectors(new ScenarioContext(handle, AgentLog.Instance, artifactsDir, seed));
             }
             catch (Exception ex)
             {
@@ -543,6 +572,45 @@ namespace AxuTestFramework.Agent.Runner
                 session = null;
             }
             return session;
+        }
+
+        /// <summary>解析 scenario 级超时覆盖（params.timeoutSec：double&gt;0 有效，否则回落 suite/默认值）。</summary>
+        static double ResolveScenarioTimeoutSec(JObject parameters, double fallback)
+        {
+            var token = parameters != null ? parameters["timeoutSec"] : null;
+            if (token == null) return fallback;
+
+            try
+            {
+                var value = token.Value<double>();
+                return value > 0 ? value : fallback;
+            }
+            catch (Exception)
+            {
+                return fallback;
+            }
+        }
+
+        /// <summary>runner 工件完整路径 → 相对报告目录路径（报告目录内用正斜杠；转不出的保留原路径）。</summary>
+        static string FormatArtifactRelative(string artifactFullPath, string reportPath)
+        {
+            if (string.IsNullOrEmpty(artifactFullPath)) return null;
+
+            var reportDir = string.IsNullOrEmpty(reportPath)
+                ? null
+                : Path.GetDirectoryName(Path.GetFullPath(reportPath));
+            if (string.IsNullOrEmpty(reportDir)) return artifactFullPath;
+
+            try
+            {
+                var relative = Path.GetRelativePath(reportDir, Path.GetFullPath(artifactFullPath));
+                if (string.IsNullOrEmpty(relative) || relative.StartsWith("..")) return artifactFullPath;
+                return relative.Replace('\\', '/');
+            }
+            catch (Exception)
+            {
+                return artifactFullPath;
+            }
         }
 
         /// <summary>解析 params.collectors（JArray→string[]；缺省全 5 个；custom 打点为会话内建通道恒可用）。</summary>

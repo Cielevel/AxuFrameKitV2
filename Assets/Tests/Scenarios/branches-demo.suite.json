@@ -1,0 +1,35 @@
+{
+  "schema": "axu-suite/1",
+  "id": "branches-demo",
+  "title": "判定分支验证：unbudgeted / timeout（budget pass 分支由 echo-demo 覆盖）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "echo.nobudget",
+      "capability": "echo",
+      "title": "无预算分支（报告应标 unbudgeted=true 且 pass）",
+      "params": {
+        "message": "no budget branch",
+        "delaySeconds": 0.3,
+        "steps": 2
+      }
+    },
+    {
+      "schema": "axu-scenario/1",
+      "id": "echo.timeout",
+      "capability": "echo",
+      "title": "看门狗超时分支（scenario 级 timeoutSec=1 < delay 30，预期 RUNTIME_TIMEOUT error）",
+      "params": {
+        "message": "should be killed by watchdog",
+        "delaySeconds": 30,
+        "steps": 30,
+        "timeoutSec": 1
+      }
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 120
+  }
+}

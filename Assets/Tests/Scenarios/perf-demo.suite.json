@@ -1,0 +1,28 @@
+{
+  "schema": "axu-suite/1",
+  "id": "perf-demo",
+  "title": "perf 能力演示（Sample_AxuTest/PerfBench 靶场场景）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "perf.bench",
+      "capability": "perf",
+      "title": "PerfBench 靶场性能基准（warmup 2s + measure 8s + 结束截图）",
+      "params": {
+        "scene": "Assets/TestAndSample/Sample_AxuTest/SC AxuTest PerfBench.unity",
+        "warmupSeconds": 2,
+        "measureSeconds": 8,
+        "screenshot": true
+      },
+      "budgets": [
+        { "metric": "fps.avg", "op": ">=", "value": 30 },
+        { "metric": "frameTime.cpuP95", "op": "<=", "value": 50, "unit": "ms", "severity": "warn" }
+      ]
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 120
+  }
+}

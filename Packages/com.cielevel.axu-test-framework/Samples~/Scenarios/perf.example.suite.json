@@ -1,0 +1,26 @@
+{
+  "schema": "axu-suite/1",
+  "id": "perf.example",
+  "title": "perf 能力示例（不指定 scene = 度量当前场景）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "perf.current-scene",
+      "capability": "perf",
+      "title": "当前场景 5 秒基准",
+      "params": {
+        "warmupSeconds": 1,
+        "measureSeconds": 5,
+        "screenshot": true
+      },
+      "budgets": [
+        { "metric": "fps.avg", "op": ">=", "value": 30 }
+      ]
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 120
+  }
+}

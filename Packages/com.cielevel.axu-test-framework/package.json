@@ -22,6 +22,11 @@
       "displayName": "SamplePlayMode",
       "description": "PlayMode 基础示例：AxuTestState/AxuWait/AxuCapture/AxuNoErrorsScope 演示（无需场景资产）。",
       "path": "Samples~/Tests/Runtime"
+    },
+    {
+      "displayName": "Scenarios",
+      "description": "场景测试能力示例 suite：echo 链路自检、perf 性能基准、loadtime 加载矩阵、smoke 冒烟矩阵（含接入一页纸）。",
+      "path": "Samples~/Scenarios"
     }
   ]
 }

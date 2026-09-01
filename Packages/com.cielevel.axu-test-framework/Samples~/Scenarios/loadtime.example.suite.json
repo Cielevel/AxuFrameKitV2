@@ -1,0 +1,29 @@
+{
+  "schema": "axu-suite/1",
+  "id": "loadtime.example",
+  "title": "loadtime 能力示例（把 scenes 换成你工程的场景路径）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "loadtime.scenes",
+      "capability": "loadtime",
+      "title": "场景加载矩阵",
+      "params": {
+        "scenes": [
+          "Assets/Scenes/YourScene1.unity",
+          "Assets/Scenes/YourScene2.unity"
+        ],
+        "targetFps": 30,
+        "stableFrames": 30
+      },
+      "budgets": [
+        { "metric": "loadtime.loadMs.max", "op": "<=", "value": 5000, "unit": "ms" }
+      ]
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 180
+  }
+}

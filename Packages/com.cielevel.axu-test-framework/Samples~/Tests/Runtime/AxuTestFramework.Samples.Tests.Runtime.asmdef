@@ -1,0 +1,15 @@
+{
+    "name": "AxuTestFramework.Samples.Tests.Runtime",
+    "rootNamespace": "AxuTestFramework.Samples",
+    "references": [
+        "AxuTestFramework",
+        "UnityEngine.TestRunner"
+    ],
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "overrideReferences": true,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ]
+}

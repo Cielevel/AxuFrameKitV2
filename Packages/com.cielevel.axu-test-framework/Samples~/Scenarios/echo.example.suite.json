@@ -1,0 +1,23 @@
+{
+  "schema": "axu-suite/1",
+  "id": "echo.example",
+  "title": "echo 能力示例（链路自检：任意工程导入即可跑）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "echo.hello",
+      "capability": "echo",
+      "title": "echo 基础（1.5 秒 / 3 步）",
+      "params": {
+        "message": "hello from axu scenario",
+        "delaySeconds": 1.5,
+        "steps": 3
+      }
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 120
+  }
+}

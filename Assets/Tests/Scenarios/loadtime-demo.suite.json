@@ -1,0 +1,30 @@
+{
+  "schema": "axu-suite/1",
+  "id": "loadtime-demo",
+  "title": "loadtime 能力演示（3 个现有示例场景加载矩阵）",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "loadtime.samples",
+      "capability": "loadtime",
+      "title": "示例场景加载矩阵（loadMs / firstFrameMs / stableMs）",
+      "params": {
+        "scenes": [
+          "Assets/TestAndSample/Sample_Core/Utility/Computed/SC Sample Core Computed.unity",
+          "Assets/TestAndSample/Sample_Core/Utility/RandomX/SC Sample Core RandomAvatar.unity",
+          "Assets/TestAndSample/Sample_Common/Utility/Trigger/SC Sample Common Trigger.unity"
+        ],
+        "targetFps": 30,
+        "stableFrames": 30
+      },
+      "budgets": [
+        { "metric": "loadtime.loadMs.max", "op": "<=", "value": 30000, "unit": "ms" }
+      ]
+    }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 180
+  }
+}
