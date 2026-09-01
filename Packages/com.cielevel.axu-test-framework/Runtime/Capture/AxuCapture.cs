@@ -139,10 +139,25 @@ namespace AxuTestFramework
             return path;
         }
 
+        /// <summary>
+        /// 平台无关固定非法文件名字符集（Windows 全集 + 控制字符），保证跨机 artifacts 文件名一致；
+        /// 与 Agent/Tools/AgentPaths.cs 同集（Runtime 程序集不引 Agent，就地内联）。
+        /// </summary>
+        static readonly char[] InvalidFileNameChars = BuildInvalidFileNameChars();
+
+        static char[] BuildInvalidFileNameChars()
+        {
+            var set = new System.Collections.Generic.HashSet<char> { '"', '<', '>', '|', ':', '*', '?', '\\', '/' };
+            for (var c = (char)0x00; c <= (char)0x1F; c++) set.Add(c);
+            var array = new char[set.Count];
+            set.CopyTo(array);
+            return array;
+        }
+
         /// <summary>把非法文件名字符替换为 '_'。</summary>
         private static string SanitizeFileName(string name)
         {
-            char[] invalidChars = Path.GetInvalidFileNameChars();
+            char[] invalidChars = InvalidFileNameChars;
             char[] chars = name.ToCharArray();
             for (int i = 0; i < chars.Length; i++)
             {

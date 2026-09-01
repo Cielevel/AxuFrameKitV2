@@ -21,13 +21,19 @@ namespace AxuTestFramework.Editor
     /// 最近报告路径（点击 reveal）。左右分栏经 TwoPaneSplitView 可拖拽调比例（viewDataKey 持久化）。
     /// 运行直接调用 <see cref="AxuTestRunService"/>（不经 HTTP）；"Run 选定"经 testNames 精确通道
     /// 只跑勾选用例（按当前模式执行，勾选用例不属于当前模式时被预检 0 匹配拦下）。
+    /// <para>Phase 4 起为三页签（partial 拆分，Scenario/Trend 页见
+    /// AxuTestRunnerWindow.ScenarioTrend.cs）：Tests（本文件，UTF 结果不动）/
+    /// Scenario（suite JSON 发现-运行-报告-导出）/ Trend（趋势 CSV 序列与环比）。</para>
     /// </summary>
-    public class AxuTestRunnerWindow : EditorWindow
+    public partial class AxuTestRunnerWindow : EditorWindow
     {
         private const string UssResourcePath = "Packages/com.cielevel.axu-test-framework/Editor/UI/AxuTestTokens.uss";
 
         private string _mode = "editor";
         private bool _running;
+
+        /// <summary>Tests 页根容器（页签切换经 display 控制；Scenario/Trend 页根在 partial 侧）。</summary>
+        private VisualElement _testsPage;
 
         private Button _runAllButton;
         private Button _runSelectedButton;
@@ -76,12 +82,24 @@ namespace AxuTestFramework.Editor
             if (uss != null)
                 rootVisualElement.styleSheets.Add(uss);
 
+            BuildTabBar();
+
+            _testsPage = new VisualElement { name = "ax-page-tests" };
+            _testsPage.style.flexGrow = 1f;
+            rootVisualElement.Add(_testsPage);
+
             BuildTopBar();
             BuildMainArea();
+
+            BuildScenarioPage();
+            BuildTrendPage();
             BuildStatusBar();
+
+            SetPage("tests");
 
             _ = RefreshTestsAsync();
             TryLoadLatestReport();
+            RefreshSuiteList();
         }
 
         // ------------------------------------------------------------------ UI 构建
@@ -130,7 +148,7 @@ namespace AxuTestFramework.Editor
             topBar.Add(_filterField);
             topBar.Add(_reportPathButton);
 
-            rootVisualElement.Add(topBar);
+            _testsPage.Add(topBar);
             SetMode(_mode);
             UpdateSelectionUi();
         }
@@ -179,7 +197,7 @@ namespace AxuTestFramework.Editor
             split.Add(testsPane);
             split.Add(resultsPane);
             main.Add(split);
-            rootVisualElement.Add(main);
+            _testsPage.Add(main);
         }
 
         private void BuildStatusBar()
@@ -189,7 +207,7 @@ namespace AxuTestFramework.Editor
             _statusLabel = new Label("就绪");
             _statusLabel.AddToClassList("ax-status-text");
             bar.Add(_statusLabel);
-            rootVisualElement.Add(bar);
+            rootVisualElement.Add(bar); // 状态栏全局可见（三页签共用）
         }
 
         private void SetMode(string mode)

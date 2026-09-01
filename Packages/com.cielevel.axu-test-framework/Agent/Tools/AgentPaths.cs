@@ -9,7 +9,21 @@ namespace AxuTestFramework.Agent.Tools
     /// </summary>
     public static class AgentPaths
     {
-        static readonly char[] InvalidFileNameChars = Path.GetInvalidFileNameChars();
+        /// <summary>
+        /// 平台无关的固定非法文件名字符集：Windows GetInvalidFileNameChars 全集
+        /// （'"'、'<'、'>'、'|'、':'、'*'、'?'、'\\'、'/'、控制字符 0x00-0x1F）。
+        /// 不用 Path.GetInvalidFileNameChars()（平台相关，macOS 不含 ':' 等），保证跨机清洗后键名一致。
+        /// </summary>
+        static readonly char[] InvalidFileNameChars = BuildInvalidFileNameChars();
+
+        static char[] BuildInvalidFileNameChars()
+        {
+            var set = new System.Collections.Generic.HashSet<char> { '"', '<', '>', '|', ':', '*', '?', '\\', '/' };
+            for (var c = (char)0x00; c <= (char)0x1F; c++) set.Add(c);
+            var array = new char[set.Count];
+            set.CopyTo(array);
+            return array;
+        }
 
         /// <summary>当前是否编辑器环境。</summary>
         public static bool IsEditor => Application.isEditor;

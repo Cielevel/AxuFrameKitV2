@@ -197,6 +197,41 @@ curl -s ... -d '{"command":"axu_test_status","parameters":{}}' ...
 `[TestRunCallback]` 报告器对**所有**测试运行生效（含 pipeline 自带 `run_tests` 发起的运行）——上下文文件缺失时报告
 `mode` 记为 `unknown`，其余内容照常收集。若只要 axu 报告链路的完整行为，用 `axu_test_run`。
 
+## Scenario 工具链（v2 Phase 4 起：axu_scenario_* / axu_player_* / axu_trend_*）
+
+词汇隔离：`axu_test_*` 永远指 UTF 测试；`axu_scenario_*` / `axu_player_*` / `axu_trend_*` 指 scenario 套件运行。
+六个命令均在 `Editor.Pipeline` 程序集（`AXU_PIPELINE_PRESENT` 守护），与 `axu_test_run` **共享互斥闸**——
+scenario / player / UTF 三类运行禁止在同一 Editor 并发驱动。
+
+### pipeline 命令一览
+
+| 命令 | 参数 | 说明 |
+|---|---|---|
+| `axu_scenario_list` | — | 枚举内建能力（echo/perf/loadtime/smoke）+ Assets 下 `*.suite.json` / `*.scenario.json`（含 scenarioIds 摘要） |
+| `axu_scenario_run` | `suite`（必填，工程相对/绝对）、`scenario`（可选，逗号分隔 id） | Editor PlayMode 内驱动 Agent Runner；**异步启动即返**，经 `axu_scenario_status` 轮询 `Temp/axu_scenario_status.json`（running/completed/error + reportPath/exitCode）；完成后看门狗自动趋势入库并退 Play |
+| `axu_scenario_status` | — | 读运行状态文件原文（idle 时返回 idle 信封） |
+| `axu_player_suite_build` | `output`（默认 `Builds/AxuScenarioPlayer/<产品名>.app`） | macOS Development Build；构建期临时确保 `AXU_TEST_AGENT` define 开启，`finally` 还原；场景 = Build Settings |
+| `axu_player_suite_run` | `suite`（必填）、`player`（默认 `Builds/AxuScenarioPlayer`，支持 .app/目录/可执行）、`scenario`、`seed`、`warn_as_fail`、`timeout_ms`（默认 3600000，0=无限，超时 Kill） | 启动 Player 进程（`-axuSuite -axuQuitOnDone -axuReport …`）→ 等退出码 → 回拉报告到 `Library/AxuTestReports/scenario/player-{时间戳}-{suite}/` → 趋势入库 |
+| `axu_trend_summary` | `scenario` / `suite`（可选过滤）、`last_n`（默认 10） | 读趋势 CSV，输出各指标最近 N 次序列与最近两次变化百分比（方向感知：**正值恒=变差**；fps 负值=改善，frameTime/memory 正值=劣化） |
+
+退出码语义：0=全 pass；1=有 fail；2=仅 warn（warn_as_fail 可升级）。
+
+### 趋势 CSV（schema `axu-trend/1`）
+
+- 路径：`Library/AxuTestReports/trend/trend.csv`（追加式长表，不入库）。
+- 列序：`timestampUtc,suite,scenario,capability,result,exitCode,durationMs,metric,value`；每条 metric 一行，
+  另有 `metric` 为空串的 **run 级行**（`value` 空，携带整体 result/exitCode/durationMs）。
+- metric 键与基线 diff 同源（`collector.stat` 扁平键，如 `fps.avg`、`scene.Demo_Scene.loadMs`）。
+- 读写经 Core `TrendStore`（RFC 4180 引号/换行转义，跨平台一致）。
+
+### Editor 侧配套
+
+- **看板 Scenario 页**：扫描并列出 suite/scenario JSON → Run Suite（含 define 预检）→ 运行后回读报告摘要 + Export JUnit/HTML；趋势自动入库。
+- **看板 Trend 页**：按 scenario 分组查看各指标最近 10 次序列与环比（正=变差红 / 负=改善绿）。
+- **导出器**：`JUnitExporter`（JUnit XML）与 `HtmlSummaryExporter`（单文件自包含 HTML 摘要）。
+- **define 预检**（Phase 1 遗留收口）：运行入口检查 `AXU_TEST_AGENT` 未开时弹可跳过警告。
+- **部署菜单**：`AxuTestFramework/Deploy Suite To StreamingAssets`（复制 suite JSON 到 `Assets/StreamingAssets/AxuSuites/`）与 `Remove Deployed Suites`。
+
 ## Runtime 工具层速览
 
 命名空间统一为 `AxuTestFramework`。

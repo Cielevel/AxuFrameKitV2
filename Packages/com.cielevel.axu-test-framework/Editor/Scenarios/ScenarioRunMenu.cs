@@ -1,6 +1,4 @@
 using System.IO;
-using System.Text;
-using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,8 +10,8 @@ namespace AxuTestFramework.Editor
     /// → 进入 Play Mode，由 Agent（<c>#if AXU_TEST_AGENT</c> 守护的 AgentBootstrap）在运行时读取并执行。
     /// <para>桥文件格式为与运行时侧的契约，勿改：
     /// <code>{"suitePath": "&lt;所选 JSON 绝对路径&gt;", "quitOnDone": false}</code>
-    /// 前置检查：当前 BuildTargetGroup 符号未开启 <see cref="AgentDefineMenu.DefineName"/> 时弹窗中止
-    /// （未开 define 时 Agent 入口不参与编译，进 Play 也不会有 Agent 读取桥文件）。</para>
+    /// 前置检查：Play 中拦截；define 未开启时经 <see cref="ScenarioPrecheck.WarnIfAgentDisabled"/>
+    /// 弹可跳过警告（未开 define 时 Agent 入口不参与编译，进 Play 也不会有 Agent 读取桥文件）。</para>
     /// </summary>
     public static class ScenarioRunMenu
     {
@@ -34,39 +32,42 @@ namespace AxuTestFramework.Editor
         [MenuItem(MenuPath, false)]
         public static void RunSuiteJson()
         {
-            if (EditorApplication.isPlaying)
-            {
-                // 防御分支（validate 已禁用菜单，键盘/脚本直呼时兜底）：不强行重启，提示退出重进。
-                EditorUtility.DisplayDialog(
-                    "Run Suite JSON",
-                    "当前已处于 Play Mode。桥文件需在进入 Play 前写入才会被 Agent 读取——" +
-                    "请退出 Play 后重新执行本菜单，下一次进 Play 时生效。",
-                    "好");
-                return;
-            }
-
-            if (!AgentDefineMenu.HasAgentDefine())
-            {
-                EditorUtility.DisplayDialog(
-                    "Run Suite JSON",
-                    $"当前 BuildTargetGroup（{AgentDefineMenu.GetActiveNamedBuildTarget().TargetName}）的脚本符号" +
-                    $"未开启 {AgentDefineMenu.DefineName}，Agent 入口不会参与编译，进 Play 也无法执行场景。\n\n" +
-                    "请先执行菜单 AxuTestFramework/Enable Test Agent 并等待重编译完成，再运行本菜单。",
-                    "好");
-                return;
-            }
-
             var selected = EditorUtility.OpenFilePanel(
                 "选择 Suite / Scenario JSON", ResolveStartDirectory(), "json");
             if (string.IsNullOrEmpty(selected))
                 return;
 
-            WriteBridge(selected);
+            TryRunSuite(selected);
+        }
+
+        /// <summary>
+        /// 运行指定 suite/scenario JSON（菜单与看板 Scenario 页共用的运行路径）：
+        /// Play 中拦截（提示退出重进）→ <see cref="ScenarioPrecheck.WarnIfAgentDisabled"/> 可跳过预检
+        /// → 写桥文件 → 进入 Play Mode。返回是否已成功启动（false = 被拦截或用户取消）。
+        /// </summary>
+        public static bool TryRunSuite(string suiteAbsolutePath)
+        {
+            if (EditorApplication.isPlaying)
+            {
+                // 防御分支（菜单 validate 已禁用；看板按钮/脚本直呼时兜底）：不强行重启，提示退出重进。
+                EditorUtility.DisplayDialog(
+                    "Run Suite JSON",
+                    "当前已处于 Play Mode。桥文件需在进入 Play 前写入才会被 Agent 读取——" +
+                    "请退出 Play 后重新运行，下一次进 Play 时生效。",
+                    "好");
+                return false;
+            }
+
+            if (!ScenarioPrecheck.WarnIfAgentDisabled())
+                return false;
+
+            WriteBridge(suiteAbsolutePath);
             EditorApplication.isPlaying = true;
 
             Debug.Log(
-                $"[AxuTestFramework] 桥文件已写入: {PendingSuiteBridgePath}；suite: {selected}" +
+                $"[AxuTestFramework] 桥文件已写入: {PendingSuiteBridgePath}；suite: {suiteAbsolutePath}" +
                 "——已进入 Play Mode，Agent 将读取并执行。");
+            return true;
         }
 
         /// <summary>文件选择起始目录：工程约定场景目录存在则用之，否则退回 Assets 根。</summary>
@@ -82,22 +83,9 @@ namespace AxuTestFramework.Editor
         /// 工程根由 Application.dataPath 推导，不依赖进程 cwd）。</summary>
         private static void WriteBridge(string suiteAbsolutePath)
         {
-            var projectRoot = Directory.GetParent(Application.dataPath).FullName;
-            var bridgeFullPath = Path.Combine(
-                projectRoot, PendingSuiteBridgePath.Replace('/', Path.DirectorySeparatorChar));
 
-            var bridgeDirectory = Path.GetDirectoryName(bridgeFullPath);
-            if (!string.IsNullOrEmpty(bridgeDirectory) && !Directory.Exists(bridgeDirectory))
-                Directory.CreateDirectory(bridgeDirectory);
-
-            var payload = JsonConvert.SerializeObject(new
-            {
-                suitePath = suiteAbsolutePath,
-                quitOnDone = false
-            }, Formatting.Indented);
-
-            File.WriteAllText(bridgeFullPath, payload + System.Environment.NewLine,
-                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            // Phase 4：桥文件写入统一走 ScenarioRunService（与 pipeline 命令共用同一契约实现）
+            ScenarioRunService.WriteBridgeFile(suiteAbsolutePath, null);
         }
     }
 }

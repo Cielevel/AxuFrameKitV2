@@ -60,6 +60,11 @@ namespace AxuTestFramework.Editor
                     return ErrorOutcome(request, "已有 axu 测试运行在途（状态文件标记 running）。" +
                         "请先经 axu_test_status 观察或等其完成。");
                 }
+                if (ScenarioRunService.IsScenarioRunInFlight())
+                {
+                    return ErrorOutcome(request, "scenario 套件运行在途（经 axu_scenario_status 观察），" +
+                        "同一 Editor 禁止并发驱动 UTF 运行。");
+                }
                 if (File.Exists(AxuTestReportPaths.ToFullPath("Temp/pipeline_test_request.json")))
                 {
                     return ErrorOutcome(request, "pipeline 自带 run_tests 的异步运行在途（Temp/pipeline_test_request.json 存在），" +

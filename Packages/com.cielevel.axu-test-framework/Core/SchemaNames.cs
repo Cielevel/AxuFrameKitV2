@@ -13,5 +13,8 @@ namespace AxuTestFramework.Core
 
         /// <summary>场景测试运行报告（axu-scenario-report/1）。</summary>
         public const string ScenarioReport = "axu-scenario-report/1";
+
+        /// <summary>趋势 CSV 存储（axu-trend/1，见 Core/Trend/TrendStore.cs）。</summary>
+        public const string Trend = "axu-trend/1";
     }
 }

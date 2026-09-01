@@ -2,6 +2,25 @@
 
 All notable changes to this package will be documented in this file.
 
+## [Unreleased]（Phase 4 工具链：axu_scenario_*/axu_player_*/axu_trend_* 六命令 + 趋势 + 看板页签 + 导出器）
+
+- **Core/Trend**（纯 C#）：`TrendPoint` / `TrendStore`（schema `axu-trend/1` 追加式长表 CSV，RFC 4180 转义、
+  引号内换行无损回读）/ `TrendSummary`（按指标序列 + 方向感知环比，正值恒=变差）；趋势路径
+  `Library/AxuTestReports/trend/trend.csv`（`AxuTrendPaths`）。
+- **Editor.Pipeline 六命令**：`axu_scenario_list/run/status`（Editor PlayMode 驱动 suite，异步 + Temp 状态文件协议）、
+  `axu_player_suite_build/run`（macOS Development Build，define 临时开启 try/finally 还原；Player 进程运行 → 退出码 →
+  回拉报告 → 趋势入库）、`axu_trend_summary`（最近 N 次序列与环比）。三类运行与 `axu_test_run` 共享互斥闸
+  （`axu_test_run` 侧同步补上 scenario 在途拒绝，双向闭环）。
+- **Editor 层**：`ScenarioRunService`（桥文件 + 看门狗 + 趋势自动入库 + 自动退 Play，菜单/命令/看板共用）、
+  `JUnitExporter` / `HtmlSummaryExporter`、`ScenarioPrecheck`（`AXU_TEST_AGENT` 未开可跳过警告，Phase 1 遗留收口）、
+  `PlayerSuiteDeployMenu`（StreamingAssets 一键部署/清理）。
+- **看板**：新增 **Scenario / Trend** 页签（Tests 页零改动）——suite 列表与运行、报告摘要、JUnit/HTML 导出、
+  趋势分组浏览与环比着色。
+- **跨平台修复**：`AgentPaths` / `AxuCapture` 文件名清洗字符集改为平台无关固定并集（Windows 全集 + 控制字符），
+  修复 macOS 上 `:` 等不被清洗导致 metric 键跨机不一致。
+- 单测 130 → **155**（趋势存储/摘要契约 25 例）；macOS DoD：axu_scenario_run→status→趋势入库→trend_summary、
+  player build(61.8s)+run 端到端回拉（isEditor=false）、包测试 155/155、Axu/Smoke 7/7。
+
 ## [Unreleased]（Phase 3 P0 批次：共享基建 + perf/loadtime/smoke；版本号待 Phase 3 收尾统一定）
 
 - **三个 P0 能力落地**（三件套 + 注册，均 Player 可编译）：
