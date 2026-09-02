@@ -133,7 +133,9 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
 
             _groups.Add(new KitGroupRevImpl("实用工具", "Utility", new IKitPageRevV2[] {
                 new SceneJumpRevPage(),
-                new BatchRenameRevPage()
+                new BatchRenameRevPage(),
+                new MissingScriptSweeperRevPage(),
+                new SceneSetPresetsRevPage()
             }));
         }
 

@@ -4,6 +4,13 @@
 
 ## [0.1.0]
 
+### 2026-09-03
+
+- **新增**：AxuKitBox「实用工具」组两个效率小页面（注册于 `SetupGroups`，纯 Editor、零新依赖、互相独立）：
+  - **缺脚本清扫器**（`KitBoxRevV2/Groups/UtilityGroup/` 下 `MissingScriptSweeperRevPage` + 纯逻辑类 `MissingScriptScanner`）：扫描 Assets 下 Prefab/Scene 资产中的 Missing Script——范围目录、预制体/场景开关、按 `AssetDatabase.GetAssetDependencyHash` 的会话级"干净缓存"（未变资产跳过）、进度条可取消；结果按资产分组列表、点击 Ping、嵌套 Prefab 实例上的缺失组件归属源资产（仅报告，不在实例清扫）；确认后一键移除（Prefab `LoadPrefabContents` → 官方移除 API → `SaveAsPrefabAsset` 落盘；场景就地或 Additive 打开保存后关闭）；`Packages/` 资产一律只读不扫。**重要口径修复**：Unity 6000.0.23f1 实测 `GetComponents<Component>()` 对缺失脚本槽位返回"真 null"（社区通行的 fake-null 判定 `== null && !ReferenceEquals(null)` 在本版本恒为 false），检测须按 `comp == null`，移除须走官方 `GameObjectUtility.RemoveMonoBehavioursWithMissingScript`（`DestroyImmediate` 对真 null 抛异常）；另实测该版本资产管线**拒绝保存含缺失脚本的 Prefab**（SaveAsPrefabAsset 引擎报错）且 prefab 根物体名强制=资产文件名。
+  - **多场景组合**（`SceneSetPresetsRevPage` + 纯逻辑类 `SceneSetPresetStore`）：把当前多场景叠加组合（`GetSceneManagerSetup`，激活场景稳定排首）存为命名预设，JSON 落 `ProjectSettings/AxuSceneSets.json` 随仓库共享（读取侧损坏自动 `.bak` 后重建、永不抛异常；保存侧 IO 异常正常上抛）；一键恢复（`RestoreSceneManagerSetup`，有未保存场景先列名确认）、更新为当前、删除、缺失场景标注与逐条 Ping。与单场景快跳（SceneJumpRevPage / indie SceneJumper）定位互补不重叠。
+- **测试**：`AxuFrameKit.Tests.Editor` 36 → 48 全绿（新增 `[Axu/Editor/MissingScript]` 5 个、`[Axu/Editor/SceneSets]` 7 个）。缺脚本正例采用**入库常驻夹具** `Tests/Editor/Fixtures/MissingScriptFixture.prefab`（stale-GUID 形态，测试复制副本后扫描/清扫）——运行时构造缺失槽位的三条路线（手写 YAML 注入、Unity 写档后文本注入、SerializedObject 置空 m_Script）经实验均被该版本资产管线剥离/拒绝，已留档于测试注释；截图留证 `artifacts/kitbox-sweeper-scenesets/`。
+
 ### 2026-09-02
 
 - **新增**：通用 ScriptableObject 资产创建窗口 `ScriptableObjectCreatorWindow`（`Editor/Common/Window/`，菜单 `AxuFrameKit/Asset/ScriptableObject Creator`，另有 Project 右键 `Assets/Create/AxuFrameKit/ScriptableObject Creator` 入口、以选中文件夹为创建初始目录）。反射扫描全程序集非抽象 SO 子类（排除 Unity/TMPro/Microsoft/System/I18N 命名空间、EditorWindow/Editor 派生类、`*.Tests` 测试程序集与 Unity 官方程序集（程序集名以 Unity 开头），测试 fixture 与引擎内部 SO 不污染窗口），支持搜索过滤、"仅框架类型（`CustomScriptableObject` 派生）"开关、按 `CreatorEntry` 分组的折叠树（未标注类型按程序集归入"未分组"区，分组折叠状态经 EditorPrefs 跨开窗持久化、未记录默认展开）、`InspectorTitle`/`InspectorIntro` meta 渲染、序列化字段预览、同类型已有资产列表（点击 Ping）、`SaveFilePanelInProject` 创建后 Select+Ping。扫描逻辑抽为可测的 `ScriptableObjectCreatorScanner`，配套 EditMode 测试；`AxuFrameKit.Tests.Editor` asmdef 补 `AxuFrameKit.Editor` 引用。
