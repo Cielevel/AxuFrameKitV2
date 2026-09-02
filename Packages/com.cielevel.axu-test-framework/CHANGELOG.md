@@ -2,40 +2,9 @@
 
 All notable changes to this package will be documented in this file.
 
-## [Unreleased]（Phase 3 P1 批次：soak/stress/monkey/gamehook；验收后随 Phase 3 收尾升 0.3.0）
+## [0.3.0] - 2026-09-02（场景测试平台 v2 完成：八能力 + 工具链，Phase 3/4 交付）
 
-- **四能力落地**（Agent 层，均 Player 可编译，各带 DOC.md 与 Samples~/Scenarios/ 示例）：
-  - `soak`（浸泡/泄漏）：durationMinutes/sampleIntervalSec/gcCollectBeforeSample/screenshotEveryMinutes/leakSlopeMBPerMin/fpsDecayPercent/flushEveryMinutes；内存序列滑窗最小二乘斜率判"泄漏嫌疑"（warn+CSV 取证）、前后半程 p50 FPS 衰减判定、周期截图；**partial report 定期覆盖写**（`{报告名}.partial.json`，`truncated:true`，正常结束删除——崩溃/中断保留前段数据，ScenarioReport 增可空 `Truncated` 字段）。
-  - `stress`（压力/承载，组合 phases）：`capacity` 容量探测（ramp + 60 帧滑窗 fps 判超载 + 二分收敛，输出 `capacity.maxEntities` 与承载曲线 CSV）、`spawner`（prefab 可空回落内置替身）、`churn`（每秒建毁 N × M 秒）、`flood`（自建托管事件洪峰吞吐基准，零框架依赖）；StressSpawner/StressCollector 配套。
-  - `monkey` v1（猴子测试）：坐标随机点按（`AgentInput`：Input System `QueueStateEvent` 注入，`AXU_INPUTSYSTEM_PRESENT` versionDefines 守护；未装/无设备降级 UGUI ExecuteEvents + info finding）、seed 可复现、JSONL 操作流水、错误即截图可配即停、卡死检测（frameCount 停滞 → 截图 + error finding + 终止）。
-  - `gamehook`（游戏适配器，显式注册 API）：`AxuTestAgent.RegisterCapability/RegisterScenario` + `ScenarioDef.FromCode`（Core 纯委托）/`FromCodeRoutine`（Agent 协程形态）+ `AxuScenarioRegistry`（进程内注册表，同 id 后者覆盖）；宿主 suite 解析推迟到 AfterSceneLoad 后首帧，保证游戏侧 RuntimeInitializeOnLoad 注册可见（时序契约见 DOC）。
-- **宿主修复 2 项（DoD 实测暴露）**：① `AgentRunnerHost.Supervise` 改 Stack 驱动任意深度嵌套迭代器（旧实现只代步一层，capacity/churn 深层等待被整段吞掉致秒退零实体）；中断路径（超时/取消/异常）统一 Dispose 栈内迭代器（清场 finally 链生效，防 stress 实体泄漏）；② CapacityProbe FpsWindow 启动判据缺陷（`_filled` 自锁恒 NaN）修复。
-- Agent asmdef：references 增 `Unity.InputSystem`（versionDefines 可选）与 `UnityEngine.UI`（降级路径）。
-- 单测 155 → **209**（四能力参数/FromCode/SuiteLoader externalById 契约 +45 例，含 clamp/混排/覆盖语义）。
-- macOS DoD：stress 容量探测（maxEntities=2000 下界/40 点曲线/churn 300 对/flood 295 万事件）、monkey 同 seed 双跑流水逐行一致、gamehook e2e pass、soak 10min（partial 每 2min 一刷×5、中断保留 truncated、结束删除）与 2min Player 抽验（isEditor=false）全过；零影响回归 209/209 + Axu/Smoke 7/7。
-
-## [Unreleased]（Phase 4 工具链：axu_scenario_*/axu_player_*/axu_trend_* 六命令 + 趋势 + 看板页签 + 导出器）
-
-- **Core/Trend**（纯 C#）：`TrendPoint` / `TrendStore`（schema `axu-trend/1` 追加式长表 CSV，RFC 4180 转义、
-  引号内换行无损回读）/ `TrendSummary`（按指标序列 + 方向感知环比，正值恒=变差）；趋势路径
-  `Library/AxuTestReports/trend/trend.csv`（`AxuTrendPaths`）。
-- **Editor.Pipeline 六命令**：`axu_scenario_list/run/status`（Editor PlayMode 驱动 suite，异步 + Temp 状态文件协议）、
-  `axu_player_suite_build/run`（macOS Development Build，define 临时开启 try/finally 还原；Player 进程运行 → 退出码 →
-  回拉报告 → 趋势入库）、`axu_trend_summary`（最近 N 次序列与环比）。三类运行与 `axu_test_run` 共享互斥闸
-  （`axu_test_run` 侧同步补上 scenario 在途拒绝，双向闭环）。
-- **Editor 层**：`ScenarioRunService`（桥文件 + 看门狗 + 趋势自动入库 + 自动退 Play，菜单/命令/看板共用）、
-  `JUnitExporter` / `HtmlSummaryExporter`、`ScenarioPrecheck`（`AXU_TEST_AGENT` 未开可跳过警告，Phase 1 遗留收口）、
-  `PlayerSuiteDeployMenu`（StreamingAssets 一键部署/清理）。
-- **看板**：新增 **Scenario / Trend** 页签（Tests 页零改动）——suite 列表与运行、报告摘要、JUnit/HTML 导出、
-  趋势分组浏览与环比着色。
-- **跨平台修复**：`AgentPaths` / `AxuCapture` 文件名清洗字符集改为平台无关固定并集（Windows 全集 + 控制字符），
-  修复 macOS 上 `:` 等不被清洗导致 metric 键跨机不一致。
-- 单测 130 → **155**（趋势存储/摘要契约 25 例）；macOS DoD：axu_scenario_run→status→趋势入库→trend_summary、
-  player build(61.8s)+run 端到端回拉（isEditor=false）、包测试 155/155、Axu/Smoke 7/7。
-
-## [Unreleased]（Phase 3 P0 批次：共享基建 + perf/loadtime/smoke；版本号待 Phase 3 收尾统一定）
-
-- **三个 P0 能力落地**（三件套 + 注册，均 Player 可编译）：
+- **能力库扩至八能力**（Agent 层，均 Player 可编译，各带 DOC.md 与 Samples~/Scenarios/ 示例）：
   - `perf`（性能基准）：可选加载场景 → warmup 挂起采样丢弃 → 度量期 → 可选截图；指标由
     `collectors` 采集器产出、宿主预算判定。加载失败出 `PERF_SCENE_LOAD_FAILED`；
   - `loadtime`（加载时长）：场景矩阵逐个计时，产出 `loadtime.scene.<safe>.loadMs/.firstFrameMs/.stableMs`
@@ -45,41 +14,77 @@ All notable changes to this package will be documented in this file.
     加载 + 稳定窗错误计数 + 截图留证，产出 `smoke.scene.<safe>.loadMs/.errors` +
     `sceneCount/loadMs.max/errors.total/loadFailed.total`；清单错误 `SMOKE_NO_SCENES`/
     `SMOKE_DIRECTORY_UNAVAILABLE`；
-  - 每能力目录附 `DOC.md`（参数表含 clamp、指标键表、budget 示例、平台备注）。
-- **共享基建**（`Agent/Tools/`，Agent 层）：
+  - `soak`（浸泡/泄漏）：durationMinutes/sampleIntervalSec/gcCollectBeforeSample/screenshotEveryMinutes/
+    leakSlopeMBPerMin/fpsDecayPercent/flushEveryMinutes；内存序列滑窗最小二乘斜率判"泄漏嫌疑"（warn+CSV
+    取证）、前后半程 p50 FPS 衰减判定、周期截图；**partial report 定期覆盖写**（`{报告名}.partial.json`，
+    `truncated:true`，正常结束删除——崩溃/中断保留前段数据，ScenarioReport 增可空 `Truncated` 字段）；
+  - `stress`（压力/承载，组合 phases）：`capacity` 容量探测（ramp + 60 帧滑窗 fps 判超载 + 二分收敛，
+    输出 `capacity.maxEntities` 与承载曲线 CSV）、`spawner`（prefab 可空回落内置替身）、`churn`
+    （每秒建毁 N × M 秒）、`flood`（自建托管事件洪峰吞吐基准，零框架依赖）；StressSpawner/StressCollector 配套；
+  - `monkey` v1（猴子测试）：坐标随机点按（`AgentInput`：Input System `QueueStateEvent` 注入，
+    `AXU_INPUTSYSTEM_PRESENT` versionDefines 守护；未装/无设备降级 UGUI ExecuteEvents + info finding）、
+    seed 可复现、JSONL 操作流水、错误即截图可配即停、卡死检测（frameCount 停滞 → 截图 + error finding + 终止）；
+  - `gamehook`（游戏适配器，显式注册 API）：`AxuTestAgent.RegisterCapability/RegisterScenario` +
+    `ScenarioDef.FromCode`（Core 纯委托）/`FromCodeRoutine`（Agent 协程形态）+ `AxuScenarioRegistry`
+    （进程内注册表，同 id 后者覆盖）；宿主 suite 解析推迟到 AfterSceneLoad 后首帧，保证游戏侧
+    RuntimeInitializeOnLoad 注册可见（时序契约见 DOC）。
+  - 每能力目录附 `DOC.md`（参数表含 clamp、指标键表、budget 示例、平台备注）；内建能力注册经
+    `BuiltInCapabilities.RegisterAll`（显式 API，无反射扫描）。
+- **共享基建**（`Agent/Tools/`）：
   - `AgentEnvironment`（+ Overrides/Snapshot POCO）：DOC §4 通用参数保留键（timeScale/vsync/targetFrameRate/
     qualityLevel/resolution/seed）的解析（缺键/类型不符一律 null，绝不抛异常）、应用（越界 clamp；
     **resolution 仅 Player**）与恢复（宿主在 finally 中调用，超时中断也还原）；
   - `AgentScenes`：场景加载三级回退解析（原样路径 → 去 `.unity` → 纯文件名）+ 激活场景 isLoaded 确认；
-  - `AgentCapture`：截图原语（**移植自 v1 `Runtime/Capture/AxuCapture` 思路**：延迟生效帧等待 + 文件校验，
-    失败仅告警）+ artifacts 路径拼合；
-  - `AgentLogWatch`：日志监视（**移植自 v1 `Runtime/Logging/AxuLogWatch` 思路**：Error/Exception/Assert 与
-    Warning 分计数、最近 20 条 `"condition (asset:line)"` 快照、ResetCounts、线程安全、Dispose 退订）。
-- **度量会话扩展**（加法式）：`MetricSession` 新增 `Suspend()/Resume()`（引用计数挂起，挂起期采样/打点/
-  节拍全 no-op，perf warmup 用）与 `TryAttachCollector()`（runner 自有采集器挂入会话：loadtime/smoke 的
-  结果采集器随宿主节拍一并驱动，id 冲突拒绝）。
-- **Runner 契约扩展**（加法式）：`ScenarioContext` 新增 `ArtifactsDir`/`Seed`（构造参数带默认值，旧调用点
-  不破坏）；`ScenarioRunHandle` 新增 `Artifacts` 列表（runner→宿主工件通道）；宿主在逐 scenario 外层应用/
-  还原环境通用参数、支持 scenario 级 `timeoutSec` 覆盖、artifacts 目录默认落到报告同目录 `artifacts/`，
-  runner 截图经 `Handle.Artifacts` 转相对报告目录路径写入报告 `results[].artifacts`。
-- 内建能力注册追加三项（`BuiltInCapabilities.RegisterAll`，显式 API，无反射扫描）。
-- **契约单测扩至 130 个**（原 57 + 新增 73，`Axu/TestFramework`）：三能力参数默认值/clamp/JSON 反序列化、
-  `AgentEnvironmentOverrides.Parse` 纯解析、`MetricSession` 挂起/附加采集器语义、loadtime/smoke 采集器
-  产出键与聚合、`AgentCapture`/`AgentLogWatch` 纯逻辑。
-- **e2e 实测驱动的修复**（Windows，Editor PlayMode 桥文件链路实跑四套件）：
-  - `AgentLogWatch` 快照改 FIFO 环形淘汰（原实现达上限后不追加，与"最近 20 条"注释不符；`DroppedCount`
-    语义同步为"因淘汰未保留的总条数"）；
-  - **全 0 聚合恒产出**：smoke 的 `errors.total`/`loadFailed.total`、loadtime 的 `unstableCount`/`sceneCount`
-    在采集器 Start 播种 0 值采样——否则"零错误/零失败"这一合法状态会因指标缺失被预算按 fail 误判
-    （观测类聚合如 `loadMs.max` 仍不播种，保持"缺失=fail"哲学）；
-  - **Unity 6 场景清单校验实证与 `AgentScenes` 收口**：6000.0.23f1 实测 Editor 与 Player 一致强制校验
-    构建场景清单（"Editor 任意 Assets 路径可载"不成立；运行时临时注册对同会话加载校验不可见）——
-    收口为前置检查 + 可读报错指引，目标场景须加入 Build Settings/Build Profile，三能力 DOC 与
-    `DOC/ScenarioSchema.md` §4 同步更正。
+  - `AgentCapture`：截图原语（延迟生效帧等待 + 文件校验，失败仅告警）+ artifacts 路径拼合；
+  - `AgentLogWatch`：日志监视（Error/Exception/Assert 与 Warning 分计数、最近 20 条快照 FIFO 环形淘汰、
+    ResetCounts、线程安全、Dispose 退订）。
+- **度量会话与 Runner 契约扩展**（加法式）：`MetricSession` 新增 `Suspend()/Resume()`（引用计数挂起，perf
+  warmup 用）与 `TryAttachCollector()`（runner 自有采集器挂入会话）；`ScenarioContext` 新增 `ArtifactsDir`/
+  `Seed`；`ScenarioRunHandle` 新增 `Artifacts` 列表；宿主逐 scenario 应用/还原环境通用参数、支持 scenario 级
+  `timeoutSec` 覆盖；artifacts 目录默认落到报告同目录 `artifacts/`，截图路径写进报告 `results[].artifacts`。
+- **工具链**（Phase 4）：
+  - **Core/Trend**（纯 C#）：`TrendPoint` / `TrendStore`（schema `axu-trend/1` 追加式长表 CSV，RFC 4180
+    转义、引号内换行无损回读）/ `TrendSummary`（按指标序列 + 方向感知环比，正值恒=变差）；趋势路径
+    `Library/AxuTestReports/trend/trend.csv`（`AxuTrendPaths`）。
+  - **Editor.Pipeline 六命令**：`axu_scenario_list/run/status`（Editor PlayMode 驱动 suite，异步 + Temp
+    状态文件协议）、`axu_player_suite_build/run`（Development Build，define 临时开启 try/finally 还原；
+    Player 进程运行 → 退出码 → 回拉报告 → 趋势入库）、`axu_trend_summary`（最近 N 次序列与环比）。
+    三类运行与 `axu_test_run` 共享互斥闸（双向闭环）。
+  - **Editor 层**：`ScenarioRunService`（桥文件 + 看门狗 + 趋势自动入库 + 自动退 Play，菜单/命令/看板共用）、
+    `JUnitExporter` / `HtmlSummaryExporter`、`ScenarioPrecheck`（`AXU_TEST_AGENT` 未开可跳过警告）、
+    `PlayerSuiteDeployMenu`（StreamingAssets 一键部署/清理）。
+  - **看板**：新增 **Scenario / Trend** 页签（Tests 页零改动）——suite 列表与运行、报告摘要、JUnit/HTML
+    导出、趋势分组浏览与环比着色。
+- **实测驱动修复 6 项**：
+  - `AgentRunnerHost.Supervise` 改 Stack 驱动任意深度嵌套迭代器（旧实现只代步一层，capacity/churn 深层
+    等待被整段吞掉致秒退零实体）；中断路径统一 Dispose 栈内迭代器（防 stress 实体泄漏）；
+  - `CapacityProbe` FpsWindow 启动判据缺陷（`_filled` 自锁恒 NaN → 每窗误判超载收敛 0）修复；
+  - **gamehook 注册时序**：宿主 BeforeSceneLoad 即解析 suite 早于游戏侧 AfterSceneLoad 注册 →
+    CAPABILITY_MISSING 假阴性；RunAll 首步 yield null 推迟到 AfterSceneLoad 后首帧；
+  - **全 0 聚合恒产出**：smoke/loadtime 的 total 类指标在采集器 Start 播种 0 值采样——"零错误"这一合法
+    状态不再被预算按指标缺失误判 fail（观测类聚合保持"缺失=fail"哲学）；
+  - **Unity 6 场景清单校验收口**：6000.0.23f1 实测 Editor 与 Player 一致强制校验构建场景清单——收口为
+    前置检查 + 可读报错指引，目标场景须加入 Build Settings/Build Profile；
+  - **跨平台文件名清洗**：`AgentPaths`/`AxuCapture` 清洗字符集改平台无关固定并集（Windows 全集 + 控制
+    字符），修复 macOS 上 `:` 等不被清洗导致 metric 键跨机不一致。
 - **`Samples~` 目录补建（v1 悬空声明修复）**：根因为工程 `.gitignore` 的备份文件模式 `*~` 把 `Samples~`
-  目录整体忽略（0.1.0 起示例从未真正入库）；`.gitignore` 追加 `!**/Samples~/` 反选后补齐
-  `Tests/Editor`、`Tests/Runtime` 两示例与 package.json 声明对齐，新增 `Scenarios` 示例
-  （echo/perf/loadtime/smoke 四 suite + 接入一页纸 README），package.json samples 增设第三项。
+  整体忽略；`.gitignore` 追加 `!**/Samples~/` 反选后补齐 `Tests/{Editor,Runtime}` 两示例，新增 `Scenarios`
+  示例（八能力各一份 example suite + 接入 README），package.json samples 增设第三项。
+- Agent asmdef：references 增 `Unity.InputSystem`（versionDefines 可选）与 `UnityEngine.UI`（降级路径）。
+- 契约单测 57 → **209**（三能力 73 例、趋势 25 例、四能力 45 例 + 既有）。
+- **DoD 验证**：macOS——perf/loadtime/smoke 四套件 PlayMode 桥文件链路、budget/unbudgeted/timeout 三分支
+  路径、stress 容量探测（maxEntities=2000 下界/40 点曲线/churn 300 对/flood 295 万事件）、monkey 同 seed
+  双跑流水逐行一致、gamehook e2e pass、soak 10min（partial 每 2min 一刷×5、中断保留 truncated、结束删除）
+  与 2min Player 抽验（isEditor=false）、player build+run 端到端回拉、axu_scenario_run→status→趋势入库→
+  trend_summary、包测试 209/209、Axu/Smoke 7/7；Windows——P0 三能力四套件 e2e + 验收重放（见下）。
+- **验收重放（2026-09-02，Windows）**：echo/branches/perf/stress 四套件 e2e 串行重放全符合预期——
+  echo 1p/1f（BASELINE_REGRESSION 为已知跨机基线项）、branches 三分支闭环（budget pass/unbudgeted
+  pass+`unbudgeted:true`/timeout `RUNTIME_TIMEOUT` error）、perf pass（fps.avg=103.02、cpuP95=29.04ms、
+  截图 artifact 落盘）、stress 2 pass（capacity.maxEntities=2000 打满配置上限/40 点曲线、churn 300 对、
+  flood 126.8 万事件）；回归 包测试 209/209 + Axu/Smoke 7/7、Console 零 error、四场运行趋势入库
+  （trend.csv 135 数据点/7 scenario）。工程所有者实机试用通过（反馈的看板可视化深度项记 backlog #4，
+  不阻塞本版）。
+
 
 ## [0.2.0] - 2026-08-31（场景测试平台建设启动，Phase 0/1/2 已落地）
 
