@@ -58,17 +58,18 @@ namespace AxuTestFramework.Editor
                 if (_runInFlight || IsAxuRunInFlight())
                 {
                     return ErrorOutcome(request, "已有 axu 测试运行在途（状态文件标记 running）。" +
-                        "请先经 axu_test_status 观察或等其完成。");
+                        "请先经 axu_test_status 观察或等其完成；running 超过 15 分钟视为陈旧会自动放行，" +
+                        "确认无实际运行时可删除 Temp/axu_test_run_status.json 手动解锁。");
                 }
                 if (ScenarioRunService.IsScenarioRunInFlight())
                 {
                     return ErrorOutcome(request, "scenario 套件运行在途（经 axu_scenario_status 观察），" +
-                        "同一 Editor 禁止并发驱动 UTF 运行。");
+                        "同一 Editor 禁止并发驱动 UTF 运行；确认无实际运行时可删除 Temp/axu_scenario_status.json 手动解锁。");
                 }
                 if (File.Exists(AxuTestReportPaths.ToFullPath("Temp/pipeline_test_request.json")))
                 {
                     return ErrorOutcome(request, "pipeline 自带 run_tests 的异步运行在途（Temp/pipeline_test_request.json 存在），" +
-                        "两者共用 UTF 的单运行通道，拒绝并发启动。");
+                        "两者共用 UTF 的单运行通道，拒绝并发启动；确认无实际运行时可删除该文件手动解锁。");
                 }
                 _runInFlight = true;
             }

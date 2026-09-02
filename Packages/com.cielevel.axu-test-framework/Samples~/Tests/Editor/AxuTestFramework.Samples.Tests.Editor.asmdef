@@ -4,7 +4,7 @@
     "references": [
         "AxuTestFramework",
         "UnityEngine.TestRunner",
-        "UnityEngine.Editor.TestRunner"
+        "UnityEditor.TestRunner"
     ],
     "includePlatforms": [
         "Editor"

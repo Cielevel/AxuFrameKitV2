@@ -126,7 +126,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/
 | `axu_test_run` | `mode`(editor/playmode/all，默认 editor)、`assembly`、`category`(逗号分隔，**区分大小写**)、`filter`+`filter_type`(testName/assembly/category)、`clear_console`(默认 true)、`report`(默认 true)、`out_path`(可选留档；不以 .json 结尾视为目录)、`timeout_ms`(默认 120000) | 发起测试运行。**安全内置**：未显式指定 assembly 时自动限定"工程测试程序集"并**排除 `Unity.Pipeline.Tests*`**（返回值含 `ExcludedAssemblies`） |
 | `axu_test_status` | 无 | 轮询运行状态（读 `Temp/axu_test_run_status.json`）；PlayMode 必用。running 超过 15 分钟视为陈旧不阻塞新运行 |
 | `axu_test_report` | `latest`(bool) 或 `path` | 返回报告 JSON 原文；超过 256KB 返回 `{status:"too_large"}` 信封 |
-| `axu_window_screenshot` | `window`(必填，EditorWindow 标题精确匹配)、`menu`(可选，窗口不存在时经此菜单自动打开)、`output`(可选 PNG 路径) | **Windows 专属、仅适用于没有 CaptureToRenderTexture 能力的 Unity 版本（< 6000.7，6000.7+ 不编译，请用 `capture_editor_element`）**。后台无感截取任意浮动 EditorWindow（PrintWindow 离屏渲染）：窗口可被遮挡/失焦，不抢焦点不置顶；限制：最小化/关闭(可经 menu 重开)/停靠状态无法截取。成功返回 `=> OK bytes=... path=...`。**macOS 无需实现**（2026-08-31 决策）：运行时平台守卫在任何 Win32 调用前返回说明文本，不崩溃无副作用；Mac 截图走跨平台路径（`AxuCapture` + `capture_game_view`/`capture_scene_view`/`screenshot`），不规划 CGWindowListCreateImage 变体 |
+| `axu_window_screenshot` | `window`(必填，EditorWindow 标题精确匹配)、`menu`(可选，窗口不存在时经此菜单自动打开)、`output`(可选 PNG 路径) | **Windows 专属、仅适用于没有 CaptureToRenderTexture 能力的 Unity 版本（< 6000.7，6000.7+ 不编译，请用 `capture_editor_element`）**。后台无感截取任意浮动 EditorWindow（PrintWindow 离屏渲染）：窗口可被遮挡/失焦，不抢焦点不置顶；限制：最小化/关闭(可经 menu 重开)/停靠状态无法截取。成功返回 `=> OK bytes=... path=...`。**macOS 无需实现**（2026-08-31 决策）：运行时平台守卫在任何 Win32 调用前返回说明文本，不崩溃无副作用；Mac 截图走跨平台路径（`AxuCapture` + `capture_game_view`/`capture_scene_view`/`screenshot`），不规划 CGWindowListCreateImage 变体。⚠️ **实测限制（2026-09-02）**：PrintWindow 对 Unity 这类 D3D 呈现内容可能返回 OK 但客户区**全白**（对照截 Hierarchy 同样白图，机制性限制）；需要窗口真实内容时回退 = eval 反射调用窗口方法（如 AxuTestRunner 的 `SetPage`）+ Show/Focus/Repaint 后按窗口矩形 `CopyFromScreen` 抓屏 |
 
 ### 调用示例
 
@@ -171,3 +171,51 @@ SetUp/TearDown 调 `SecurityTokenManager.ClearCache()` 毒化会话 token → �
 
 菜单 `AxuFrameKit/AxuTestRunner`（UITK 看板：套件树/结果树/模式切换/最近报告），与 HTTP 命令共用
 `AxuTestRunService` 编排核心；与内置 `run_tests` 之间有并发检测（`Temp/pipeline_test_request.json`）。
+
+---
+
+## 10. 场景测试命令：`axu_scenario_*` / `axu_player_*` / `axu_trend_*`（AxuTestFramework v2，2026-09-01 新增）
+
+来源：`Packages/com.cielevel.axu-test-framework/Editor.Pipeline/`（AxuTestFramework.Editor.Pipeline 程序集，
+`AXU_PIPELINE_PRESENT` 守护——未装 pipeline 包不编译，不影响包内其余功能）。**与 `axu_test_run` 共享互斥闸**：
+UTF / scenario / player 三类运行禁止在同一 Editor 并发驱动；**Play 长跑（soak 等）期间严禁并行派发其他命令**
+（2026-09-02 事故实证：并行取消链在 Play Mode 中触发 UTF 收尾任务崩溃污染运行）。词汇隔离：`axu_test_*`
+永远指 UTF 测试，本节命令永远指 scenario 套件。
+
+### 命令一览
+
+| 命令 | 参数 | 说明 |
+|---|---|---|
+| `axu_scenario_list` | — | 枚举内建能力（echo/perf/loadtime/smoke/soak/stress/monkey + gamehook 注册规范）+ Assets 下 `*.suite.json` / `*.scenario.json`（含 scenarioIds 摘要） |
+| `axu_scenario_run` | `suite`（必填，工程相对/绝对路径）、`scenario`（可选，逗号分隔 id 过滤） | Editor PlayMode 内驱动 Agent Runner。**异步启动即返**，经 `axu_scenario_status` 轮询；完成后看板/服务自动趋势入库并退 Play |
+| `axu_scenario_status` | — | 读 `Temp/axu_scenario_status.json` 原文（running/completed/error + completedCount/totalCount/reportPath/exitCode/summary；idle 时返回 idle 信封）。Play Mode 域重载窗口内 HTTP 可能短暂拿不到响应，以状态文件为准 |
+| `axu_player_suite_build` | `output`（默认 `Builds/AxuScenarioPlayer/`） | Development Build；构建期临时确保 `AXU_TEST_AGENT` define 开启，`finally` 还原；场景清单 = Build Settings |
+| `axu_player_suite_run` | `suite`（必填）、`player`（默认 `Builds/AxuScenarioPlayer`，支持 .app/目录/可执行）、`scenario`、`seed`、`warn_as_fail`、`timeout_ms`（默认 3600000，0=无限，超时 Kill） | 启动 Player 进程（`-axuSuite -axuQuitOnDone -axuReport`）→ 等退出码 → 回拉报告到 `Library/AxuTestReports/scenario/player-{时间戳}-{suite}/` → 趋势入库 |
+| `axu_trend_summary` | `scenario` / `suite`（可选过滤）、`last_n`（默认 10） | 读趋势 CSV，输出各指标最近 N 次序列与环比（方向感知：**正值恒=变差**） |
+
+退出码语义（scenario 侧）：0=全 pass；1=有 fail；2=仅 warn（`warn_as_fail` 可升级为 fail）。
+
+### 调用示例
+
+```bash
+# Editor 内跑 suite：异步 → 轮询状态文件 → 收报告
+curl -s -X POST ... -d '{"command":"axu_scenario_run","parameters":{"suite":"Assets/Tests/Scenarios/echo-demo.suite.json"}}' ...
+curl -s -X POST ... -d '{"command":"axu_scenario_status","parameters":{}}' ...   # 循环至 completed/error
+# 报告在 reportPath 字段指向的 Library/AxuTestReports/scenario/{时间戳}-{suite名}.json
+
+# 真机/独立 Player：构建 + 运行（报告自动回拉并入库趋势）
+curl -s -X POST ... -d '{"command":"axu_player_suite_build","parameters":{}}' ...
+curl -s -X POST ... -d '{"command":"axu_player_suite_run","parameters":{"suite":"echo-demo.suite.json"}}' ...
+
+# 趋势：某 scenario 最近 10 次各指标环比
+curl -s -X POST ... -d '{"command":"axu_trend_summary","parameters":{"scenario":"echo.demo"}}' ...
+```
+
+### 产物
+
+- 报告：`Library/AxuTestReports/scenario/{yyyyMMdd-HHmmss}-{suite名}.json`（schema `axu-scenario-report/1`；
+  soak 中断残留为同目录 `{报告名}.partial.json`，`truncated:true`）。
+- 趋势：`Library/AxuTestReports/trend/trend.csv`（schema `axu-trend/1` 追加式长表；metric 键与 baselineDiff 扁平键同源）。
+- 基线：suite 旁 `baselines/{scenarioId}.baseline.json`（schema `axu-baseline/1`）；基线跨机不可比
+  （录制环境不同会出 BASELINE_REGRESSION 假阳性，换机需重录）。
+- suite 编写/接入步骤见包 README「场景测试接入一页纸」；schema 全集见包内 `DOC/ScenarioSchema.md`。

@@ -33,3 +33,10 @@
   - P1（Agent 层，1d）：游戏内 Overlay HUD——即方案 §3.4/Phase 5 的 `AgentOverlay.cs`（`#if AXU_TEST_AGENT` 守护），Play 时 Game 视图显示当前 suite/scenario、进度、实时 fps/内存。**原计划已排 Phase 5（按需），维持不动，不因本条提前。**
   - P2：Trend 页自绘折线图（UITK generateVisualContent）+ 任意两份报告 A/B 对比。
 - **决策约定**：不因此打乱既定 Phase 顺序；Phase 6 收口时由工程所有者决定"顺手做掉 P0"或"留作 v2 后独立迭代"。
+
+## 5. Agent asmdef 对 InputSystem/UGUI 的硬引用正规化【P2 级，Phase 6 审查发现】
+
+- **现象**：`Packages/com.cielevel.axu-test-framework/Agent/AxuTestFramework.Agent.asmdef` 硬引用 `Unity.InputSystem` 与 `UnityEngine.UI`（monkey 输入注入与 UGUI 降级路径用），但包 package.json 未声明这两个依赖；versionDefines（AXU_INPUTSYSTEM_PRESENT）只守护代码符号、不能让 asmdef 引用解析变可选。**未装这两个包的干净工程中 Agent 程序集有整体编译失败风险**（本工程两包齐全故未暴露）。
+- **来源**：2026-09-02 Phase 6 unity-reviewer 交付审查 P2（0.3.0 发版仅做 README 措辞准确化，本项为正规化遗留）。
+- **建议方案**：拆分守护 asmdef——新建 `AxuTestFramework.Agent.Input`（versionDefines: com.unity.inputsystem + defineConstraints: AXU_INPUTSYSTEM_PRESENT + references: InputSystem/Agent），monkey 的 InputSystem 注入路径移入；UGUI 降级路径同理或保留主程序集（com.unity.ugui 在多数工程默认存在）。或在 package.json 正式声明依赖（代价：强制所有接入工程安装 InputSystem）。
+- **临时缓解（已做）**：README「包定位」Agent 条目已如实注明硬引用约束。

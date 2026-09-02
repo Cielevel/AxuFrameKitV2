@@ -9,18 +9,20 @@ AxuFrameKit 体系之外的**通用测试框架包**：覆盖 EditMode 与 PlayM
 
 - **Runtime 程序集 `AxuTestFramework`**：测试编写工具层（等待 / 场景 / 截图 / 日志监视 / 静态重置 / 报告模型）。
   全平台可编译，`defineConstraints: [UNITY_INCLUDE_TESTS]` 保证正常出包时**不参与编译**，运行时零影响。
-- **Core 程序集 `AxuTestFramework.Core`**（0.2.0 新增，建设中）：场景测试平台的纯 C# 基座（scenario/suite 模型、
-  指标统计、预算/基线/趋势、报告模型）。`noEngineReferences: true`，唯一外部依赖 Newtonsoft.Json。
+- **Core 程序集 `AxuTestFramework.Core`**：场景测试平台的纯 C# 基座（scenario/suite 模型与加载、指标统计、
+  预算/基线/趋势、报告模型、JSON 封装）。`noEngineReferences: true`，唯一外部依赖 Newtonsoft.Json。
   schema 见 [`DOC/ScenarioSchema.md`](DOC/ScenarioSchema.md)。
-- **Agent 程序集 `AxuTestFramework.Agent`**（0.2.0 新增，建设中）：Player 可编译的场景测试运行时
-  （Bootstrap / Runner / 采集器 / Overlay）。只依赖 Core；公开入口以 `AXU_TEST_AGENT` define 守护（不开启则不产生激活代码）。
+- **Agent 程序集 `AxuTestFramework.Agent`**：Player 可编译的场景测试运行时
+  （Bootstrap / Runner / 采集器 / 八能力 / 工具集）。引用 Core 与 `Unity.InputSystem`/`UnityEngine.UI`
+  程序集（monkey 输入注入与 UGUI 降级路径用；asmdef 为硬引用——未装这两个包的工程需自行安装或裁剪引用，
+  拆分守护 asmdef 的正规化方案见工程 backlog）；公开入口以 `AXU_TEST_AGENT` define 守护（不开启则不产生激活代码）。
 - **Editor 程序集 `AxuTestFramework.Editor`**：报告落盘（`[TestRunCallback]` → `AxuTestReportWriter`）、
-  运行编排与看板窗口（菜单 `AxuFrameKit/AxuTestRunner`）。`autoReferenced: false`，仅 Editor 参与；
-  **0.2.0 起零 pipeline 引用**。
-- **Editor 程序集 `AxuTestFramework.Editor.Pipeline`**（0.2.0 新增）：全部引用 pipeline 的 `[CliCommand]` 命令
-  （`axu_test_*` / `axu_window_screenshot`，后续 + `axu_scenario_*`）经 TypeCache 自动注册。`defineConstraints:
-  [AXU_PIPELINE_PRESENT]`（由本程序集 versionDefines 按 `com.unity.pipeline ≥0.5.0-exp` 注入）——**未装 pipeline
-  包的工程该程序集整体不编译，包内其余功能不受影响**。
+  scenario 运行编排（桥文件 + 看门狗 + 趋势入库）、导出器与看板窗口（菜单 `AxuFrameKit/AxuTestRunner`，
+  Tests / Scenario / Trend 三页签）。`autoReferenced: false`，仅 Editor 参与；零 pipeline 引用。
+- **Editor 程序集 `AxuTestFramework.Editor.Pipeline`**：全部引用 pipeline 的 `[CliCommand]` 命令
+  （`axu_test_*` / `axu_scenario_*` / `axu_player_*` / `axu_trend_*` / `axu_window_screenshot`）经 TypeCache 自动注册。
+  `defineConstraints: [AXU_PIPELINE_PRESENT]`（由本程序集 versionDefines 按 `com.unity.pipeline ≥0.5.0-exp` 注入）——
+  **未装 pipeline 包的工程该程序集整体不编译，包内其余功能不受影响**。
 - **Samples~**：EditMode / PlayMode 各一组最小示例，经 Package Manager → Samples 导入。
 
 ## 依赖
@@ -36,43 +38,49 @@ AxuFrameKit 体系之外的**通用测试框架包**：覆盖 EditMode 与 PlayM
 ```
 com.cielevel.axu-test-framework/
 ├── package.json / README.md / CHANGELOG.md
-├── DOC/ScenarioSchema.md             # v2 场景测试 schema 草案（axu-scenario/1、axu-suite/1、axu-scenario-report/1）
-├── Core/                             # asmdef: AxuTestFramework.Core（纯 C#，noEngineReferences；0.2.0 新增，建设中）
-├── Agent/                            # asmdef: AxuTestFramework.Agent（Player 可编译，AXU_TEST_AGENT 守护；0.2.0 新增，建设中）
-├── Runtime/                          # asmdef: AxuTestFramework（全平台，UNITY_INCLUDE_TESTS）
+├── DOC/ScenarioSchema.md             # axu-scenario/1、axu-suite/1、axu-scenario-report/1、axu-baseline/1 schema 文档
+├── Core/                             # asmdef: AxuTestFramework.Core（纯 C#，noEngineReferences，仅依赖 Newtonsoft.Json）
+│   ├── Scenarios/                    #   ScenarioDef / SuiteDef / SuiteLoader（profile 扇出）/ ScenarioRunHandle / ScenarioCli（-axu* 命令行解析）
+│   ├── Metrics/                      #   MetricStats（百分位/最小二乘斜率）/ RingBuffer / MetricDirection 方向元数据
+│   ├── Budget/                       #   BudgetEvaluator（两段键 <collector>.<stat>）
+│   ├── Baseline/                     #   BaselineFile（axu-baseline/1）/ BaselineDiff（方向感知）
+│   ├── Trend/                        #   TrendPoint / TrendStore（RFC 4180 CSV）/ TrendSummary（环比）
+│   ├── Report/                       #   ScenarioReport / Finding / ReportEnvironment（axu-scenario-report/1）
+│   └── Json/                         #   AxuJson（Newtonsoft 薄封装 + schema 校验）
+├── Agent/                            # asmdef: AxuTestFramework.Agent（Player 可编译；只依赖 Core）
+│   ├── Bootstrap/                    #   AgentBootstrap（RuntimeInitializeOnLoad）/ AxuTestAgent 门面 / 能力·场景注册表
+│   ├── Runner/                       #   AgentRunnerHost（嵌套迭代器驱动 + 看门狗）/ ScenarioLaunchOptions / ScenarioStatusFile
+│   ├── Capabilities/                 #   Echo / Perf / LoadTime / Smoke / Soak / Stress / Monkey / GameHook（各带 DOC.md）
+│   ├── Collectors/                   #   fps / frameTime / memory / rendering / gc 五采集器（默认 250ms 聚合）
+│   ├── Metrics/                      #   AxuMetrics 零分配 no-op 门面 / MetricSession
+│   ├── Tools/                        #   AgentEnvironment / AgentScenes / AgentCapture / AgentLogWatch / AgentInput（InputSystem 可选化）/ StressSpawner / AgentPaths / AgentWait
+│   └── Reports/                      #   ScenarioReportWriter（axu-scenario-report/1 落盘；soak 的 partial flush 在 SoakRunner 内实现）
+├── Runtime/                          # asmdef: AxuTestFramework（全平台，UNITY_INCLUDE_TESTS 守护）
 │   ├── Wait/AxuWait.cs               #   帧 / 条件 / 秒等待（[UnityTest] 协程 yield）
 │   ├── Scene/AxuTestScene.cs         #   场景按路径加载 / 卸载 / 重载
 │   ├── Capture/AxuCapture.cs         #   PlayMode 截图到报告 artifacts 目录
-│   ├── Logging/AxuLogWatch.cs        #   Error/Exception/Assert 日志监视
-│   ├── Logging/AxuNoErrorsScope.cs   #   "无错误"作用域（using 友好）
-│   ├── Logging/LogEntry.cs           #   单条日志条目模型
+│   ├── Logging/                      #   AxuLogWatch / AxuNoErrorsScope / LogEntry
 │   ├── State/AxuTestState.cs         #   静态/单例重置登记表（域重载关闭纪律）
-│   └── Reports/                      #   报告 POCO（schema: axu-test-report/1）
-│       ├── AxuTestReport.cs / FilterInfo.cs / ReportSummary.cs
-│       ├── ReportResult.cs / ReportConsole.cs
-│       └── ReportArtifact.cs / ReportEnvironment.cs
-├── Editor/                           # asmdef: AxuTestFramework.Editor（Editor-only, autoReferenced:false；0.2.0 起零 pipeline 引用）
-│   ├── Commands/AxuTestRunService.cs        # 运行编排核心（命令与窗口共用）
-│   ├── Commands/AxuTestAssemblyScanner.cs   # 安全测试程序集枚举（剔除 Unity.Pipeline.Tests*）
-│   ├── Commands/AxuTestRunRequest.cs        # 运行请求模型
-│   ├── Commands/AxuTestRunOutcome.cs        # 运行结果模型
-│   ├── Reports/AxuTestReportWriter.cs       # [TestRunCallback] 报告落盘（schema axu-test-report/1）
-│   ├── Reports/AxuConsoleRing.cs            # 运行期 Console 环形缓冲（Error/Warning 采样）
-│   ├── Reports/AxuTestRunContext.cs         # 跨域重载运行上下文（Temp 文件）
-│   ├── Reports/AxuTestRunStatus.cs          # 运行状态文件模型
-│   ├── Reports/AxuTestReportPaths.cs        # 路径约定
-│   ├── Window/AxuTestRunnerWindow.cs        # UITK 看板（AxuFrameKit/AxuTestRunner）
-│   └── UI/AxuTestTokens.uss                 # 窗口样式 token（独立自持，仿 KitBox 意象）
-├── Editor.Pipeline/                  # asmdef: AxuTestFramework.Editor.Pipeline（0.2.0 新增；AXU_PIPELINE_PRESENT 守护）
+│   └── Reports/                      #   UTF 报告 POCO（schema: axu-test-report/1）
+├── Editor/                           # asmdef: AxuTestFramework.Editor（Editor-only, autoReferenced:false；零 pipeline 引用）
+│   ├── Commands/                     #   UTF 运行编排（AxuTestRunService / 程序集扫描 / 请求·结果模型）
+│   ├── Reports/                      #   AxuTestReportWriter（[TestRunCallback]）/ AxuConsoleRing / 路径约定
+│   ├── Scenarios/                    #   ScenarioRunService（桥文件+看门狗+趋势入库+自动退 Play）/ 菜单族
+│   │                                 #   （Enable Test Agent / Create Scenario·Suite JSON / Run Suite JSON... / Deploy）
+│   ├── Export/                       #   JUnitExporter / HtmlSummaryExporter
+│   ├── Window/AxuTestRunnerWindow.cs #   UITK 看板（AxuFrameKit/AxuTestRunner，Tests / Scenario / Trend 页签）
+│   └── UI/AxuTestTokens.uss          #   窗口样式 token（独立自持，仿 KitBox 意象）
+├── Editor.Pipeline/                  # asmdef: AxuTestFramework.Editor.Pipeline（AXU_PIPELINE_PRESENT 守护）
 │   └── Commands/
-│       ├── AxuTestPipelineCommands.cs       # [CliCommand] axu_test_run / axu_test_report / axu_test_status
-│       └── AxuWindowScreenshotCommand.cs    # [Windows/<6000.7] axu_window_screenshot 后台窗口截图（PrintWindow）
-├── Tests/Editor/                     # asmdef: AxuTestFramework.Tests.Editor（包自身测试）
-│   └── AxuTestRunSelectionTests.cs   #   "选定测试"通道解析/FilterInfo/并发闸语义
+│       ├── AxuTestPipelineCommands.cs       # axu_test_run / axu_test_report / axu_test_status
+│       ├── AxuScenarioPipelineCommands.cs   # axu_scenario_list / axu_scenario_run / axu_scenario_status
+│       ├── AxuPlayerSuiteCommands.cs        # axu_player_suite_build / axu_player_suite_run
+│       ├── AxuTrendCommand.cs               # axu_trend_summary
+│       └── AxuWindowScreenshotCommand.cs    # axu_window_screenshot（Windows 专属）
+├── Tests/Editor/                     # asmdef: AxuTestFramework.Tests.Editor（包自身契约单测，209 例）
 └── Samples~/
-    └── Tests/
-        ├── Editor/                   # SampleEditMode（PM → Samples 导入）
-        └── Runtime/                  # SamplePlayMode（PM → Samples 导入）
+    ├── Tests/{Editor,Runtime}/       # UTF 最小示例（PM → Samples 导入）
+    └── Scenarios/                    # 每能力一份 example suite + README（PM → Samples 导入）
 ```
 
 ## Editor 层（报告落盘 / axu_test_* 命令 / 看板）
@@ -210,7 +218,7 @@ scenario / player / UTF 三类运行禁止在同一 Editor 并发驱动。
 | `axu_scenario_list` | — | 枚举内建能力（echo/perf/loadtime/smoke + P1：soak/stress/monkey）+ Assets 下 `*.suite.json` / `*.scenario.json`（含 scenarioIds 摘要） |
 | `axu_scenario_run` | `suite`（必填，工程相对/绝对）、`scenario`（可选，逗号分隔 id） | Editor PlayMode 内驱动 Agent Runner；**异步启动即返**，经 `axu_scenario_status` 轮询 `Temp/axu_scenario_status.json`（running/completed/error + reportPath/exitCode）；完成后看门狗自动趋势入库并退 Play |
 | `axu_scenario_status` | — | 读运行状态文件原文（idle 时返回 idle 信封） |
-| `axu_player_suite_build` | `output`（默认 `Builds/AxuScenarioPlayer/<产品名>.app`） | macOS Development Build；构建期临时确保 `AXU_TEST_AGENT` define 开启，`finally` 还原；场景 = Build Settings |
+| `axu_player_suite_build` | `output`（默认 `Builds/AxuScenarioPlayer/<产品名>.app`；**默认后缀为 macOS .app——Windows/Linux 构建请显式传 `output` 目录**） | Development Build；构建期临时确保 `AXU_TEST_AGENT` define 开启，`finally` 还原；场景 = Build Settings |
 | `axu_player_suite_run` | `suite`（必填）、`player`（默认 `Builds/AxuScenarioPlayer`，支持 .app/目录/可执行）、`scenario`、`seed`、`warn_as_fail`、`timeout_ms`（默认 3600000，0=无限，超时 Kill） | 启动 Player 进程（`-axuSuite -axuQuitOnDone -axuReport …`）→ 等退出码 → 回拉报告到 `Library/AxuTestReports/scenario/player-{时间戳}-{suite}/` → 趋势入库 |
 | `axu_trend_summary` | `scenario` / `suite`（可选过滤）、`last_n`（默认 10） | 读趋势 CSV，输出各指标最近 N 次序列与最近两次变化百分比（方向感知：**正值恒=变差**；fps 负值=改善，frameTime/memory 正值=劣化） |
 
@@ -243,7 +251,7 @@ scenario / player / UTF 三类运行禁止在同一 Editor 并发驱动。
 | `soak` | 浸泡/泄漏 | 长跑内存斜率/FPS 衰减 + partial flush（崩溃不丢前段） | Agent/Capabilities/Soak/DOC.md |
 | `stress` | 压力/承载 | 容量探测（目标帧率最大实体数）+ churn + 事件洪峰 | Agent/Capabilities/Stress/DOC.md |
 | `monkey` | 猴子测试 | 随机点按（seed 可复现）+ 卡死检测 + JSONL 流水 | Agent/Capabilities/Monkey/DOC.md |
-| （gamehook） | 游戏适配器 | 游戏侧显式注册自定义能力/代码态 scenario（`AxuTestAgent.RegisterCapability/RegisterScenario`） | Agent/Capabilities/GameHook/DOC.md |
+| `gamehook` | 游戏适配器 | 游戏侧显式注册自定义能力/代码态 scenario（`AxuTestAgent.RegisterCapability/RegisterScenario`） | Agent/Capabilities/GameHook/DOC.md |
 
 示例 suite 见 `Samples~/Scenarios/`（每能力一份，Package Manager → Samples 导入）。
 
@@ -324,7 +332,54 @@ public IEnumerator SetUp()
 `ReportEnvironment`——纯数据模型，由 M2 的报告器填充并序列化；`AxuCapture.CapturedPaths` 可作为
 `Artifacts` 的数据源。
 
-## 各包接入（M2/M3 落地后补全"接入一页纸"）
+## 场景测试接入一页纸（任何游戏工程 15 分钟跑通首个 scenario）
+
+接入模型 = **装包 + 开 define + 三选一入口**。以下步骤从零开始：
+
+**① 装包（约 2 分钟）**：把本包放入工程的 `Packages/`（嵌入式）或经 Package Manager 从 tarball 安装。
+依赖自动生效：`com.unity.test-framework` 与 `com.unity.nuget.newtonsoft-json`（必需）、
+`com.unity.pipeline`（可选——只在需要 HTTP 命令驱动时安装）。
+
+**② 开 define（1 分钟）**：菜单 `AxuTestFramework/Enable Test Agent` 勾选（Standalone 平台注入
+`AXU_TEST_AGENT`，等价于 ProjectSettings 的 Scripting Define Symbols；切换后需等一次重编译）。
+
+**③ 写第一个 suite（5 分钟）**：菜单 `AxuTestFramework/Create Suite JSON` 生成模板，或直接手写
+（放 `Assets/` 下任意位置，扩展名 `.suite.json`）：
+
+```json
+{
+  "schema": "axu-suite/1",
+  "id": "my-first-suite",
+  "scenarios": [
+    {
+      "schema": "axu-scenario/1",
+      "id": "echo.first",
+      "capability": "echo",
+      "params": { "message": "hello", "delaySeconds": 1.0, "steps": 2 }
+    }
+  ]
+}
+```
+
+**④ 三选一入口跑（2 分钟）**：
+
+| 入口 | 适合谁 | 做法 |
+|---|---|---|
+| 看板（人） | 日常开发 | 菜单 `AxuFrameKit/AxuTestRunner` → Scenario 页 → 选中 suite → Run Suite（自动进/退 Play） |
+| pipeline 命令（Agent/CI） | 无人值守 | `axu_scenario_run {suite}` → 轮询 `axu_scenario_status` → `axu_trend_summary` 看趋势 |
+| Player/真机 | 打包验证 | 菜单 `Deploy Suite To StreamingAssets` → `axu_player_suite_build` + `axu_player_suite_run`（或 Player 命令行 `-axuSuite <路径> -axuQuitOnDone -axuReport <路径>`） |
+
+**⑤ 看结果（1 分钟）**：报告 JSON 落 `Library/AxuTestReports/scenario/`（Player 侧运行自动回拉），
+看板 Scenario 页显示摘要、可导出 JUnit/HTML；Trend 页看历次趋势。退出码：0=全过，1=有 fail，2=仅 warn。
+
+**⑥ 进阶（可选）**：给 scenario 加 `budgets` 数组做绝对门槛判定、`baseline` 字段做跨次回归对比
+（schema 与字段全集见 [`DOC/ScenarioSchema.md`](DOC/ScenarioSchema.md)；八种能力见上节表格，
+各自 DOC.md 有参数说明）。自定义能力用 `gamehook` 显式注册 API（见 GameHook DOC）。
+
+**已知边界**：性能类采集在 Editor 里受编辑器开销影响，正式判定以 Development Build（`axu_player_suite_*`）
+为准；场景加载类能力要求目标场景在 Build Settings 列表内（Unity 6 Editor 与 Player 校验行为一致）。
+
+## 各包接入（UTF 单元测试）
 
 1. 在被测包内建 `Tests/Editor` 与/或 `Tests/Runtime`，asmdef 命名 `{被测程序集}.Tests.{Editor|Runtime}`；
 2. references：被测程序集 + `AxuTestFramework` + `UnityEngine.TestRunner`（Editor 侧再加 `UnityEditor.TestRunner`）；

@@ -84,6 +84,18 @@ All notable changes to this package will be documented in this file.
   flood 126.8 万事件）；回归 包测试 209/209 + Axu/Smoke 7/7、Console 零 error、四场运行趋势入库
   （trend.csv 135 数据点/7 scenario）。工程所有者实机试用通过（反馈的看板可视化深度项记 backlog #4，
   不阻塞本版）。
+- **交付审查修复（2026-09-02，Phase 6 unity-reviewer）**：
+  - 【P1】`axu_scenario_list` 内建能力静态清单补齐 soak/stress/monkey（gamehook 注明"注册制"）——
+    原清单停留在四能力时代，误导自动化调用方的能力发现；
+  - 【P2】Samples 编辑器示例 asmdef 引用名 `UnityEngine.Editor.TestRunner` 更正为 `UnityEditor.TestRunner`
+    （原引用不存在，导入 SampleEditMode 后无法编译）；
+  - 【读侧闭环】看板回读报告排除 `*.partial.json`（soak 中断残留不再被误选为最新报告）并在发现残留时
+    LogWarning 提示（含"目录只有 partial"盲区：残留告警先于"未发现报告"判空）；在途互斥报错文案
+    （axu_test_run / scenario / player 三处命令 + 看板路径）统一补"running 超 15 分钟视为陈旧自动放行、
+    可删状态文件手动解锁"提示；
+  - 【文档】Echo 补 `DOC.md`（八能力各带 DOC 达成）；README 目录树对齐实际文件名
+    （AgentRunnerHost/ScenarioRunHandle 等）；`axu_player_suite_build` 参数行补 Windows/Linux 需显式
+    `output` 的平台备注；Agent asmdef 对 InputSystem/UGUI 硬引用约束如实注明（正规化拆分记 backlog #5）。
 
 
 ## [0.2.0] - 2026-08-31（场景测试平台建设启动，Phase 0/1/2 已落地）

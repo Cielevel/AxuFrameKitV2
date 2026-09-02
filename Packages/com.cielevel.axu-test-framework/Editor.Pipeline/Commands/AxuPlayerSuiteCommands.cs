@@ -290,9 +290,9 @@ namespace AxuTestFramework.Editor
             if (_playerRunBusy)
                 return "已有 axu_player_suite_run 在途。";
             if (ScenarioRunService.IsScenarioRunInFlight())
-                return "已有 scenario 运行在途（Temp/axu_scenario_status.json 标记 running），拒绝并发驱动。";
+                return "已有 scenario 运行在途（Temp/axu_scenario_status.json 标记 running），拒绝并发驱动；running 超 15 分钟视为陈旧自动放行，确认无运行可删该文件手动解锁。";
             if (AxuTestRunService.IsAxuRunInFlight())
-                return "已有 axu 测试运行在途（Temp/axu_test_run_status.json 标记 running），拒绝并发驱动。";
+                return "已有 axu 测试运行在途（Temp/axu_test_run_status.json 标记 running），拒绝并发驱动；running 超 15 分钟视为陈旧自动放行，确认无运行可删该文件手动解锁。";
             if (File.Exists(AxuTestReportPaths.ToFullPath("Temp/pipeline_test_request.json")))
                 return "pipeline 自带 run_tests 的异步运行在途（Temp/pipeline_test_request.json 存在），拒绝并发驱动。";
             return null;

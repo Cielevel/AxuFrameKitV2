@@ -34,6 +34,10 @@ namespace AxuTestFramework.Editor
             ("perf", "性能基准", "场景/玩法帧率与帧时间采样（fps/frameTime collectors），配预算判定"),
             ("loadtime", "加载时长", "场景加载矩阵：逐场景进入并采集加载耗时指标"),
             ("smoke", "冒烟矩阵", "全场景可进、无报错、可截图留证（场景清单 list/buildSettings/directory）"),
+            ("soak", "浸泡/泄漏", "长跑内存斜率 + FPS 衰减判定，周期截图与 partial flush（中断保留前段数据）"),
+            ("stress", "压力/承载", "组合 phases：capacity 容量探测（目标帧率最大实体数）/ spawner / churn / flood 事件洪峰"),
+            ("monkey", "猴子测试", "随机点按（seed 可复现）+ 卡死检测 + JSONL 操作流水（InputSystem 可选化，降级 UGUI 点按）"),
+            ("gamehook", "游戏适配器（注册制）", "非内建执行体：游戏侧经 AxuTestAgent.RegisterCapability/RegisterScenario 显式注册自定义能力/代码态 scenario"),
         };
 
         // ------------------------------------------------------------------ axu_scenario_list
@@ -213,9 +217,9 @@ namespace AxuTestFramework.Editor
             if (_scenarioRunBusy)
                 return "已有 axu_scenario_run 在途。";
             if (ScenarioRunService.IsScenarioRunInFlight())
-                return "已有 scenario 运行在途（Temp/axu_scenario_status.json 标记 running）。请先经 axu_scenario_status 观察或等其完成。";
+                return "已有 scenario 运行在途（Temp/axu_scenario_status.json 标记 running）。请先经 axu_scenario_status 观察或等其完成；running 超 15 分钟视为陈旧自动放行，确认无运行可删该文件手动解锁。";
             if (AxuTestRunService.IsAxuRunInFlight())
-                return "已有 axu 测试运行在途（Temp/axu_test_run_status.json 标记 running）。请先经 axu_test_status 观察或等其完成。";
+                return "已有 axu 测试运行在途（Temp/axu_test_run_status.json 标记 running）。请先经 axu_test_status 观察或等其完成；running 超 15 分钟视为陈旧自动放行，确认无运行可删该文件手动解锁。";
             if (File.Exists(AxuTestReportPaths.ToFullPath("Temp/pipeline_test_request.json")))
                 return "pipeline 自带 run_tests 的异步运行在途（Temp/pipeline_test_request.json 存在），拒绝并发驱动。";
             return null;

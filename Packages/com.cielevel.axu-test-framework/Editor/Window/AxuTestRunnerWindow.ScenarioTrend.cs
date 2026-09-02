@@ -268,7 +268,8 @@ namespace AxuTestFramework.Editor
             }
         }
 
-        /// <summary>找 scenario 报告目录里、指定时刻之后落盘的最新报告并反序列化。</summary>
+        /// <summary>找 scenario 报告目录里、指定时刻之后落盘的最新报告并反序列化。
+        /// soak 中断残留的 *.partial.json（truncated 报告）不参与最新报告选择，仅告警提示残留。</summary>
         private static bool TryLoadScenarioReport(DateTime sinceUtc, out ScenarioReport report, out string path)
         {
             report = null;
@@ -281,11 +282,17 @@ namespace AxuTestFramework.Editor
                 return false;
             }
 
+            // 排除 *.partial.json：soak 中断残留的 truncated 报告同样以 .json 结尾，若恰为最新会被误当作本次运行报告
             var newest = new DirectoryInfo(directory)
                 .EnumerateFiles("*.json")
+                .Where(f => !f.Name.EndsWith(".partial.json", StringComparison.OrdinalIgnoreCase))
                 .Where(f => f.LastWriteTimeUtc >= sinceUtc.AddSeconds(-5))
                 .OrderByDescending(f => f.LastWriteTimeUtc)
                 .FirstOrDefault();
+
+            // 先于 newest 判空告警：soak 中断后目录可能只有 partial 残留，此时残留提示比"未发现报告"更有价值
+            WarnIfPartialRemnants(directory);
+
             if (newest == null)
             {
                 Debug.LogWarning("[AxuTestFramework] 未发现本次运行产出的 scenario 报告——Agent 可能未运行或报告写盘失败。");
@@ -303,6 +310,32 @@ namespace AxuTestFramework.Editor
             {
                 Debug.LogWarning("[AxuTestFramework] scenario 报告解析失败: " + ex.Message);
                 return false;
+            }
+        }
+
+        /// <summary>扫描 scenario 报告目录的 *.partial.json 残留并告警（soak 中断留下的 truncated 报告，
+        /// 只提示完整数据以前段为准，不改变返回值与流程）。</summary>
+        private static void WarnIfPartialRemnants(string directory)
+        {
+            try
+            {
+                var partials = new DirectoryInfo(directory)
+                    .EnumerateFiles("*.partial.json")
+                    .Select(f => f.Name)
+                    .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                if (partials.Count == 0)
+                    return;
+
+                var detail = partials.Count <= 3
+                    ? string.Join("、", partials)
+                    : $"共 {partials.Count} 个";
+                Debug.LogWarning($"[AxuTestFramework] 发现 soak 中断残留的 partial 报告（truncated），完整数据以前段为准: {detail}");
+            }
+            catch (Exception ex)
+            {
+                // 残留扫描失败不拦报告加载
+                Debug.LogWarning($"[AxuTestFramework] partial 残留扫描失败（忽略）: {ex.Message}");
             }
         }
 

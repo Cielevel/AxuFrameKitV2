@@ -18,6 +18,10 @@ JSON 会落到 `Assets/Samples/com.cielevel.axu-test-framework/<版本>/Scenario
 | `perf.example.suite.json` | perf | 不指定 `scene` = 度量当前场景（warmup → measure → 预算判定） |
 | `loadtime.example.suite.json` | loadtime | 场景加载矩阵；导入后把 `scenes` 换成你工程的场景路径 |
 | `smoke.example.suite.json` | smoke | 遍历 Build Settings 场景（`source: "buildSettings"`），进得去 / 错误数 / 截图 |
+| `soak.example.suite.json` | soak | 浸泡/泄漏：内存斜率 + FPS 衰减 + 周期截图 + partial flush（长跑注意：期间勿并行驱动 Editor） |
+| `stress.example.suite.json` | stress | 组合 phases：capacity 容量探测 / spawner / churn / flood 事件洪峰 |
+| `monkey.example.suite.json` | monkey | 随机点按（seed 复现）+ 卡死检测 + JSONL 操作流水；要求 activeInputHandler 为 Both/InputSystem only |
+| `gamehook.example.suite.json` | gamehook | 游戏侧显式注册自定义能力/代码态 scenario（时序契约见 GameHook DOC） |
 
 ## 常用参数速记
 
