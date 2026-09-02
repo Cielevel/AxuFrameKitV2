@@ -1,0 +1,238 @@
+/* ==================================================================
+   ScriptableObjectCreatorWindow — Component Layer (AxuKit Design System)
+   ------------------------------------------------------------------
+   只引用 var(--kb-*) token（定义见 Editor/Common/UI/AxuKitTokens.uss）。
+   加载本样式表的窗口须同时加载 AxuKitTokens.uss，并在根元素挂 .theme-* 类
+   （见 AxuKitTheme）；通用组件层样式在同目录 CommonWindowStyles.uss，
+   本文件只补窗口专属的 soc-* 类（双栏 split / 分组 Foldout / 行高亮等）。
+   ================================================================== */
+
+/* ===== Main Split Layout ===== */
+.soc-main-container {
+    flex-direction: row;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+/* ===== Left Panel (grouped type list) ===== */
+.soc-left-panel {
+    width: 320px;
+    min-width: 280px;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
+    margin-right: 6px;
+}
+
+/* ===== Right Panel (detail) ===== */
+.soc-right-panel {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* ===== Toolbar Toggle ===== */
+.soc-toolbar-toggle {
+    margin-left: var(--kb-s2);
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text-2);
+}
+
+/* ===== Group Foldout（左栏分组树；嵌套由层级自然缩进） ===== */
+.soc-group-foldout {
+    margin: 2px 0 4px 0;
+}
+
+.soc-group-foldout > .unity-toggle {
+    margin: 0;
+    min-height: 20px;
+}
+
+.soc-group-foldout > .unity-toggle .unity-label {
+    font-size: var(--kb-f-caption);
+    -unity-font-style: bold;
+    color: var(--kb-text-2);
+}
+
+/* ===== Selected Row Highlight（以 row.userData 比对挂类） ===== */
+.soc-item-selected {
+    background-color: var(--kb-accent-soft);
+    border-color: var(--kb-accent-line);
+}
+
+.soc-item-selected:hover {
+    background-color: var(--kb-accent-soft);
+}
+
+/* ===== Namespace Badge (small pill) ===== */
+.soc-ns-badge {
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text-3);
+    background-color: var(--kb-surface-2);
+    border-width: 0;
+    border-radius: 6px;
+    padding-left: 5px;
+    padding-right: 5px;
+    margin-right: 4px;
+    -unity-text-align: middle-center;
+    flex-shrink: 0;
+}
+
+/* ===== Detail Header Title Block（显示名 + 类名副标题） ===== */
+.soc-title-block {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.soc-subtitle {
+    font-size: var(--kb-f-caption);
+    -unity-font-style: italic;
+    color: var(--kb-text-3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ===== Detail Info Row ===== */
+.soc-info-row {
+    flex-direction: row;
+    align-items: flex-start;
+    margin-bottom: 6px;
+    padding: 6px 8px;
+    background-color: var(--kb-surface-2);
+    border-radius: var(--kb-r-s);
+    border-width: 0;
+}
+
+.soc-info-label {
+    width: 90px;
+    min-width: 90px;
+    font-size: var(--kb-f-caption);
+    -unity-font-style: bold;
+    color: var(--kb-text-3);
+    -unity-text-align: middle-left;
+}
+
+.soc-info-value {
+    flex-grow: 1;
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text);
+    white-space: normal;
+    overflow: hidden;
+}
+
+/* ===== Inspector Meta Block (InspectorTitle + InspectorIntro) ===== */
+.soc-meta-block {
+    margin-bottom: 10px;
+    padding: 8px 4px 4px 4px;
+}
+
+/* Large centered title (mirrors InspectorTitleAttribute) */
+.soc-meta-title {
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    color: var(--kb-text);
+    /* font-size is set inline from titleAttr.FontSize / 2 */
+    margin-bottom: 6px;
+}
+
+/* Intro / description text (mirrors InspectorIntroAttribute) */
+.soc-meta-intro {
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text-2);
+    white-space: normal;
+    padding: 4px 2px;
+    margin-bottom: 6px;
+}
+
+/* Divider after title */
+.soc-meta-divider {
+    height: 1px;
+    background-color: var(--kb-line-2);
+    margin-bottom: var(--kb-s2);
+}
+
+/* Divider after intro — lighter */
+.soc-meta-divider--light {
+    background-color: var(--kb-line);
+}
+
+/* ===== Fields Section ===== */
+.soc-fields-section-title {
+    font-size: var(--kb-f-caption);
+    -unity-font-style: bold;
+    color: var(--kb-text-3);
+    letter-spacing: 1px;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    padding-left: 2px;
+}
+
+.soc-field-row {
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--kb-surface-2);
+    border-radius: var(--kb-r-s);
+    border-width: 0;
+    padding: 4px 8px;
+    margin-bottom: 3px;
+}
+
+.soc-field-row:hover {
+    background-color: var(--kb-hover);
+}
+
+/* Field type keyword (int, string, …) */
+.soc-field-type {
+    font-size: var(--kb-f-caption);
+    color: var(--kb-accent);
+    -unity-font-style: bold;
+    margin-right: 6px;
+    min-width: 48px;
+}
+
+/* Field name */
+.soc-field-name {
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text);
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ===== Separator ===== */
+.soc-separator {
+    height: 1px;
+    background-color: var(--kb-line);
+    margin-top: var(--kb-s2);
+    margin-bottom: var(--kb-s3);
+}
+
+/* ===== Create Asset Button (full-width override) ===== */
+.soc-create-btn {
+    align-self: stretch;
+    height: 36px;
+    margin-top: 0;
+}
+
+/* ===== Existing Assets ===== */
+.soc-asset-row {
+    min-height: 24px;
+}
+
+.soc-asset-path {
+    font-size: var(--kb-f-caption);
+    color: var(--kb-text-3);
+    -unity-text-align: middle-right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    margin-right: 4px;
+}
+
+.soc-asset-more {
+    font-size: var(--kb-f-caption);
+    -unity-font-style: italic;
+    color: var(--kb-text-3);
+    margin-top: 2px;
+}

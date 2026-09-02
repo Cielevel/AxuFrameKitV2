@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using AxuFrameKit.Common.CustomAttribute;
 
 namespace AxuFrameKit.Modules.LiveStream
 {
-    [CreateAssetMenu(fileName = "TriggerLikeConfigSo", menuName = "AxuFrameKit/LiveStream/TriggerLikeConfigSo")]
+    [CreatorEntry("直播互动/触发器/TriggerLikeConfigSo")]
     public class TriggerLikeConfigSo : ScriptableObject
     {
         [field: SerializeField]

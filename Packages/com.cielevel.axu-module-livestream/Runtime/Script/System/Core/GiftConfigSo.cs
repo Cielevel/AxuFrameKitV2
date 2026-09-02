@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
+using AxuFrameKit.Common.CustomAttribute;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 namespace AxuFrameKit.Modules.LiveStream
 {
-    [CreateAssetMenu(fileName = "GiftConfig", menuName = "AxuFrameKit/LiveStream/GiftConfig")]
+    [CreatorEntry("直播互动/配置/GiftConfigSo")]
     public class GiftConfigSo : ScriptableObject
     {
         [SerializeField] private List<GiftDataUnit> _giftDataUnitList;

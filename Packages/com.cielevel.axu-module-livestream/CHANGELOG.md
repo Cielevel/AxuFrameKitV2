@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 2026-08-31：包内测试接入测试框架 AxuTestFramework——新增 `Tests/Editor/`（`AxuFrameKit.Modules.LiveStream.Tests.Editor`，6 个 EditMode 测试，类别 `Axu/Module/LiveStream`：操作录制/回放分发、评论触发器三路分发、礼物直传与按数量切割）。`UNITY_INCLUDE_TESTS` 守护不进构建；运行经 pipeline `axu_test_run`。
 
+### Changed
+
+- 2026-09-02：6 个可创建 SO（`UserConfigSo` / `GiftConfigSo` / `TriggerCommentConfigSo` / `TriggerLikeConfigSo` / `TriggerGiftConfigSo` / `TirggerCollectionSo`）移除 `[CreateAssetMenu]` 原生菜单头部，改标注框架包的 `[CreatorEntry]` 分组标签（分组：`直播互动/配置`、`直播互动/触发器`），创建入口统一为 `AxuFrameKit/Asset/ScriptableObject Creator` 窗口。既有资产不受影响（资产与脚本的关联由脚本 GUID 决定，与 attribute 无关）。
+
 ## [0.1.0] - 2026-08-29
 
 ### Added

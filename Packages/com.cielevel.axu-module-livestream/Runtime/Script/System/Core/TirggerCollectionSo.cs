@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
+using AxuFrameKit.Common.CustomAttribute;
 
 namespace AxuFrameKit.Modules.LiveStream
 {
-    [CreateAssetMenu(fileName = "TirggerCollection", menuName = "AxuFrameKit/LiveStream/TirggerCollection")]
+    [CreatorEntry("直播互动/触发器/TirggerCollectionSo")]
     public class TirggerCollectionSo : ScriptableObject
     {
         [Header("PreTrigger")] // 预先触发（关于弹窗或动画）

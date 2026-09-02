@@ -2,13 +2,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using AxuFrameKit._Core.Structure;
 using AxuFrameKit._Core.Utility.RandomX;
+using AxuFrameKit.Common.CustomAttribute;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 namespace AxuFrameKit.Modules.LiveStream
 {
-    [CreateAssetMenu(fileName = "UserConfig", menuName = "AxuFrameKit/LiveStream/UserConfig")]
+    [CreatorEntry("直播互动/配置/UserConfigSo")]
     public class UserConfigSo : ScriptableObject
     {
         [Header("可右键一键添加")]

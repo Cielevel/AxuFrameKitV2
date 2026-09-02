@@ -4,6 +4,12 @@
 
 ## [0.1.0]
 
+### 2026-09-02
+
+- **新增**：通用 ScriptableObject 资产创建窗口 `ScriptableObjectCreatorWindow`（`Editor/Common/Window/`，菜单 `AxuFrameKit/Asset/ScriptableObject Creator`，另有 Project 右键 `Assets/Create/AxuFrameKit/ScriptableObject Creator` 入口、以选中文件夹为创建初始目录）。反射扫描全程序集非抽象 SO 子类（排除 Unity/TMPro/Microsoft/System/I18N 命名空间、EditorWindow/Editor 派生类、`*.Tests` 测试程序集与 Unity 官方程序集（程序集名以 Unity 开头），测试 fixture 与引擎内部 SO 不污染窗口），支持搜索过滤、"仅框架类型（`CustomScriptableObject` 派生）"开关、按 `CreatorEntry` 分组的折叠树（未标注类型按程序集归入"未分组"区，分组折叠状态经 EditorPrefs 跨开窗持久化、未记录默认展开）、`InspectorTitle`/`InspectorIntro` meta 渲染、序列化字段预览、同类型已有资产列表（点击 Ping）、`SaveFilePanelInProject` 创建后 Select+Ping。扫描逻辑抽为可测的 `ScriptableObjectCreatorScanner`，配套 EditMode 测试；`AxuFrameKit.Tests.Editor` asmdef 补 `AxuFrameKit.Editor` 引用。
+- **新增**：`CreatorEntryAttribute`（`Runtime/Common/CustomAttribute/`，SO 子类可选标注）：路径串风格同 `MenuItem`，最后一段为创建窗口中的显示名（替代类名）、前序段为分组路径，如 `[CreatorEntry("配置/战斗/SkillData")]`。
+- **变更**：包内可创建 SO 的创建入口从原生 `CreateAssetMenu` 右键菜单迁移至 `ScriptableObjectCreatorWindow`——移除 `GameObjectStrPools`/`GameObjectIntPools` 的 `[CreateAssetMenu]`，包内 3 个可创建 SO（含 `CustomScriptableObject` 标记基类）全部标注 `[CreatorEntry]`（分组：`框架/对象池`、`框架/基础`）。既有资产不受影响（资产与脚本的关联由脚本 GUID 决定，与 attribute 无关）。
+
 ### 2026-08-31
 
 - **新增**：包内测试体系落地（接入测试基建包 `com.cielevel.axu-test-framework`）。`Tests/Editor/`（`AxuFrameKit.Tests.Editor`，23 个 EditMode 测试，类别 `Axu/Smoke` / `Axu/Core/Util` / `Axu/Common/Util`）+ `Tests/Runtime/`（`AxuFrameKit.Tests.Runtime`，6 个 PlayMode 冒烟测试，类别 `Axu/Play`）；`UNITY_INCLUDE_TESTS` 守护不进构建，运行经 pipeline `axu_test_run` 命令或菜单 `AxuFrameKit/AxuTestRunner` 看板。`Assets/Tests/Editor/` 保留为工程级冒烟入口。

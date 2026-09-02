@@ -37,7 +37,7 @@ com.cielevel.axu-frame-kit/
 │       ├── KitBoxRevV2/             "AxuKitBox" 主工具箱窗口（纯 UI Toolkit），Core/Groups/UI
 │       ├── UI/Kit/                  UIListView、UIBindParent 自定义 Inspector
 │       ├── Utility/                 AutoSequence 编辑器、CSV 容器创建窗口、TerrainToMesh 转换器、CsvIOUtil、ShapeDrawer/TitleDrawer
-│       └── Window/                  独立 EditorWindow：AssetFavorites、AvatarDownloader（SceneJumper/SpriteToAnimation 已拆为独立模块包）
+│       └── Window/                  独立 EditorWindow：AssetFavorites、AvatarDownloader、ScriptableObjectCreator（SO 资产创建，含 Scanner）（SceneJumper/SpriteToAnimation 已拆为独立模块包）
 └── Runtime/                         [231 cs] 运行时（两个程序集）
     ├── _Core/                       [80 cs] 纯 C# 核心库（详见 03-core-modules.md）
     │   ├── Advanced/                BetterFSM、FSM(泛型)、EventSystem、ObjectPool
@@ -47,7 +47,7 @@ com.cielevel.axu-frame-kit/
     │   ├── Structure/               IndexedList、IndexedMultiList、BiDictionary、PriorityQueue、CircularBuffer、ReactiveProperty
     │   └── Utility/                 Common(Logger/Number)、Computed、Encrypt、Math(Interpolation/Ease)、Misc、Multiton、RandomX、TaskQ
     └── Common/                      [151 cs] Unity 运行时组件库（详见 04-common-modules.md）
-        ├── CustomAttribute/         CustomMonoBehaviour、CustomScriptableObject 基类 + Inspector 属性
+        ├── CustomAttribute/         CustomMonoBehaviour、CustomScriptableObject 基类 + Inspector 属性（含 CreatorEntry：SO 创建窗口分组/显示名标注）
         ├── Extension/               Vector/Transform/Color/GameObject/RectTransform/AsyncOperation 扩展
         ├── UI/                      Framework(页面框架)、Kit(DataBind/ListView/Group/Scroll/Toast/ToggleBtnGroup/Typewriter/Video)
         └── Utility/                 Analysis、2D、Auto、Event、Math(Tween)、Misc、Multiton、Net、ObjectPool、Raycast、Res、Save、Serializer、Singleton、Static、Table(CSV)、TaskQ、Timer、Trigger、UseMono

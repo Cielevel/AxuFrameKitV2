@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using AxuFrameKit._Core.Advanced.ObjectPool;
+using AxuFrameKit.Common.CustomAttribute;
 
 namespace AxuFrameKit.Common.Utility.ObjectPool.GameObjectPool
 {
-    [CreateAssetMenu(fileName = "GameObjectPool-Str", menuName = "AxuFrameKit/Utility/GameObjectPools-Str")]
+    [CreatorEntry("框架/对象池/GameObjectStrPools")]
     public class GameObjectStrPools : GameObjectPools<string> { }
 
     [Serializable]

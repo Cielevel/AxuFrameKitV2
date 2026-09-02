@@ -20,7 +20,7 @@ AxuFrameKit.Core (Runtime/_Core/, 纯 C# 零 Unity 依赖)
 |---|---|
 | `Runtime/_Core/` | 纯 C# 核心：BetterFSM/FSM、EventCenter、对象池、设计模式、数据结构（BiDictionary/ReactiveProperty 等）、Computed、Encrypt 加密全套、Ease/插值基座、TaskQ、RandomX |
 | `Runtime/Common/` | Unity 运行时：UI 框架（Manager→Area→Panel→Page）、UIBind 数据绑定、UIListView、EventCentral、单例/多例族、AxuTween、Net（Http/HttpClient/Socket）、Save 存档、CSV、GameObjectPool、Timer、Auto* 零代码组件等 |
-| `Editor/` | 编辑器工具：AxuKitBox 工具箱窗口、Hierarchy 增强、TerrainToMesh 转换器、CSV 工具、独立工作流窗口等 |
+| `Editor/` | 编辑器工具：AxuKitBox 工具箱窗口、Hierarchy 增强、TerrainToMesh 转换器、CSV 工具、SO 资产创建窗口、独立工作流窗口等 |
 | `Tests/Editor/` + `Tests/Runtime/` | EditMode 与 PlayMode 测试（`AxuFrameKit.Tests.{Editor,Runtime}`，`UNITY_INCLUDE_TESTS` 守护不进构建；运行用 pipeline `axu_test_run` 命令或菜单 `AxuFrameKit/AxuTestRunner`） |
 
 ## 安装
@@ -45,6 +45,7 @@ AxuFrameKit.Core (Runtime/_Core/, 纯 C# 零 Unity 依赖)
 | Math 数学与插值 | `Runtime/Common/Utility/Math/Doc_MathUtility.md` |
 | Save 存档（另见 ReadMe/Usage） | `Runtime/Common/Utility/Save/` |
 | CSV 表格 | `Runtime/Common/Utility/Table/CSV/Doc_TableCsvUtility.md` |
+| SO 资产创建窗口（`ScriptableObjectCreatorWindow` + `CreatorEntryAttribute` 分组/显示名标注，用法见源码头注释） | `Editor/Common/Window/ScriptableObjectCreatorWindow.cs`、`Runtime/Common/CustomAttribute/CreatorEntryAttribute.cs` |
 | AutoSnapshot 快照录制/回放 | `Runtime/Common/Utility/Auto/AutoSnapshot/README.md` |
 | Net 网络（HttpClient/Socket） | `Runtime/Common/Utility/Net/Advanced/DOC/`、`Runtime/Common/Utility/Net/Socket/README.md` |
 | 测试体系（测试基建 + axu_test_* 命令 + 报告 schema + 接入约定） | `../../com.cielevel.axu-test-framework/README.md`（独立嵌入式包 AxuTestFramework） |

@@ -40,3 +40,9 @@
 - **来源**：2026-09-02 Phase 6 unity-reviewer 交付审查 P2（0.3.0 发版仅做 README 措辞准确化，本项为正规化遗留）。
 - **建议方案**：拆分守护 asmdef——新建 `AxuTestFramework.Agent.Input`（versionDefines: com.unity.inputsystem + defineConstraints: AXU_INPUTSYSTEM_PRESENT + references: InputSystem/Agent），monkey 的 InputSystem 注入路径移入；UGUI 降级路径同理或保留主程序集（com.unity.ugui 在多数工程默认存在）。或在 package.json 正式声明依赖（代价：强制所有接入工程安装 InputSystem）。
 - **临时缓解（已做）**：README「包定位」Agent 条目已如实注明硬引用约束。
+
+## 6. _Core 层历史遗留 UnityEngine 依赖清理【P2 级，2026-09-02 SO 创建窗口交付审查发现】
+
+- **现象**：`Runtime/_Core/Extension/FloatExtension.cs:4` 与 `Runtime/_Core/Utility/RandomX/RandomNickname.cs:4` 存在 `using UnityEngine`（分别使用 Mathf 等），违反"_Core 纯 C# 零 Unity 依赖"分层红线。属框架迁包前的历史遗留，非本次改动引入；git status 确认本次未触碰这两个文件。
+- **建议方案**：FloatExtension 的 NearZero/Near 类方法改用 `System.Math.Abs`；RandomNickname 剥离 `GetRandom` 引擎随机依赖（改用 `_Core/RandomX` 的引擎无关随机）；若剥离代价过高则将对应成员移出 _Core 至 Common 层。
+- **验收**：`AxuFrameKit.Core` 程序集编译不依赖 UnityEngine（可在 asmdef 层面用 versionDefines 或编译目标验证），包内既有测试全绿。

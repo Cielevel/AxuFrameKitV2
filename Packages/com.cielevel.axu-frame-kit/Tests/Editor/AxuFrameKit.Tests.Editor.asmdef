@@ -4,6 +4,7 @@
     "references": [
         "AxuFrameKit.Core",
         "AxuFrameKit.Runtime",
+        "AxuFrameKit.Editor",
         "AxuTestFramework",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

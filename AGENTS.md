@@ -99,7 +99,7 @@ Packages/com.cielevel.axu-frame-kit/Runtime/_Core/
 ```
 Packages/com.cielevel.axu-frame-kit/Runtime/Common/
 ├── CustomAttribute/   # 自定义基类与 Inspector 属性
-│                      #   (CustomMonoBehaviour, CustomScriptableObject, InsButton/InspectorIntro/InspectorTitle)
+│                      #   (CustomMonoBehaviour, CustomScriptableObject, InsButton/InspectorIntro/InspectorTitle/CreatorEntry)
 ├── Extension/         # Unity 类型扩展
 │                      #   (Transform/Vector/Color/GameObject/RectTransform/AsyncOperation 扩展)
 ├── UI/                # UI 框架
@@ -152,7 +152,7 @@ Packages/com.cielevel.axu-frame-kit/Editor/Common/
 ├── KitBoxRevV2/       # "AxuKitBox" 多页签工具箱主窗口（纯 UI Toolkit，页面插件化 IKitPageRevV2）
 ├── Hierarchy/         # Hierarchy 增强 (Colorizer 规则着色 / Icon 规则图标，各带 Config/Window)
 ├── CustomAttribute/   # CustomMonoBehaviour/CustomScriptableObject/InsButton 的 Inspector 绘制器
-├── Window/            # 独立窗口 (AssetFavorites, SceneJumper, AvatarDownloader, SpriteToAnimation)
+├── Window/            # 独立窗口 (AssetFavorites, AvatarDownloader, ScriptableObjectCreator)
 ├── Utility/           # 转换与批量工具 (TerrainToMeshConverter, CsvIOUtil, CsvContainerCreatorWindow,
 │                      #   SequenceEditor, ScriptDefineSymbolSetter, ShapeDrawer/TitleDrawer)
 └── UI/Kit/            # UIListView / UIBindParent 自定义 Inspector

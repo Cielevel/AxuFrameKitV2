@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Text.RegularExpressions;
+using AxuFrameKit.Common.CustomAttribute;
 
 namespace AxuFrameKit.Modules.LiveStream
 {
-    [CreateAssetMenu(fileName = "TriggerCommentConfigSo", menuName = "AxuFrameKit/LiveStream/TriggerCommentConfigSo")]
+    [CreatorEntry("直播互动/触发器/TriggerCommentConfigSo")]
     public class TriggerCommentConfigSo : ScriptableObject
     {
         [field: SerializeField]
