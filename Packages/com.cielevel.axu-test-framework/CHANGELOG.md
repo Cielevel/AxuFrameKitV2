@@ -2,6 +2,26 @@
 
 All notable changes to this package will be documented in this file.
 
+## [Unreleased]
+
+- **看板面板可读化改造（2026-09-02，面向非技术使用者）**：
+  - 新增 **「总览」页并设为默认页**（`AxuTestRunnerWindow.Overview.cs`，partial）：
+    最近一次 suite 运行的大结果徽章（✓全部通过 / ⚠通过但有警告 / ✗有失败 / —尚无记录，颜色绿/黄/红/灰）、
+    一行中文摘要（套件名、运行时间、N 项·通过·警告·失败·用时、退出码）、趋势速览
+    （各场景最近 8 次运行彩色圆点序列，点击直达该场景趋势页）、三个快捷大按钮
+    （运行场景套件 / 查看趋势 / 刷新）；truncated（soak 中断）报告显示"运行中 / 中断"与提醒；
+    读取逻辑与 Scenario 页同源（排除 `*.partial.json`）；suite 运行完成回读报告后总览自动刷新。
+  - **Scenario 页可读化**：suite 列表不再只显示文件路径——主行显示 suite 中文 `title`（无 title 回退 id）、
+    副行显示 id 与能力清单（Inline.Capability / Ref，最多 6 项），完整路径进 tooltip；选中行高亮
+    （`ax-suite-selected` 主题橙）；空状态文案与错别字修正（"（尚无报告——点击左侧套件选中后运行…）"）；
+    Run 按钮更名「▶ 运行选中的套件」并在未选中时提示；列表底部加三步流程引导小字。
+  - **Trend 页可读化**：页头与空态改中文引导（"在「场景套件」页运行一次套件后自动记录"）；
+    下拉标签改「场景」；run 级整体结果行按 pass/warn/fail 着色（`ax-trend-run-*`）；
+    环比 tooltip 明确"正值=变差（红）/负值=改善（绿）"；滚动区上方加读取方式说明行。
+  - **Tab 栏**：Tests / Scenario / Trend 三页签改为「总览 / 单元测试 / 场景套件 / 趋势」四页签（中文标签）。
+  - 样式：`AxuTestTokens.uss` 新增 overview 卡片/大徽章/大按钮/趋势圆点/suite 行选中/帮助小字等类
+    （全部沿用既有 token，无新色值）。
+
 ## [0.3.0] - 2026-09-02（场景测试平台 v2 完成：八能力 + 工具链，Phase 3/4 交付）
 
 - **能力库扩至八能力**（Agent 层，均 Player 可编译，各带 DOC.md 与 Samples~/Scenarios/ 示例）：

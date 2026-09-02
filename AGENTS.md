@@ -240,7 +240,7 @@ Assets/
   "com.cielevel.axu-indie-selection-to-csv": "嵌入式包 - 选中导出 CSV（零依赖）",
   "com.cielevel.axu-indie-sprite-to-animation": "嵌入式包 - 序列帧转动画（零依赖）",
   "com.cielevel.axu-indie-stat-pipeline": "嵌入式包 - 数值管线（零依赖）",
-  "com.cielevel.axu-test-framework": "嵌入式包 - 通用测试框架 AxuTestFramework 0.3.0（UTF 工具层 + 场景测试平台：八能力 Agent 运行时、axu_test_* / axu_scenario_* / axu_player_* / axu_trend_* pipeline 命令、AxuTestRunner 三页签看板）",
+  "com.cielevel.axu-test-framework": "嵌入式包 - 通用测试框架 AxuTestFramework 0.3.0（UTF 工具层 + 场景测试平台：八能力 Agent 运行时、axu_test_* / axu_scenario_* / axu_player_* / axu_trend_* pipeline 命令、AxuTestRunner 看板（总览/Tests/Scenario/Trend 四页签，总览为默认页））",
   "com.termway.ide.antigravity": "Git 包 - IDE 增强",
   "com.unity.ai.navigation": "2.0.4",
   "com.unity.collab-proxy": "2.9.3",

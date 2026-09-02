@@ -18,7 +18,7 @@ AxuFrameKit 体系之外的**通用测试框架包**：覆盖 EditMode 与 PlayM
   拆分守护 asmdef 的正规化方案见工程 backlog）；公开入口以 `AXU_TEST_AGENT` define 守护（不开启则不产生激活代码）。
 - **Editor 程序集 `AxuTestFramework.Editor`**：报告落盘（`[TestRunCallback]` → `AxuTestReportWriter`）、
   scenario 运行编排（桥文件 + 看门狗 + 趋势入库）、导出器与看板窗口（菜单 `AxuFrameKit/AxuTestRunner`，
-  Tests / Scenario / Trend 三页签）。`autoReferenced: false`，仅 Editor 参与；零 pipeline 引用。
+  Tests / Scenario / Trend 四页签）。`autoReferenced: false`，仅 Editor 参与；零 pipeline 引用。
 - **Editor 程序集 `AxuTestFramework.Editor.Pipeline`**：全部引用 pipeline 的 `[CliCommand]` 命令
   （`axu_test_*` / `axu_scenario_*` / `axu_player_*` / `axu_trend_*` / `axu_window_screenshot`）经 TypeCache 自动注册。
   `defineConstraints: [AXU_PIPELINE_PRESENT]`（由本程序集 versionDefines 按 `com.unity.pipeline ≥0.5.0-exp` 注入）——
@@ -68,7 +68,9 @@ com.cielevel.axu-test-framework/
 │   ├── Scenarios/                    #   ScenarioRunService（桥文件+看门狗+趋势入库+自动退 Play）/ 菜单族
 │   │                                 #   （Enable Test Agent / Create Scenario·Suite JSON / Run Suite JSON... / Deploy）
 │   ├── Export/                       #   JUnitExporter / HtmlSummaryExporter
-│   ├── Window/AxuTestRunnerWindow.cs #   UITK 看板（AxuFrameKit/AxuTestRunner，Tests / Scenario / Trend 页签）
+│   ├── Window/AxuTestRunnerWindow.cs #   UITK 看板（AxuFrameKit/AxuTestRunner，总览 / Tests / Scenario / Trend 页签）
+│   ├── Window/AxuTestRunnerWindow.ScenarioTrend.cs  #  Scenario / Trend 页（partial）
+│   ├── Window/AxuTestRunnerWindow.Overview.cs       #  总览页（partial，默认页）
 │   └── UI/AxuTestTokens.uss          #   窗口样式 token（独立自持，仿 KitBox 意象）
 ├── Editor.Pipeline/                  # asmdef: AxuTestFramework.Editor.Pipeline（AXU_PIPELINE_PRESENT 守护）
 │   └── Commands/
@@ -189,10 +191,16 @@ curl -s ... -d '{"command":"axu_test_status","parameters":{}}' ...
 
 ### 看板窗口
 
-菜单 **`AxuFrameKit/AxuTestRunner`**（与 AxuKitBox 同级；样式仿 KitBox 但包内自持独立 USS，无任何代码引用）：
-左侧测试套件树（按程序集/类分组，顶部过滤输入做全名包含匹配），右侧最近报告结果树（FAIL 默认展开，消息/堆栈/类别可看），
-顶栏 EditMode/PlayMode 切换 + **Run 全部 / Run 选定（N）** 双按钮 + 刷新 + 最近报告路径（点击 Reveal）。
-窗口 Run 与 `axu_test_run` 走同一内部服务。
+菜单 **`AxuFrameKit/AxuTestRunner`**（与 AxuKitBox 同级；样式仿 KitBox 但包内自持独立 USS，无任何代码引用）。
+窗口为四页签，**默认落在「总览」页**：
+
+- **总览（默认页）**：最近一次 suite 运行的大结果徽章（✓全部通过 / ⚠通过但有警告 / ✗有失败 / —尚无记录）
+  + 趋势速览（各场景最近 8 次运行的彩色圆点序列，点击某行直达其趋势页）+ 三个快捷大按钮
+  （运行场景套件 / 查看趋势 / 刷新）；面向不看技术细节的使用者，数据与 Scenario/Trend 页同源。
+- **Tests 页（单元测试）**：左侧测试套件树（按程序集/类分组，顶部过滤输入做全名包含匹配），
+  右侧最近报告结果树（FAIL 默认展开，消息/堆栈/类别可看），
+  顶栏 EditMode/PlayMode 切换 + **Run 全部 / Run 选定（N）** 双按钮 + 刷新 + 最近报告路径（点击 Reveal）。
+  窗口 Run 与 `axu_test_run` 走同一内部服务。
 
 - **Run 全部**：当前模式全量（过滤输入非空时作为 testName 子串过滤收窄）。
 - **Run 选定**：左侧树勾选用例经 `test_names` 精确通道执行（按当前模式；勾选用例不属于当前模式时被预检 0 匹配拦下）。
@@ -234,8 +242,8 @@ scenario / player / UTF 三类运行禁止在同一 Editor 并发驱动。
 
 ### Editor 侧配套
 
-- **看板 Scenario 页**：扫描并列出 suite/scenario JSON → Run Suite（含 define 预检）→ 运行后回读报告摘要 + Export JUnit/HTML；趋势自动入库。
-- **看板 Trend 页**：按 scenario 分组查看各指标最近 10 次序列与环比（正=变差红 / 负=改善绿）。
+- **看板 Scenario 页**：扫描并列出 suite/scenario JSON（列表显示中文标题与能力清单、点击选中高亮、底部三步引导）→ Run Suite（含 define 预检）→ 运行后回读报告摘要 + Export JUnit/HTML；趋势自动入库。
+- **看板 Trend 页**：按 scenario 分组查看各指标最近 10 次序列与环比（正=变差红 / 负=改善绿；run 级行按 pass/warn/fail 着色）。
 - **导出器**：`JUnitExporter`（JUnit XML）与 `HtmlSummaryExporter`（单文件自包含 HTML 摘要）。
 - **define 预检**（Phase 1 遗留收口）：运行入口检查 `AXU_TEST_AGENT` 未开时弹可跳过警告。
 - **部署菜单**：`AxuTestFramework/Deploy Suite To StreamingAssets`（复制 suite JSON 到 `Assets/StreamingAssets/AxuSuites/`）与 `Remove Deployed Suites`。

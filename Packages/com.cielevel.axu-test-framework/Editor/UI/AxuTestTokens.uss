@@ -340,3 +340,184 @@
 .axu-theme-ue5 .unity-label {
     color: var(--ax-text);
 }
+
+/* ===== Overview 总览页（2026-09-02 面板可读化）===== */
+
+/* 卡片：run 大结果 / 趋势速览 / 快捷操作 */
+.ax-overview-card {
+    flex-direction: column;
+    background-color: var(--ax-surface);
+    border-width: 1px;
+    border-color: var(--ax-line);
+    border-radius: var(--ax-r-m);
+    padding: var(--ax-s3);
+    margin-bottom: var(--ax-s2);
+}
+
+/* 大结果徽章（通过=绿 / 警告=黄 / 失败=红 / 无记录=灰） */
+.ax-badge {
+    font-size: 26px;
+    -unity-font-style: bold;
+    margin-right: var(--ax-s3);
+    white-space: nowrap;
+}
+
+.ax-badge-ok {
+    color: var(--ax-ok);
+}
+
+.ax-badge-warn {
+    color: var(--ax-warn);
+}
+
+.ax-badge-bad {
+    color: var(--ax-bad);
+}
+
+.ax-badge-neutral {
+    color: var(--ax-text-3);
+}
+
+.ax-overview-subtitle {
+    color: var(--ax-text);
+    font-size: 13px;
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+}
+
+.ax-overview-note {
+    color: var(--ax-text-2);
+    font-size: 11px;
+    white-space: normal;
+}
+
+/* 三个大按钮（快捷操作） */
+.ax-big-button {
+    height: 40px;
+    flex-grow: 1;
+    margin-right: var(--ax-s2);
+    border-radius: var(--ax-r-m);
+    background-color: var(--ax-surface-2);
+    color: var(--ax-text);
+    border-width: 1px;
+    border-color: var(--ax-line-2);
+    font-size: 13px;
+}
+
+.ax-big-button:hover {
+    background-color: var(--ax-hover);
+    color: var(--ax-accent);
+    border-color: var(--ax-accent);
+}
+
+/* 趋势速览行：场景名 + 彩色圆点序列 + 最近时间 */
+.ax-overview-trend-row {
+    padding: 4px 6px;
+    border-radius: var(--ax-r-s);
+}
+
+.ax-overview-trend-row:hover {
+    background-color: var(--ax-hover);
+}
+
+.ax-overview-trend-name {
+    color: var(--ax-text);
+    -unity-font-style: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ax-overview-trend-time {
+    color: var(--ax-text-3);
+    font-size: 10px;
+    margin-left: 8px;
+    white-space: nowrap;
+}
+
+/* 单个运行结果圆点 */
+.ax-trend-dot {
+    font-size: 12px;
+    margin-right: 4px;
+}
+
+.ax-trend-dot-ok {
+    color: var(--ax-ok-light);
+}
+
+.ax-trend-dot-warn {
+    color: var(--ax-warn);
+}
+
+.ax-trend-dot-bad {
+    color: var(--ax-bad-light);
+}
+
+.ax-trend-dot-neutral {
+    color: var(--ax-text-3);
+}
+
+/* ===== Scenario 页 suite 列表（标题/能力两行 + 选中高亮）===== */
+.ax-suite-row {
+    flex-direction: column;
+    background-color: var(--ax-surface-2);
+    border-width: 1px;
+    border-color: var(--ax-line-2);
+    border-radius: var(--ax-r-s);
+    padding: 6px 8px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.ax-suite-row:hover {
+    background-color: var(--ax-hover);
+}
+
+.ax-suite-row.ax-suite-selected {
+    background-color: var(--ax-accent-soft);
+    border-color: var(--ax-accent);
+}
+
+.ax-suite-title {
+    color: var(--ax-text);
+    font-size: 12px;
+    white-space: normal;
+}
+
+.ax-suite-sub {
+    color: var(--ax-text-3);
+    font-size: 10px;
+    white-space: normal;
+    margin-top: 2px;
+}
+
+.ax-suite-row.ax-suite-selected .ax-suite-title {
+    color: var(--ax-accent);
+}
+
+.ax-suite-row.ax-suite-selected .ax-suite-sub {
+    color: var(--ax-text-2);
+}
+
+/* ===== 帮助小字（流程引导）===== */
+.ax-help-note {
+    color: var(--ax-text-2);
+    font-size: 10px;
+    white-space: normal;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+/* ===== Trend 页 run 级行结果着色 ===== */
+.ax-trend-run-ok {
+    color: var(--ax-ok-light);
+}
+
+.ax-trend-run-warn {
+    color: var(--ax-warn);
+}
+
+.ax-trend-run-bad {
+    color: var(--ax-bad-light);
+    -unity-font-style: bold;
+}

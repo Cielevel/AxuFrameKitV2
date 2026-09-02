@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using AxuTestFramework.Core;
 using AxuTestFramework.Core.Report;
+using AxuTestFramework.Core.Scenarios;
 using AxuTestFramework.Core.Trend;
 using AxuTestFramework.Editor.Export;
 using UnityEditor;
@@ -25,6 +26,7 @@ namespace AxuTestFramework.Editor
     {
         private VisualElement _scenarioPage;
         private VisualElement _trendPage;
+        private Button _overviewTabButton;
         private Button _testsTabButton;
         private Button _scenarioTabButton;
         private Button _trendTabButton;
@@ -39,6 +41,7 @@ namespace AxuTestFramework.Editor
         }
 
         private readonly List<SuiteEntry> _suiteEntries = new List<SuiteEntry>();
+        private readonly List<VisualElement> _suiteRowElements = new List<VisualElement>();
         private string _selectedSuitePath;
         private ScrollView _suiteListScroll;
         private Button _runSuiteButton;
@@ -68,12 +71,14 @@ namespace AxuTestFramework.Editor
             var tabBar = new VisualElement { name = "ax-tabbar" };
             tabBar.AddToClassList("ax-topbar");
 
-            _testsTabButton = new Button(() => SetPage("tests")) { text = "Tests" };
-            _scenarioTabButton = new Button(() => SetPage("scenario")) { text = "Scenario" };
-            _trendTabButton = new Button(() => SetPage("trend")) { text = "Trend" };
-            foreach (var button in new[] { _testsTabButton, _scenarioTabButton, _trendTabButton })
+            _overviewTabButton = new Button(() => SetPage("overview")) { text = "总览" };
+            _testsTabButton = new Button(() => SetPage("tests")) { text = "单元测试" };
+            _scenarioTabButton = new Button(() => SetPage("scenario")) { text = "场景套件" };
+            _trendTabButton = new Button(() => SetPage("trend")) { text = "趋势" };
+            foreach (var button in new[] { _overviewTabButton, _testsTabButton, _scenarioTabButton, _trendTabButton })
                 button.AddToClassList("ax-mode-button");
 
+            tabBar.Add(_overviewTabButton);
             tabBar.Add(_testsTabButton);
             tabBar.Add(_scenarioTabButton);
             tabBar.Add(_trendTabButton);
@@ -82,19 +87,23 @@ namespace AxuTestFramework.Editor
 
         private void SetPage(string page)
         {
-            if (_testsPage == null || _scenarioPage == null || _trendPage == null)
+            if (_overviewPage == null || _testsPage == null || _scenarioPage == null || _trendPage == null)
                 return;
 
+            _overviewPage.style.display = page == "overview" ? DisplayStyle.Flex : DisplayStyle.None;
             _testsPage.style.display = page == "tests" ? DisplayStyle.Flex : DisplayStyle.None;
             _scenarioPage.style.display = page == "scenario" ? DisplayStyle.Flex : DisplayStyle.None;
             _trendPage.style.display = page == "trend" ? DisplayStyle.Flex : DisplayStyle.None;
 
+            _overviewTabButton.EnableInClassList("ax-mode-active", page == "overview");
             _testsTabButton.EnableInClassList("ax-mode-active", page == "tests");
             _scenarioTabButton.EnableInClassList("ax-mode-active", page == "scenario");
             _trendTabButton.EnableInClassList("ax-mode-active", page == "trend");
 
             if (page == "trend")
                 RefreshTrend();
+            if (page == "overview")
+                RefreshOverview();
         }
 
         // ------------------------------------------------------------------ Scenario 页
@@ -109,15 +118,18 @@ namespace AxuTestFramework.Editor
             var listPane = new VisualElement { name = "ax-suite-list-pane" };
             listPane.AddToClassList("ax-pane");
             listPane.style.width = 380f;
-            var listHeader = new Label("Suite / Scenario JSON（扫描 Assets）");
+            var listHeader = new Label("场景套件列表（点击选中后，右侧运行）");
             listHeader.AddToClassList("ax-pane-header");
             var refreshButton = new Button(RefreshSuiteList) { text = "刷新列表" };
             refreshButton.AddToClassList("ax-secondary-button");
             _suiteListScroll = new ScrollView { viewDataKey = "ax-suite-list-scroll" };
             _suiteListScroll.AddToClassList("ax-scroll");
+            var listHint = new Label("① 点击左侧套件选中  →  ② 点右侧「▶ 运行选中的套件」  →  ③ 跑完自动回显结果");
+            listHint.AddToClassList("ax-help-note");
             listPane.Add(listHeader);
             listPane.Add(refreshButton);
             listPane.Add(_suiteListScroll);
+            listPane.Add(listHint);
 
             // 右：运行 + 报告摘要 + 导出
             var reportPane = new VisualElement { name = "ax-suite-report-pane" };
@@ -129,21 +141,23 @@ namespace AxuTestFramework.Editor
             var actionRow = new VisualElement { name = "ax-suite-actions" };
             actionRow.style.flexDirection = FlexDirection.Row;
             actionRow.style.marginBottom = 8f;
-            _runSuiteButton = new Button(RunSelectedSuite) { text = "Run Suite" };
+            _runSuiteButton = new Button(RunSelectedSuite) { text = "▶  运行选中的套件" };
             _runSuiteButton.AddToClassList("ax-run-button");
             _runSuiteButton.SetEnabled(false);
-            _runSuiteButton.tooltip = "写桥文件并进入 Play Mode，由 Agent 执行选中 suite（含 AXU_TEST_AGENT define 预检）";
-            _exportJunitButton = new Button(ExportSelectedReportJunit) { text = "Export JUnit" };
+            _runSuiteButton.tooltip = "先点击左侧列表选中一套件，再点此运行（写桥文件并进入 Play Mode，由 Agent 执行；含 AXU_TEST_AGENT define 预检）";
+            _exportJunitButton = new Button(ExportSelectedReportJunit) { text = "导出 JUnit" };
             _exportJunitButton.AddToClassList("ax-secondary-button");
             _exportJunitButton.SetEnabled(false);
-            _exportHtmlButton = new Button(ExportSelectedReportHtml) { text = "Export HTML" };
+            _exportJunitButton.tooltip = "把最近一次报告导出为 JUnit XML（CI 系统对接用）";
+            _exportHtmlButton = new Button(ExportSelectedReportHtml) { text = "导出 HTML" };
             _exportHtmlButton.AddToClassList("ax-secondary-button");
             _exportHtmlButton.SetEnabled(false);
+            _exportHtmlButton.tooltip = "把最近一次报告导出为单文件 HTML 摘要（可分享给非技术同事）";
             actionRow.Add(_runSuiteButton);
             actionRow.Add(_exportJunitButton);
             actionRow.Add(_exportHtmlButton);
 
-            _scenarioSummaryLabel = new Label("（尚无报告——选 suite 并 Run 后自动加载）");
+            _scenarioSummaryLabel = new Label("（尚无报告——点击左侧套件选中后运行，结果自动加载）");
             _scenarioSummaryLabel.AddToClassList("ax-summary");
             _scenarioResultsScroll = new ScrollView { viewDataKey = "ax-scenario-results-scroll" };
             _scenarioResultsScroll.AddToClassList("ax-scroll");
@@ -181,34 +195,94 @@ namespace AxuTestFramework.Editor
             }
 
             _suiteListScroll.Clear();
+            _suiteRowElements.Clear();
             if (_suiteEntries.Count == 0)
             {
-                var empty = new Label("（Assets 下未发现 *.suite.json / *.scenario.json——可经菜单 AxuTestFramework/Create Scenario/Template JSON 创建）");
+                var empty = new Label("（Assets 下未发现 .suite.json / .scenario.json——菜单 AxuTestFramework/Create Suite JSON 可生成模板）");
                 empty.AddToClassList("ax-empty-note");
                 _suiteListScroll.Add(empty);
             }
 
-            var projectRoot = AxuTestReportPaths.ProjectRootFullPath;
             foreach (var entry in _suiteEntries)
             {
                 var captured = entry;
-                var label = $"{(captured.IsSuite ? "[suite] " : "[scenario] ")}" +
-                            Relativize(projectRoot, captured.Path);
-                var row = new Button(() => SelectSuite(captured)) { text = label };
-                row.AddToClassList("ax-secondary-button");
-                row.style.unityTextAlign = TextAnchor.MiddleLeft;
-                row.style.whiteSpace = WhiteSpace.Normal;
-                row.style.marginTop = 2f;
+                var (title, id, capabilities) = ReadSuiteMeta(captured.Path);
+
+                // 主行文本：优先中文标题（来自 suite 的 title 字段），无标题回退 id；副行 = id + 能力清单
+                var primary = !string.IsNullOrEmpty(title) ? title : id ?? captured.Path;
+                var subParts = new List<string>();
+                if (!string.IsNullOrEmpty(id) && !string.Equals(id, primary, StringComparison.Ordinal))
+                    subParts.Add(id);
+                if (!string.IsNullOrEmpty(capabilities))
+                    subParts.Add("能力：" + capabilities);
+
+                var row = new VisualElement { name = "ax-suite-row" };
+                row.AddToClassList("ax-suite-row");
+                var titleLabel = new Label(primary);
+                titleLabel.AddToClassList("ax-suite-title");
+                row.Add(titleLabel);
+                if (subParts.Count > 0)
+                {
+                    var subLabel = new Label(string.Join(" · ", subParts));
+                    subLabel.AddToClassList("ax-suite-sub");
+                    row.Add(subLabel);
+                }
+                row.tooltip = captured.IsSuite
+                    ? $"套件文件：{captured.Path}\n点击选中后在右侧点「▶ 运行选中的套件」"
+                    : $"场景文件：{captured.Path}";
+                row.RegisterCallback<PointerDownEvent>(_ => SelectSuite(captured));
                 _suiteListScroll.Add(row);
+                _suiteRowElements.Add(row);
             }
 
+            UpdateSuiteSelectionHighlight();
             UpdateSelectedSuiteUi();
+        }
+
+        /// <summary>读 suite JSON 的 title/id/能力清单（Inline.Capability / Ref）。任何解析失败静默降级——显示路径即可。</summary>
+        private static (string title, string id, string capabilities) ReadSuiteMeta(string path)
+        {
+            try
+            {
+                var suite = Newtonsoft.Json.JsonConvert.DeserializeObject<SuiteDef>(File.ReadAllText(path));
+                if (suite == null)
+                    return (null, null, null);
+
+                var caps = new List<string>();
+                if (suite.Scenarios != null)
+                {
+                    foreach (var entry in suite.Scenarios)
+                    {
+                        if (entry == null)
+                            continue;
+                        if (entry.Inline != null && !string.IsNullOrEmpty(entry.Inline.Capability))
+                            caps.Add(entry.Inline.Capability);
+                        else if (!string.IsNullOrEmpty(entry.Ref))
+                            caps.Add(entry.Ref);
+                    }
+                }
+
+                var capabilities = caps.Count > 0 ? string.Join("、", caps.Distinct().Take(6)) : null;
+                return (suite.Title, suite.Id, capabilities);
+            }
+            catch
+            {
+                return (null, null, null);
+            }
         }
 
         private void SelectSuite(SuiteEntry entry)
         {
             _selectedSuitePath = entry.Path;
+            UpdateSuiteSelectionHighlight();
             UpdateSelectedSuiteUi();
+        }
+
+        /// <summary>按选中路径回填列表行高亮（重建/选中共用）。</summary>
+        private void UpdateSuiteSelectionHighlight()
+        {
+            for (var i = 0; i < _suiteEntries.Count && i < _suiteRowElements.Count; i++)
+                _suiteRowElements[i].EnableInClassList("ax-suite-selected", _suiteEntries[i].Path == _selectedSuitePath);
         }
 
         private void UpdateSelectedSuiteUi()
@@ -263,6 +337,7 @@ namespace AxuTestFramework.Editor
                 window._scenarioReport = report;
                 window._scenarioReportPath = path;
                 window.RenderScenarioReport();
+                window.RefreshOverview(); // 若停留在总览页，徽章与趋势速览同步刷新（重新读最近报告与趋势 CSV）
                 window.UpdateStatus($"Suite 运行完成：{Path.GetFileName(path)}（趋势已入库）");
                 window.UpdateSelectedSuiteUi();
             }
@@ -443,7 +518,7 @@ namespace AxuTestFramework.Editor
             _trendPage.style.flexGrow = 1f;
             _trendPage.AddToClassList("ax-pane");
 
-            _trendHeaderLabel = new Label("趋势（axu-trend/1）");
+            _trendHeaderLabel = new Label("趋势（每个场景最近 10 次运行，最新在右）");
             _trendHeaderLabel.AddToClassList("ax-pane-header");
 
             var controlRow = new VisualElement { name = "ax-trend-controls" };
@@ -451,11 +526,14 @@ namespace AxuTestFramework.Editor
             controlRow.style.marginBottom = 8f;
             var refreshButton = new Button(RefreshTrend) { text = "刷新" };
             refreshButton.AddToClassList("ax-secondary-button");
-            _trendScenarioField = new DropdownField("Scenario") { choices = new List<string>() };
+            _trendScenarioField = new DropdownField("场景") { choices = new List<string>() };
             _trendScenarioField.style.flexGrow = 1f;
             _trendScenarioField.RegisterValueChangedCallback(_ => RenderTrend());
             controlRow.Add(refreshButton);
             controlRow.Add(_trendScenarioField);
+
+            var trendHint = new Label("每行一个指标：数字序列 = 最近 10 次运行的值（最新在右）；右侧百分比 = 最近两次变化（红色=变差，绿色=改善）。");
+            trendHint.AddToClassList("ax-help-note");
 
             _trendScroll = new ScrollView { viewDataKey = "ax-trend-scroll" };
             _trendScroll.AddToClassList("ax-scroll");
@@ -479,7 +557,7 @@ namespace AxuTestFramework.Editor
             {
                 _trendPoints = new List<TrendPoint>();
                 _trendScenarioField.choices = new List<string>();
-                RenderTrendEmpty("趋势库为空（Library/AxuTestReports/trend/trend.csv 不存在）——Run suite to collect trend：在 Scenario 页运行套件后自动入库。");
+                RenderTrendEmpty("趋势库为空——在「场景套件」页运行一次套件后，趋势会自动记录到这里。");
                 return;
             }
 
@@ -525,11 +603,11 @@ namespace AxuTestFramework.Editor
             var scenario = _trendScenarioField.value;
             if (string.IsNullOrEmpty(scenario) || _trendPoints.Count == 0)
             {
-                RenderTrendEmpty("（无数据——选择 scenario 后此处展示各指标最近 10 次序列与环比）");
+                RenderTrendEmpty("（无数据——选择场景后此处展示各指标最近 10 次序列与最近两次变化）");
                 return;
             }
 
-            _trendHeaderLabel.text = $"趋势（axu-trend/1）· {scenario} · 共 {_trendPoints.Count} 行";
+            _trendHeaderLabel.text = $"趋势 · {scenario}";
 
             var metrics = _trendPoints
                 .Where(p => p.Scenario == scenario)
@@ -542,8 +620,12 @@ namespace AxuTestFramework.Editor
             // run 级行：整体结果/退出码序列（无环比——Value 为 null 不参与 ChangePercent）
             var runRows = TrendSummary.Series(_trendPoints, scenario, string.Empty);
             if (runRows.Count > 0)
+            {
+                var lastRun = runRows[runRows.Count - 1];
                 _trendScroll.Add(CreateTrendRow("(run) 整体结果",
-                    string.Join(" → ", LastN(runRows, 10).Select(r => $"{r.Result}(exit {r.ExitCode})")), null));
+                    string.Join(" → ", LastN(runRows, 10).Select(r => $"{r.Result}(exit {r.ExitCode})")), null,
+                    lastRun.Result));
+            }
 
             foreach (var metric in metrics)
             {
@@ -564,8 +646,9 @@ namespace AxuTestFramework.Editor
             }
         }
 
-        /// <summary>单个 metric 行：名称 + 最近 10 次序列 + 环比（正值=变差→红，负值=改善→绿，无→灰）。</summary>
-        private static VisualElement CreateTrendRow(string metric, string seriesText, double? changePercent)
+        /// <summary>单个指标行：名称 + 最近 10 次序列 + 环比（正值=变差→红，负值=改善→绿，无→灰）。
+        /// <paramref name="resultTone"/> 仅 run 级行使用：pass/warn/fail/error 给序列文本着色。</summary>
+        private static VisualElement CreateTrendRow(string metric, string seriesText, double? changePercent, string resultTone = null)
         {
             var row = new VisualElement { name = "ax-trend-row" };
             row.style.flexDirection = FlexDirection.Row;
@@ -581,6 +664,15 @@ namespace AxuTestFramework.Editor
             seriesLabel.style.color = ParseColor("#a0a0a0");
             seriesLabel.style.flexGrow = 1f;
 
+            var tone = (resultTone ?? "-").Trim().ToLowerInvariant();
+            switch (tone)
+            {
+                case "pass": seriesLabel.AddToClassList("ax-trend-run-ok"); break;
+                case "warn": seriesLabel.AddToClassList("ax-trend-run-warn"); break;
+                case "fail":
+                case "error": seriesLabel.AddToClassList("ax-trend-run-bad"); break;
+            }
+
             row.Add(nameLabel);
             row.Add(seriesLabel);
 
@@ -592,7 +684,7 @@ namespace AxuTestFramework.Editor
                 changeLabel.style.color = changePercent.Value > 0.0001
                     ? ParseColor("#ec8a8a")
                     : changePercent.Value < -0.0001 ? ParseColor("#8ed19a") : ParseColor("#a0a0a0");
-                changeLabel.tooltip = "最近两次环比（TrendSummary.ChangePercent）——正值 = 相对上次变差";
+                changeLabel.tooltip = "最近两次的百分比变化——正值 = 相对上次变差（红），负值 = 改善（绿）";
                 row.Add(changeLabel);
             }
 

@@ -84,6 +84,8 @@ namespace AxuTestFramework.Editor
 
             BuildTabBar();
 
+            BuildOverviewPage();
+
             _testsPage = new VisualElement { name = "ax-page-tests" };
             _testsPage.style.flexGrow = 1f;
             rootVisualElement.Add(_testsPage);
@@ -95,7 +97,7 @@ namespace AxuTestFramework.Editor
             BuildTrendPage();
             BuildStatusBar();
 
-            SetPage("tests");
+            SetPage("overview");
 
             _ = RefreshTestsAsync();
             TryLoadLatestReport();
