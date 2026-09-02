@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- 2026-09-02：新增 `LiveStreamPlayerWindow` 回放窗口（菜单 `AxuFrameKit/Modules/LiveStream/Operation Player`）——加载 `LiveStreamOpRecorder` 保存的录制 JSON，按录制时间戳回放礼物/评论/点赞操作。编辑器窗口无协程宿主，用 `EditorApplication.update` 自驱时间轴（相对首条记录时间偏移，兼容两种录制模式）；复用 `LiveStreamOpPlaybackHandler` 做类型分发；支持 加载/开始回放/停止/立即回放/清空日志，及「📌 使用选中文件」按钮（Project 窗口选中 .json 资产后一键校验解析并填入路径）。
 - 2026-08-31：包内测试接入测试框架 AxuTestFramework——新增 `Tests/Editor/`（`AxuFrameKit.Modules.LiveStream.Tests.Editor`，6 个 EditMode 测试，类别 `Axu/Module/LiveStream`：操作录制/回放分发、评论触发器三路分发、礼物直传与按数量切割）。`UNITY_INCLUDE_TESTS` 守护不进构建；运行经 pipeline `axu_test_run`。
 
 ### Changed
