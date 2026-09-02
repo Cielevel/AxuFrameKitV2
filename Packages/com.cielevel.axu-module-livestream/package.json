@@ -13,5 +13,12 @@
     "com.unity.nuget.newtonsoft-json": "3.2.2",
     "com.unity.textmeshpro": "3.0.0",
     "com.unity.ugui": "1.0.0"
-  }
+  },
+  "samples": [
+    {
+      "displayName": "LiveStream",
+      "description": "直播互动模拟示例：评论/礼物/点赞触发、UI 面板与演示场景",
+      "path": "Samples~/LiveStream"
+    }
+  ]
 }
