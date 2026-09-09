@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="30 80 640 690" width="640" height="690" role="img">
+  <title>AxU liquid logo</title>
+  <desc>AxU monogram rebuilt as glossy liquid ink: jelly-like surface wobble, gooey drips falling from the leg tip and the U-bowl tail, sweeping sheen.</desc>
+
+  <defs>
+    <!-- 墨色：改这里换颜色（userSpaceOnUse，跨形状统一） -->
+    <linearGradient id="ink" gradientUnits="userSpaceOnUse" x1="0" y1="120" x2="0" y2="745">
+      <stop offset="0"    stop-color="#2c2c31"/>
+      <stop offset="0.5"  stop-color="#0a0a0d"/>
+      <stop offset="0.85" stop-color="#000000"/>
+      <stop offset="1"    stop-color="#26262b"/>
+    </linearGradient>
+
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0"   stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.09"/>
+      <stop offset="1"   stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- 整体果冻扰动：湍流置换，双循环避免机械感 -->
+    <filter id="wobble" x="-6%" y="-6%" width="112%" height="112%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.007 0.022" numOctaves="2" seed="7" result="n">
+        <animate attributeName="baseFrequency" values="0.007 0.022;0.009 0.03;0.007 0.022" dur="13s" repeatCount="indefinite"/>
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="8" xChannelSelector="R" yChannelSelector="G">
+        <animate attributeName="scale" values="5;9;5" dur="8s" repeatCount="indefinite"/>
+      </feDisplacementMap>
+    </filter>
+
+    <!-- 黏液阈值：让相邻液滴像表面张力一样融合 -->
+    <filter id="goo" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10"/>
+    </filter>
+
+    <filter id="soften" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.6"/>
+    </filter>
+
+    <!-- 轮廓：按原图位图逐行扫描重建（705x706 原坐标系） -->
+    <path id="au" fill-rule="evenodd" d="
+      M 257 127
+      L 364 127 Q 367 127 367 131
+      L 386 298 Q 390 302 394 296
+      L 452 254 Q 455 252 455 257
+      L 455 336
+      C 450 346 434 352 422 357
+      C 408 362 402 372 399 383
+      C 395 396 396 428 402 448
+      C 407 468 424 486 449 492
+      Q 459 494 468 490
+      C 482 484 499 473 508 461
+      C 515 451 518 441 518 428
+      L 519 130 Q 519 127 522 127
+      L 596 127 Q 599 127 599 131
+      L 599 446
+      C 598 500 588 528 566 546
+      C 545 562 522 570 498 572
+      Q 478 573 463 571
+      C 425 562 380 543 352 518
+      C 336 500 325 468 321 434
+      Q 320 429 316 433
+      L 305 445
+      L 154 566
+      L 70 567
+      L 254 129
+      Q 255 127 257 127
+      Z
+      M 296 229
+      C 301 241 307 272 310 306
+      C 312 326 313 341 313 351
+      L 213 439
+      Z"/>
+    <clipPath id="auClip"><use href="#au"/></clipPath>
+  </defs>
+
+  <!-- ===== 液滴层（gooey 融合，藏在主体后面从底缘长出来） ===== -->
+  <g filter="url(#goo)" fill="url(#ink)">
+    <!-- 常驻液颈：咬合主体底缘，随液囊下垂同步伸长保持连接 -->
+    <ellipse cx="459" cy="564" rx="10" ry="10">
+      <animate attributeName="cy" values="564;571;564;564" keyTimes="0;0.5;0.58;1" dur="6s" repeatCount="indefinite"/>
+      <animate attributeName="ry" values="10;13;10;10"     keyTimes="0;0.5;0.58;1" dur="6s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="111" cy="558" rx="8" ry="8">
+      <animate attributeName="cy" values="558;566;558;558" keyTimes="0;0.55;0.62;1" dur="8.5s" begin="-3.2s" repeatCount="indefinite"/>
+      <animate attributeName="ry" values="8;12;8;8"        keyTimes="0;0.55;0.62;1" dur="8.5s" begin="-3.2s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="524" cy="556" rx="7" ry="7">
+      <animate attributeName="cy" values="556;563;556;556" keyTimes="0;0.6;0.68;1" dur="10s" begin="-5s" repeatCount="indefinite"/>
+      <animate attributeName="ry" values="7;10;7;7"        keyTimes="0;0.6;0.68;1" dur="10s" begin="-5s" repeatCount="indefinite"/>
+    </ellipse>
+
+    <!-- 大滴：U 底水滴尾，6s 周期 -->
+    <ellipse cx="459" cy="581" rx="9" ry="8">
+      <animate attributeName="cy" values="581;596;581;581" keyTimes="0;0.5;0.58;1" dur="6s" repeatCount="indefinite"/>
+      <animate attributeName="rx" values="9;11;9;9"       keyTimes="0;0.5;0.58;1" dur="6s" repeatCount="indefinite"/>
+      <animate attributeName="ry" values="8;19;7;7"       keyTimes="0;0.5;0.58;1" dur="6s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="459" cy="598" rx="7" ry="10" opacity="0">
+      <animate attributeName="cy"      values="598;598;730" keyTimes="0;0.56;1" calcMode="spline" keySplines="0 0 1 1;0.45 0 0.9 0.6" dur="6s" repeatCount="indefinite"/>
+      <animate attributeName="rx"      values="7;7;5"       keyTimes="0;0.56;1" dur="6s" repeatCount="indefinite"/>
+      <animate attributeName="ry"      values="10;10;15"    keyTimes="0;0.56;1" dur="6s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;0;1;1;0"   keyTimes="0;0.56;0.6;0.9;1" dur="6s" repeatCount="indefinite"/>
+    </ellipse>
+
+    <!-- 小滴：A 尖脚底，8.5s 周期（错相） -->
+    <ellipse cx="111" cy="573" rx="6.5" ry="7">
+      <animate attributeName="cy" values="573;586;573;573"   keyTimes="0;0.55;0.62;1" dur="8.5s" begin="-3.2s" repeatCount="indefinite"/>
+      <animate attributeName="rx" values="6.5;8;6.5;6.5"     keyTimes="0;0.55;0.62;1" dur="8.5s" begin="-3.2s" repeatCount="indefinite"/>
+      <animate attributeName="ry" values="6;14;5.5;5.5"      keyTimes="0;0.55;0.62;1" dur="8.5s" begin="-3.2s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="111" cy="584" rx="5.5" ry="8" opacity="0">
+      <animate attributeName="cy"      values="584;584;700" keyTimes="0;0.56;1" calcMode="spline" keySplines="0 0 1 1;0.45 0 0.9 0.6" dur="8.5s" begin="-3.2s" repeatCount="indefinite"/>
+      <animate attributeName="rx"      values="5.5;5.5;4.5" keyTimes="0;0.56;1" dur="8.5s" begin="-3.2s" repeatCount="indefinite"/>
+      <animate attributeName="ry"      values="8;8;12"      keyTimes="0;0.56;1" dur="8.5s" begin="-3.2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;0;0.95;0.95;0" keyTimes="0;0.56;0.6;0.9;1" dur="8.5s" begin="-3.2s" repeatCount="indefinite"/>
+    </ellipse>
+
+    <!-- 微滴：U 外弧右下侧，10s 周期 -->
+    <ellipse cx="524" cy="563" rx="5" ry="5.5">
+      <animate attributeName="cy" values="563;576;563;563" keyTimes="0;0.6;0.68;1" dur="10s" begin="-5s" repeatCount="indefinite"/>
+      <animate attributeName="rx" values="5;7;5;5"         keyTimes="0;0.6;0.68;1" dur="10s" begin="-5s" repeatCount="indefinite"/>
+      <animate attributeName="ry" values="5;11;4.5;4.5"    keyTimes="0;0.6;0.68;1" dur="10s" begin="-5s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="526" cy="574" rx="4.5" ry="6" opacity="0">
+      <animate attributeName="cy"      values="574;574;690" keyTimes="0;0.6;1" calcMode="spline" keySplines="0 0 1 1;0.45 0 0.9 0.6" dur="10s" begin="-5s" repeatCount="indefinite"/>
+      <animate attributeName="rx"      values="4.5;4.5;3.5" keyTimes="0;0.6;1" dur="10s" begin="-5s" repeatCount="indefinite"/>
+      <animate attributeName="ry"      values="6;6;10"      keyTimes="0;0.6;1" dur="10s" begin="-5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;0;0.9;0.9;0"   keyTimes="0;0.6;0.64;0.9;1" dur="10s" begin="-5s" repeatCount="indefinite"/>
+    </ellipse>
+  </g>
+
+  <!-- 液囊高光（跟手，不受 goo 阈值影响） -->
+  <g fill="#ffffff">
+    <ellipse cx="455.5" cy="578" rx="3" ry="2.2" opacity="0.45">
+      <animate attributeName="cy" values="578;590;578;578" keyTimes="0;0.5;0.58;1" dur="6s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="108.5" cy="573" rx="2.5" ry="1.8" opacity="0.4">
+      <animate attributeName="cy" values="573;582;573;573" keyTimes="0;0.55;0.62;1" dur="8.5s" begin="-3.2s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="522" cy="563" rx="2" ry="1.5" opacity="0.4">
+      <animate attributeName="cy" values="563;571;563;563" keyTimes="0;0.6;0.68;1" dur="10s" begin="-5s" repeatCount="indefinite"/>
+    </ellipse>
+  </g>
+
+  <!-- ===== 主体（果冻扰动 + 湿面高光 + 扫光） ===== -->
+  <g filter="url(#wobble)">
+    <use href="#au" fill="url(#ink)"/>
+    <g clip-path="url(#auClip)">
+      <g fill="none" stroke="#ffffff" stroke-linecap="round" filter="url(#soften)">
+        <path d="M 258 200 L 108 505"           stroke-width="9" opacity="0.16"/>
+        <path d="M 282 143 L 344 143"           stroke-width="6" opacity="0.10"/>
+        <path d="M 585 165 L 585 410"           stroke-width="10" opacity="0.13"/>
+        <path d="M 588 440 C 586 505 562 545 520 560" stroke-width="9" opacity="0.12"/>
+      </g>
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="-220 0;820 0;820 0" keyTimes="0;0.58;1" dur="9.5s" repeatCount="indefinite"/>
+        <rect x="0" y="40" width="130" height="780" fill="url(#sheen)" transform="skewX(-14)"/>
+      </g>
+    </g>
+  </g>
+</svg>

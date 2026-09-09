@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="AxuLogo.jpeg" width="260" alt="AxuFrameKit"/>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="AxuLogo-liquid-dark.svg">
+  <img src="AxuLogo-liquid.svg" width="260" alt="AxuFrameKit">
+</picture>
 
 # AxuFrameKit
 
