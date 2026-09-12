@@ -36,6 +36,7 @@ namespace AxuFrameKit.Modules.LiveStream
             }
             else if (userDataUnit is UserDataLike userDataLike)
             {
+                // Like 无形态分支，入口直通（设计原因见 TriggerLikeConfigSo 类注释）
                 _preTriggerLikeConfigSo?.PushLike(userDataLike);
                 _mainTriggerLikeConfigSo?.PushLike(userDataLike);
             }
