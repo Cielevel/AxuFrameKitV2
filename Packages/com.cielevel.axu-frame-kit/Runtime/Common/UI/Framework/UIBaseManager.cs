@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using AxuFrameKit.Common.Utility.Singleton;
 
 namespace AxuFrameKit.Common.UI.Framework
 {
     public class UIBaseManager<T> : SingletonMono<T> where T : UIBaseManager<T>
     {
+        [SerializeField] private bool _includeInactive = true;
+
         private List<UIBasePage> _uiPageList;
 
         private List<UIBaseArea> _uiAreaList;
@@ -15,8 +18,8 @@ namespace AxuFrameKit.Common.UI.Framework
         {
             base.Awake();
             
-            _uiPageList = transform.GetComponentsInChildren<UIBasePage>().ToList();
-            _uiAreaList = transform.GetComponentsInChildren<UIBaseArea>().ToList();
+            _uiPageList = transform.GetComponentsInChildren<UIBasePage>(_includeInactive).ToList();
+            _uiAreaList = transform.GetComponentsInChildren<UIBaseArea>(_includeInactive).ToList();
         }
 
         #region PAGE
