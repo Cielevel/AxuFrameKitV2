@@ -14,16 +14,28 @@ namespace AxuFrameKit.Common.Editor.Hierarchy
         EditorApplication.hierarchyWindowItemOnGUI += HandleHierarchyWindowItemOnGUI;
     }
 
-    public static void RefreshConfig()
-    {
-        config = HierarchyColorizerConfig.Load();
-    }
+        public static void RefreshConfig()
+        {
+            config = HierarchyColorizerConfig.Load();
 
-    private static void HandleHierarchyWindowItemOnGUI(int selectionID, Rect selectionRect)
-    {
-        if (config == null) return;
-        
-        GameObject obj = EditorUtility.InstanceIDToObject(selectionID) as GameObject;
+            // 配置加载/刷新时预解析 Layer 规则的层名 → 层数值，
+            // 避免 Hierarchy 每次绘制、每个物体、每条规则都调用 LayerMask.NameToLayer
+            if (config?.rules != null)
+            {
+                foreach (var rule in config.rules)
+                {
+                    rule.cachedLayer = string.IsNullOrEmpty(rule.pattern) ? -1 : LayerMask.NameToLayer(rule.pattern);
+                }
+            }
+        }
+
+        private static void HandleHierarchyWindowItemOnGUI(int selectionID, Rect selectionRect)
+        {
+            if (config == null) return;
+            // 仅在 Repaint 时执行匹配与绘制（与 HierarchyIconDrawer 一致），避免 Layout 等事件重复跑规则
+            if (Event.current.type != EventType.Repaint) return;
+
+            GameObject obj = EditorUtility.InstanceIDToObject(selectionID) as GameObject;
         if (obj == null) return;
 
         foreach (var rule in config.rules)
@@ -51,11 +63,11 @@ namespace AxuFrameKit.Common.Editor.Hierarchy
                     case ColorRule.MatchType.Layer:
                          if (!string.IsNullOrEmpty(rule.pattern))
                          {
-                            int layer = LayerMask.NameToLayer(rule.pattern);
-                            if (layer != -1)
-                                matched = (obj.layer == layer);
+                            // 使用 RefreshConfig 时预解析的层数值缓存，不再逐帧调用 NameToLayer
+                            if (rule.cachedLayer != -1)
+                                matched = (obj.layer == rule.cachedLayer);
                          }
-                        break;
+                         break;
                 }
             }
             catch

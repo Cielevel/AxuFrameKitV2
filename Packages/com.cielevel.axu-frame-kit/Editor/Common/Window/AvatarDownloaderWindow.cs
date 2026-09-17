@@ -24,6 +24,9 @@ namespace AxuFrameKit.Common.Editor.Window
         private const string PrefsKeyCount = "AvatarDownloader_Count";
         private const string PrefsKeySavePath = "AvatarDownloader_SavePath";
 
+        // 单张图片下载的超时秒数，避免服务器无响应时忙等挂死
+        private const int DownloadTimeoutSeconds = 30;
+
         #endregion
 
         #region Fields
@@ -583,16 +586,22 @@ namespace AxuFrameKit.Common.Editor.Window
             catch (Exception ex)
             {
                 Debug.LogError($"下载出错: {ex.Message}");
-                _statusLabel.text = $"下载出错: {ex.Message}";
+                // await 延续里窗口可能已被销毁（假 null 判空），访问 UI 前先判空
+                if (this != null) _statusLabel.text = $"下载出错: {ex.Message}";
             }
             finally
             {
                 _isDownloading = false;
-                UpdateDownloadButtonState();
                 AssetDatabase.Refresh();
 
-                // Set downloaded textures to Sprite type
-                SetTextureImportSettings();
+                // 窗口可能已在下载途中被销毁（EditorWindow 是 UnityEngine.Object，假 null 判空有效），后续涉及窗口 UI 的操作需跳过
+                if (this != null)
+                {
+                    UpdateDownloadButtonState();
+
+                    // Set downloaded textures to Sprite type
+                    SetTextureImportSettings();
+                }
             }
         }
 
@@ -661,6 +670,9 @@ namespace AxuFrameKit.Common.Editor.Window
                 }
             }
 
+            // Assets 目录的绝对路径，用于把下载结果转换为 AssetDatabase 相对路径
+            string assetsFullPath = Path.GetFullPath(Application.dataPath);
+
             // Download each avatar
             foreach (var task in downloadTasks)
             {
@@ -668,6 +680,9 @@ namespace AxuFrameKit.Common.Editor.Window
                 string filePath = Path.Combine(savePath, fileName);
 
                 bool success = await DownloadImage(task.url, filePath);
+
+                // async 延续里窗口可能已被销毁（假 null 判空有效），直接终止剩余下载
+                if (this == null) return;
 
                 _completedCount++;
                 float progress = (float)_completedCount / _totalCount * 100f;
@@ -677,9 +692,10 @@ namespace AxuFrameKit.Common.Editor.Window
                 if (success)
                 {
                     string relativePath = filePath;
-                    if (filePath.Contains("Assets"))
+                    // 与 OnBrowseClicked 相同口径：基于 Application.dataPath 前缀判断，避免 Contains("Assets") 子串误命中
+                    if (filePath.StartsWith(assetsFullPath, StringComparison.OrdinalIgnoreCase))
                     {
-                        relativePath = "Assets" + filePath.Substring(filePath.IndexOf("Assets") + 6);
+                        relativePath = ("Assets" + filePath.Substring(assetsFullPath.Length)).Replace('\\', '/');
                     }
                     _downloadedFiles.Add(relativePath);
                     _statusLabel.text = $"已下载 {_completedCount}/{_totalCount}: {fileName}";
@@ -693,6 +709,9 @@ namespace AxuFrameKit.Common.Editor.Window
 
                 // Small delay to avoid overwhelming the servers
                 await Task.Delay(100);
+
+                // 延迟期间窗口也可能被关闭，循环末尾再判一次，避免下一轮迭代与收尾语句访问已销毁的 UI
+                if (this == null) return;
             }
 
             _statusLabel.text = $"下载完成：成功 {_downloadedFiles.Count}/{_totalCount} 张头像";
@@ -714,6 +733,8 @@ namespace AxuFrameKit.Common.Editor.Window
             try
             {
                 using var request = UnityWebRequest.Get(url);
+                // 设置超时，避免服务器无响应时请求永不完成、忙等循环挂死
+                request.timeout = DownloadTimeoutSeconds;
                 var operation = request.SendWebRequest();
 
                 while (!operation.isDone)

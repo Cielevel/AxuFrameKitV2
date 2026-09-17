@@ -159,6 +159,10 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CopierGroup
             _logView.Clear();
         }
 
+        // 本页无全局事件订阅，生命周期钩子留空
+        public void OnEnter() { }
+        public void OnExit() { }
+
         public void DrawIMGUI() { }
     }
 }

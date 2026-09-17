@@ -2,6 +2,23 @@
 
 本文件记录 com.cielevel.axu-frame-kit 的显著变更。0.1.0 为首个版本条目，其中 2026-08-29 之前的内容依据项目 git 提交历史整理。
 
+## [Unreleased]
+
+### 2026-09-17
+
+全框架体检后的集中修复批次（分层红线、域重载、UI、网络/存档/加密、任务队列、Editor 工具）。测试：`AxuFrameKit.Tests.Editor` 48 → 49、`AxuFrameKit.Tests.Runtime` 6 → 14，两侧全绿；`LiveStream`/`Noise` 模块测试与工程级冒烟同步复跑通过。
+
+- **修复（_Core 分层红线）**：`AxuFrameKit.Core.asmdef` 置 `noEngineReferences: true`（编译器强制零引擎依赖），并清除最后三处引擎引用——`Logger` 重写为纯 C# 可注入 Sink（公共 API 不变；新增 `LoggerUnityWire`/`LoggerWire` 分别把运行时与编辑器输出接线到 `UnityEngine.Debug`）、`FloatExtension` 改用 `System.Math`、`RandomNickname` 改走 `Logger`。
+- **修复（域重载静态状态）**：新增 `MultitonRegistry`（全框架静态重置登记中心）与 `AxuStaticResetGuard`（每次进入 Play 最早期统一清理）；登记覆盖 Multiton / MultitonAuto / MultitonMono 族、Singleton 全家族（Lazy / Mono / CustomMono / MonoCr / DesignPattern `Singleton<T>`）、`EventChannelCore` 实例订阅、UseMono 双 handler。同步修复：`MultitonAuto.DisposeAll` 边枚举边删必抛、`SingletonMono(Cr)` 重复实例不销毁与静态引用残留、UseMono Separate 模式 `_destroyedObjects` 强引用泄漏（改 `ConditionalWeakTable` 弱标记）。
+- **修复（UI 框架层）**：`UIBaseManager<T>` 重构为统一查找核心 + 惰性收集——修复 Awake 前调用 NRE、已销毁组件残留抛 `MissingReferenceException`、动态实例化组件查找不到三类缺陷；新增 `RegisterPage/UnregisterPage/RegisterArea/UnregisterArea`；28 个公开 API 签名零变更。`IsPageShow/IsAreaShow` 补 `Content` 判空，id 重载补类型过滤。`UIBaseComponent` 修复：`Start` 不再覆盖此前的显隐交互、`OnValidate` 不再覆写手工填充的 Name/ID/Content、空参数回落无参 `OnShow/OnHide` 回调（此前走 Manager 的 `ShowPage<T>()` 不会触发只重写了无参回调的子类）。
+- **修复（UI Kit）**：`UIListView` 追加数据后列表空白（刷新早退）、非池模式克隆堆积、活跃项 O(n²) 查询、可见数量不随视口重算、Grid 布局忽略 `controlChildSize`、适配器 lambda 订阅叠加与悬垂；`UIBindParent` 重复 ID/Index 抛异常、Index 自动编号、跨模式误用守卫；`UIVideoKit` RenderTexture/材质泄漏、`playbackSpeed` 未生效、淡出回调无防护（新增 `Stop()`）；`TmpTypewriter` 富文本 alpha 破坏与播放中文本变更失效、Manager 版空文本永不完成与 label 销毁后每帧异常；`UIToastUnit` 回收不停用、`UISideToast` 池初始化时序 NRE；`UIToggleParent(ForPanel)` 订阅泄漏、id 恒空与 Index 口径不一致；`UIImageGroupID/UISpriteGroupIndex` 重复 ID 与空引用健壮性；删除 `UILoopVerticalScrollRect` 的占位 `GetVisibleRange`。
+- **修复（网络 / 存档 / 加密 / 定时器）**：`HttpUtil` 六方法补 30s 超时 + 保留头集合去重、`Downloader` 三处补超时、`SocketClient` 四处吞异常补日志；`SaveUtil` 改为写盘成功后再提交缓存、键名白名单校验（防路径逃逸）；`AesCrypto` 字节接口严格校验密钥长度（16/24/32）、修正解密路径的操作枚举、新增 `EncryptStringWithPbkdf2/DecryptStringWithPbkdf2` 并把旧口令接口标记过时（**旧字符串接口保持原有密文格式，既有存档/旧密文仍可解**）；`RsaCrypto` 新增可选填充方式参数（默认维持平台历史行为）与 PKCS1 明文长度预检；`HmacSha256` 字符串校验改常量时间；`Pbkdf2KeyDerivation` 迭代次数可配；倒计时/秒表句柄加版本号，归还池后写入不再串到新计时器。
+- **修复（任务队列）**：新增 `TaskQueueEngine` 公共引擎（信号量等待替代空转轮询、generation 代数杜绝 Stop→立即 Run 的双消费者竞态、任务级异常隔离），`TaskQ / TaskQAuto / TaskQc / TaskQcAuto` 全部收敛其上且公共签名不变，修复 `TaskQc` 系 CTS 重复 Run 泄漏与单任务异常中止整队；`CoroutineQ` 子协程异常不再导致队列永久假死。
+- **修复（Editor 工具）**：KitBox——CSV 编辑器改为引号语义解析/转义 + 写入 `.bak` 备份 + UTF8 无 BOM、缺脚本清扫器不再静默保存已打开场景（改为标记脏 + 提示手动保存）、页面新增 `OnEnter/OnExit` 生命周期并治理全局订阅（修复 `selectionChanged` 进页叠加订阅、`projectChanged` 全工程重建、`hierarchyChanged` 无注销）、当前页 EditorPrefs 持久化、场景组合存储改原子写 + 损坏弹窗告知；独立工具——`ButtonAttributeEditor` 反射缓存 + 支持多选、`AvatarDownloader` 补超时并修正工程路径判定、`ScriptDefineSymbolSetter` 改精确匹配宏、`UIBindParentEditor` 补 Undo/SetDirty、Hierarchy Colorizer 补 Repaint 早退与层号缓存、Icon 修复 null 缓存失效、四处每帧 `GUIStyle/GUIContent` 分配改缓存、`CsvIOUtil` 无扩展名路径越界与编码口径统一。
+- **修复（其他 Runtime）**：`Computed` 在 Dispose/重算时正确解绑上游订阅；`AutoEventChannel*` 补反注册与空校验、类名与文件名对齐；`ResourceLoader` 失败改为告警并新增失败回调重载；`CsvContainerSo` 统一加载口径、补空引用防护、移除 ScriptableObject finalizer；`Structure` 系列补 `TryDequeue`/`IComparer` 重载、统一重复元素策略、去掉 `BiDictionary` 双重上报；`CollectionExtension.GetRandomUniqueItems` 修复含重复元素时的死循环并复用共享随机源；`GameObjectPools`/`SimpleObjPool` 增加已销毁对象与重复归还防护；`TransformExtension.ClearChildren` 修复编辑器模式漏删；删除字典重复键的静态死雷 `Type2Name`/`Type2DefaultStrValue`。
+- **测试**：新增 `Tests/Runtime/UIFrameworkPlayModeTests.cs`（8 个用例：惰性收集、按类型与 id 查找、已销毁过滤、`Content` 为空不抛、`Start` 竞争回归、动态注册/注销）；`CoreEncryptTests` 新增 PBKDF2 口令接口往返与字节接口严格校验用例。
+- **文档**：`UI框架.md` 重写为与代码一致的职责说明（Manager 只管 Page/Area；Panel/Unit 为组件层），并补回调/`Content`/`Name`/`ID` 约定。
+
 ## [0.1.0]
 
 ### 2026-09-03

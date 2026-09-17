@@ -40,6 +40,18 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
             }
         }
 
+        private void OnDestroy()
+        {
+            // 成对注销 Awake 中的订阅（未订阅的 -= 是无害空操作）；场景卸载时对方可能已销毁
+            if (_toggleParent == null)
+                return;
+
+            _toggleParent.OnMultipleSelectionIndexChanged -= OnMultipleSelectionIndexChanged;
+            _toggleParent.OnMultipleSelectionIdChanged -= OnMultipleSelectionIdChanged;
+            _toggleParent.OnIndexChanged -= OnIndexChanged;
+            _toggleParent.OnIdChanged -= OnIdChanged;
+        }
+
         private void OnIdChanged(string id) // 单选开启
         {
             _panelList.ForEach(e =>
@@ -89,9 +101,12 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
             if (_autoValidate == false)
                 return;
 
-            _panelList = GetComponentsInChildren<UIBaseComponent>().Select(e=> new Panel()
+            // 只收集 UIBasePanel（Area/Page/Unit/Toast 等基类组件不参与），
+            // 并同步填 id（组件 ID 为空则用物体名），保证 OnIdChanged 的 e.id == id 比较有值可命中
+            _panelList = GetComponentsInChildren<UIBasePanel>().Select(e => new Panel()
             {
                 uiComponent = e,
+                id = string.IsNullOrEmpty(e.ID) ? e.gameObject.name : e.ID,
                 index = e.transform.GetSiblingIndex()
             }).ToList();
         }

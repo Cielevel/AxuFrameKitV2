@@ -15,6 +15,10 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind.Editor
         private SerializedProperty _listProp;
         private string _generatedCode = "";
 
+        // 每帧绘制复用的 GUI 内容/样式静态缓存，避免 OnInspectorGUI 与列表元素逐帧 new
+        private static GUIContent _elementLabelContent;
+        private static GUIStyle _greenButtonStyle;
+
         private void OnEnable()
         {
             // 获取属性引用
@@ -67,7 +71,10 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind.Editor
                     rect.height = EditorGUIUtility.singleLineHeight;
 
                     // 绘制属性字段，并将我们计算出的 labelName 传进去覆盖默认的 "Element X"
-                    EditorGUI.PropertyField(rect, element, new GUIContent(labelName));
+                    // 复用静态 GUIContent，仅原地更新 text，避免每个元素每帧分配
+                    if (_elementLabelContent == null) _elementLabelContent = new GUIContent();
+                    _elementLabelContent.text = labelName;
+                    EditorGUI.PropertyField(rect, element, _elementLabelContent);
                 }
             };
         }
@@ -88,8 +95,12 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind.Editor
 
             EditorGUILayout.Space(5);
 
-            GUIStyle style = new GUIStyle(GUI.skin.button);
-            style.normal.textColor = Color.green;
+            // 惰性创建并静态缓存按钮样式（GUI.skin 需在 GUI 上下文中访问）
+            if (_greenButtonStyle == null)
+            {
+                _greenButtonStyle = new GUIStyle(GUI.skin.button);
+                _greenButtonStyle.normal.textColor = Color.green;
+            }
 
             // 2. 绘制我们自定义的列表
             _reorderableList.DoLayoutList();
@@ -105,7 +116,7 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind.Editor
             if (GUILayout.Button("FillIdOrIndex"))
                 FillIdOrIndex();
 
-            if (GUILayout.Button("Generate SetData Code", style))
+            if (GUILayout.Button("Generate SetData Code", _greenButtonStyle))
                 GenerateSetterCode();
 
             // 显示生成的代码
@@ -214,7 +225,10 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind.Editor
                     string baseName = componentRef.name.ToLower().Replace(' ', '_');
                     string finalId = string.IsNullOrEmpty(typeSuffix) ? baseName : $"{baseName}_{typeSuffix}";
 
+                    // 对场景中子组件的改动需记录撤销并标脏，否则改动丢失且不可撤销（参照 RefreshList 的做法）
+                    Undo.RecordObject(componentRef, "Fill Bind ID");
                     ((IUIBindComponent)componentRef).SetID(finalId);
+                    EditorUtility.SetDirty(componentRef);
                 }
             }
             else if (bindTypeIndex == 1) // Index 模式
@@ -231,7 +245,10 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind.Editor
                         continue;
                     }
 
+                    // 同上：记录撤销并标脏
+                    Undo.RecordObject(componentRef, "Fill Bind Index");
                     ((IUIBindComponent)componentRef).SetIndex(i);
+                    EditorUtility.SetDirty(componentRef);
                 }
             }
 

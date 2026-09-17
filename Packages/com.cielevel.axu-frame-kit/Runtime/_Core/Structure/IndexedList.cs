@@ -65,6 +65,7 @@ namespace AxuFrameKit._Core.Structure
         /// <param name="index">插入的索引位置</param>
         /// <param name="item">要插入的元素</param>
         /// <exception cref="ArgumentOutOfRangeException">索引超出范围时抛出</exception>
+        /// <exception cref="ArgumentException">元素已存在时抛出（统一采用索引器 setter 的口径：容器不允许重复元素，重复即视为调用方错误）</exception>
         public void Insert(int index, T item)
         {
             if (index < 0 || index > _list.Count)
@@ -73,8 +74,9 @@ namespace AxuFrameKit._Core.Structure
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
+            // 与索引器 setter 统一口径：重复元素抛异常，不再静默跳过
             if (_indexDict.ContainsKey(item))
-                return;
+                throw new ArgumentException("Duplicate item.", nameof(item));
 
             _list.Insert(index, item);
 

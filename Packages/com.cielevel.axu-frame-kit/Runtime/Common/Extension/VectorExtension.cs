@@ -161,11 +161,13 @@ namespace AxuFrameKit.Common.Extension
         // ==================== 向量检测 ====================
 
         /// <summary>
-        /// 检测向量是否包含 NaN 或 Infinity
+        /// 检测向量是否包含 NaN 或 Infinity（与文档口径一致，非法值统一返回 true）
         /// </summary>
         public static bool IsNaN(this Vector3 v)
         {
-            return float.IsNaN(v.x) || float.IsNaN(v.y) || float.IsNaN(v.z);
+            return float.IsNaN(v.x) || float.IsInfinity(v.x) ||
+                   float.IsNaN(v.y) || float.IsInfinity(v.y) ||
+                   float.IsNaN(v.z) || float.IsInfinity(v.z);
         }
 
         /// <summary>
@@ -173,7 +175,8 @@ namespace AxuFrameKit.Common.Extension
         /// </summary>
         public static bool IsNaN(this Vector2 v)
         {
-            return float.IsNaN(v.x) || float.IsNaN(v.y);
+            return float.IsNaN(v.x) || float.IsInfinity(v.x) ||
+                   float.IsNaN(v.y) || float.IsInfinity(v.y);
         }
 
         /// <summary>

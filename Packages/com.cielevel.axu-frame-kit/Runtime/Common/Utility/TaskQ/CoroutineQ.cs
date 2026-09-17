@@ -27,6 +27,7 @@ namespace AxuFrameKit.Common.Utility.TaskQ
 
     /// <summary>
     /// 协程队列；支持从不同线程入队；但是所有执行都会在主线程上进行。
+    /// 子协程异常只跳过该项并继续队列，不会终止父 Loop（修复异常后 _isRunning 残留导致的假死）。
     /// </summary>
     public class CoroutineQ : MultitonMono<CoroutineQ>, ICoroutineQ
     {
@@ -97,15 +98,55 @@ namespace AxuFrameKit.Common.Utility.TaskQ
 
         private IEnumerator Loop()
         {
-            while (_isRunning)
+            try
             {
-                while (0 < _insertQ.Count && _insertQ.TryDequeue(out var insertNext))
-                    yield return StartCoroutine(insertNext);
+                while (_isRunning)
+                {
+                    // 插入队列优先消费，全部经安全宿主步进，异常不再波及父 Loop
+                    while (0 < _insertQ.Count && _insertQ.TryDequeue(out var insertNext))
+                        yield return SafeHost(insertNext);
 
-                if (0 < _queue.Count && _queue.TryDequeue(out var next))
-                    yield return StartCoroutine(next);
-                else
-                    yield return null;
+                    if (0 < _queue.Count && _queue.TryDequeue(out var next))
+                        yield return SafeHost(next);
+                    else
+                        yield return null; // 空队列让出一帧，避免每帧空转
+                }
+            }
+            finally
+            {
+                // Loop 无论正常跑完、被 Pause 的 StopCoroutine 停止，还是子协程异常导致的意外终止，
+                // 退出时都复位状态，保证 Run 的守卫条件自洽、不再出现 _isRunning 残留 true 的假死
+                _isRunning = false;
+                _loopCoroutine = null;
+            }
+        }
+
+        /// <summary>
+        /// 子协程安全宿主：手动步进子协程（不再经 StartCoroutine 嵌套），
+        /// 每次 MoveNext 均由 try/catch 保护——子协程抛异常只终止该项（LogError 后队列继续），
+        /// 子协程的挂起指令原样转发给 Unity 调度器，步进节奏与原生嵌套协程一致。
+        /// </summary>
+        private static IEnumerator SafeHost(IEnumerator routine)
+        {
+            while (true)
+            {
+                bool moved;
+                object current;
+                try
+                {
+                    moved = routine.MoveNext();
+                    current = moved ? routine.Current : null;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[CoroutineQ] 子协程异常，跳过该项继续队列：{ex}");
+                    yield break;
+                }
+
+                if (!moved)
+                    yield break;
+
+                yield return current;
             }
         }
 

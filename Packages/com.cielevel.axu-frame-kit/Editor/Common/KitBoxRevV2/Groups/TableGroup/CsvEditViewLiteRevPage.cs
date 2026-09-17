@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using AxuFrameKit.Common.Editor.KitBoxRevV2.Core;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -155,11 +156,73 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             _currentCsvPath = path;
             _pathLabel.text = Path.GetFileName(path);
 
-            var lines = File.ReadAllLines(path);
             _tableData.Clear();
-            foreach (var l in lines) _tableData.Add(l.Split(',').ToList());
+            // 带引号语义加载：引号包裹的字段可内嵌换行，故先把物理行合并为逻辑行
+            // （累计引号数为偶数即闭合），再逐逻辑行走 ParseCsvLine 解析，
+            // 保证与保存侧的 EscapeCsvField 对称往返
+            var logicalLine = new StringBuilder();
+            int quoteCount = 0;
+            foreach (var rawLine in File.ReadAllLines(path))
+            {
+                if (logicalLine.Length > 0) logicalLine.Append('\n');
+                logicalLine.Append(rawLine);
+                quoteCount += rawLine.Count(c => c == '"');
+
+                if (quoteCount % 2 == 0)
+                {
+                    _tableData.Add(ParseCsvLine(logicalLine.ToString()));
+                    logicalLine.Clear();
+                    quoteCount = 0;
+                }
+            }
+
+            // 兜底：末尾引号未闭合的残行也按一行解析，不丢数据
+            if (logicalLine.Length > 0) _tableData.Add(ParseCsvLine(logicalLine.ToString()));
 
             RefreshGrid();
+        }
+
+        /// <summary>
+        /// 带引号语义解析一行（逻辑行）CSV：字段以逗号分隔；引号包裹的字段内
+        /// 逗号 / 引号 / 换行均视为数据，内部引号以连续两个引号表示。
+        /// 与 <see cref="EscapeCsvField"/> 对称：后者转义出的内容可被本方法原样解析回来。
+        /// </summary>
+        private static List<string> ParseCsvLine(string line)
+        {
+            var fields = new List<string>();
+            var field = new StringBuilder();
+            bool inQuotes = false;
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+                if (inQuotes)
+                {
+                    if (c == '"')
+                    {
+                        // 连续两个引号 = 转义出的一个引号；单个引号 = 引号字段结束
+                        if (i + 1 < line.Length && line[i + 1] == '"') { field.Append('"'); i++; }
+                        else inQuotes = false;
+                    }
+                    else field.Append(c);
+                }
+                else if (c == '"') inQuotes = true;
+                else if (c == ',') { fields.Add(field.ToString()); field.Clear(); }
+                else field.Append(c);
+            }
+
+            // 收尾字段（空行解析为单个空字段，与旧 Split(',') 行为一致）
+            fields.Add(field.ToString());
+            return fields;
+        }
+
+        /// <summary>带引号语义转义字段：含逗号 / 引号 / 换行 / 回车时用引号包裹，内部引号翻倍。</summary>
+        private static string EscapeCsvField(string field)
+        {
+            field ??= string.Empty;
+            bool needQuote = field.IndexOf(',') >= 0 || field.IndexOf('"') >= 0
+                || field.IndexOf('\n') >= 0 || field.IndexOf('\r') >= 0;
+            return needQuote ? "\"" + field.Replace("\"", "\"\"") + "\"" : field;
         }
 
         private void RefreshGrid()
@@ -216,13 +279,27 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
         private void SaveCsv()
         {
             if (string.IsNullOrEmpty(_currentCsvPath)) return;
-            var lines = _tableData.Select(r => string.Join(",", r));
-            File.WriteAllLines(_currentCsvPath, lines);
+
+            // 覆盖写入前把旧文件复制为 .bak 备份，误存后可手动回退（备份失败仅告警，不阻断保存）
+            try
+            {
+                if (File.Exists(_currentCsvPath)) File.Copy(_currentCsvPath, _currentCsvPath + ".bak", true);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[CSV 编辑器] 覆盖前备份旧文件失败（将继续保存）: {ex.Message}");
+            }
+
+            // 逐字段做带引号语义的转义（与加载侧 ParseCsvLine 对称）；编码固定 UTF8 无 BOM
+            var lines = _tableData.Select(r => string.Join(",", r.Select(EscapeCsvField)));
+            File.WriteAllLines(_currentCsvPath, lines, new UTF8Encoding(false));
             AssetDatabase.Refresh();
             EditorUtility.DisplayDialog("提示", "保存完成", "确定");
         }
 
         public void Refresh() => RefreshGrid();
+        public void OnEnter() { }
+        public void OnExit() { }
         public void DrawIMGUI() { }
     }
 }

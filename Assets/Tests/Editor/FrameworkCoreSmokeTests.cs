@@ -31,10 +31,8 @@ namespace AxuFrameKitV2.Tests
             var bd = new BiDictionary<int, string>();
             bd.Add(1, "one");
 
-            // Add 在拒绝重复键/值时会经 Logger.Error 记录日志，需声明为预期日志
-            LogAssert.Expect(LogType.Error, "BiDictionary: 重复键值->1");
+            // Add 拒绝重复键/值时直接抛异常；不再自行记录日志，避免与调用方日志形成双重上报
             Assert.Throws<ArgumentException>(() => bd.Add(1, "uno"));
-            LogAssert.Expect(LogType.Error, "BiDictionary: 重复键值->one");
             Assert.Throws<ArgumentException>(() => bd.Add(11, "one"));
         }
 

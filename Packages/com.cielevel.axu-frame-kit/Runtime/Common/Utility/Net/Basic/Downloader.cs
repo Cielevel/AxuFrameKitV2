@@ -15,10 +15,14 @@ namespace AxuFrameKit.Common.Utility.Net
 
         private static readonly Vector2 _pivot = new Vector2(0.5f, 0.5f);
 
+        /// <summary> 请求超时（秒），防止挂起的下载永久占用调用方 </summary>
+        private const int DefaultTimeoutSeconds = 30;
+
 #if UNI_TASK
         private static async Task<Texture2D> DownloadTextureTask(string url, CancellationTokenSource tokenSource = null)
         {
             using UnityWebRequest uwr = UnityWebRequestTexture.GetTexture(url);
+            uwr.timeout = DefaultTimeoutSeconds;
             var operation = uwr.SendWebRequest();
 
             if (tokenSource != null)
@@ -35,7 +39,7 @@ namespace AxuFrameKit.Common.Utility.Net
                         || uwr.result == UnityWebRequest.Result.DataProcessingError
                         || uwr.result == UnityWebRequest.Result.ProtocolError)
             {
-                DebugEx.Log("下载头像失败，msg：" + uwr.error + "，头像地址为：" + url);
+                Debug.LogWarning("下载头像失败，msg：" + uwr.error + "，头像地址为：" + url);
                 return null;
             }
             return null;
@@ -57,6 +61,7 @@ namespace AxuFrameKit.Common.Utility.Net
         private static async Task<Texture2D> DownloadTextureTask(string url)
         {
             using var uwr = UnityWebRequestTexture.GetTexture(url);
+            uwr.timeout = DefaultTimeoutSeconds;
 
             var operation = uwr.SendWebRequest();
 
@@ -82,6 +87,7 @@ namespace AxuFrameKit.Common.Utility.Net
         public IEnumerator DownloadSprite(string url, Action<Sprite> callback, float pixelPerUnit = 100f) // 始终提供一个协程版本
         {
             using var uwr = UnityWebRequestTexture.GetTexture(url);
+            uwr.timeout = DefaultTimeoutSeconds;
             yield return uwr.SendWebRequest();
 
             switch (uwr.result)

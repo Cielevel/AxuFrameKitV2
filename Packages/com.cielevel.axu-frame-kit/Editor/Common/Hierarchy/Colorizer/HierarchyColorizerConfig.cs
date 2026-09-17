@@ -8,10 +8,17 @@ namespace AxuFrameKit.Common.Editor.Hierarchy
     [Serializable]
     public class ColorRule
 {
-    public bool enabled = true;
-    public string pattern = "";
-    public MatchType matchType = MatchType.Prefix;
-    public Color color = new Color(0.3f, 0.8f, 0.3f, 0.3f);
+        public bool enabled = true;
+        public string pattern = "";
+        public MatchType matchType = MatchType.Prefix;
+        public Color color = new Color(0.3f, 0.8f, 0.3f, 0.3f);
+
+        /// <summary>
+        /// Layer 匹配模式下的层名预解析结果（-1 表示无效/未解析）。
+        /// 不参与序列化，由 HierarchyColorizer.RefreshConfig 刷新，
+        /// 避免 Hierarchy 逐帧绘制时对每个物体每条规则调用 LayerMask.NameToLayer。
+        /// </summary>
+        [NonSerialized] public int cachedLayer = -1;
 
     public enum MatchType
     {

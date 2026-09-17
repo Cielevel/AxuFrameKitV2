@@ -10,7 +10,8 @@ namespace AxuFrameKit.Tests.Editor
 {
     /// <summary>
     /// [Axu/Editor/SceneSets] SceneSetPresetStore：多场景组合预设的 JSON 落盘往返、
-    /// 损坏自愈（.bak 重建）、存在性校验与同名覆盖。
+    /// 损坏自愈（保留 .corrupt 后空档重建，仅默认路径弹窗告知，临时注入路径不弹窗）、
+    /// 存在性校验与同名覆盖。
     /// 全部走临时 path 注入（系统 Temp 下随机目录，SetUp 建 / TearDown 整目录删），
     /// 不打开/保存任何真实场景；"存在场景"用例直接复用工程内已有 SceneAsset
     /// （AssetDatabase.FindAssets 检索现成 .unity）——不经手写场景 YAML、不 ImportAsset、
@@ -77,7 +78,7 @@ namespace AxuFrameKit.Tests.Editor
         }
 
         [Test]
-        public void Load_文件损坏_返回空列表不抛异常并生成bak()
+        public void Load_文件损坏_返回空列表不抛异常并保留corrupt()
         {
             // Arrange：写入非法 JSON
             File.WriteAllText(_tempPath, "{oops");
@@ -88,13 +89,13 @@ namespace AxuFrameKit.Tests.Editor
             Assert.That(loaded, Is.Not.Null);
             Assert.That(loaded, Is.Empty);
 
-            // 损坏文件应被改名 .bak（原文件移走）
-            Assert.That(File.Exists(_tempPath + ".bak"), Is.True, "损坏文件应备份为 .bak");
+            // 损坏文件应被改名 .corrupt 保留（原文件移走）；临时注入路径不弹窗（弹窗仅限默认路径）
+            Assert.That(File.Exists(_tempPath + ".corrupt"), Is.True, "损坏文件应保留为 .corrupt");
             Assert.That(File.Exists(_tempPath), Is.False, "原损坏文件应已被移走");
         }
 
         [Test]
-        public void Load_文件不存在_返回空列表且不产生bak()
+        public void Load_文件不存在_返回空列表且不产生corrupt()
         {
             // Act
             var loaded = SceneSetPresetStore.LoadPresets(_tempPath);
@@ -102,7 +103,7 @@ namespace AxuFrameKit.Tests.Editor
             // Assert
             Assert.That(loaded, Is.Not.Null);
             Assert.That(loaded, Is.Empty);
-            Assert.That(File.Exists(_tempPath + ".bak"), Is.False, "文件本就不存在时不应产生 .bak");
+            Assert.That(File.Exists(_tempPath + ".corrupt"), Is.False, "文件本就不存在时不应产生 .corrupt");
         }
 
         [Test]

@@ -44,7 +44,8 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
         {
             _kitBox = kitBox;
             RefreshSelectedAssets();
-            Selection.selectionChanged += RefreshSelectedAssets;
+            // 全局选中订阅移至 OnEnter/OnExit：页面在窗口启动时即被 Init，
+            // 若在此订阅会在未展示期间持续接收回调且切页后无法注销
         }
 
         public VisualElement CreateContent()
@@ -456,6 +457,20 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
         public void Refresh()
         {
             RefreshSelectedAssets();
+        }
+
+        public void OnEnter()
+        {
+            // 进入页面：订阅选中变化（先防御性注销，防止重复叠加），并同步一次当前选中
+            Selection.selectionChanged -= RefreshSelectedAssets;
+            Selection.selectionChanged += RefreshSelectedAssets;
+            RefreshSelectedAssets();
+        }
+
+        public void OnExit()
+        {
+            // 离开页面：注销全局选中订阅
+            Selection.selectionChanged -= RefreshSelectedAssets;
         }
 
         public void DrawIMGUI() { }

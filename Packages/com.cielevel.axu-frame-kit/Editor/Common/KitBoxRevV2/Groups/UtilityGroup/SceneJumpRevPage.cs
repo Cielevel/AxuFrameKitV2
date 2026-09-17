@@ -27,13 +27,17 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
         private ScrollView _contentScrollView;
         private VisualElement _root;
 
+        // projectChanged 防抖脏标记：事件只置位，刷新经 delayCall 合并，避免一批导入连发多次全量重建
+        private bool _projectDirty;
+
         public void Init(IKitBoxRevV2 kitBox)
         {
             _kitBox = kitBox;
             LoadFavoriteScenes();
             LoadGroups();
             CollectScenes();
-            EditorApplication.projectChanged += OnProjectChanged;
+            // projectChanged 订阅移至 OnEnter/OnExit：页面在窗口启动时即被 Init，
+            // 在此订阅会在未展示期间持续全工程 FindAssets + 全 UI 重建
         }
 
         public VisualElement CreateContent()
@@ -84,8 +88,36 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
 
         private void OnProjectChanged()
         {
+            // 防抖：projectChanged 高频触发（批量导入会连发多次），只置脏标记，
+            // 由 delayCall 合并到下一次编辑器更新时统一刷新一次
+            if (_projectDirty) return;
+            _projectDirty = true;
+            EditorApplication.delayCall += HandleProjectChanged;
+        }
+
+        /// <summary>delayCall 里执行的合并刷新（真正的 CollectScenes + 重建 UI）。</summary>
+        private void HandleProjectChanged()
+        {
+            _projectDirty = false;
             CollectScenes();
             RefreshContent();
+        }
+
+        public void OnEnter()
+        {
+            // 进入页面：订阅工程变化（先防御性注销，防止重复叠加），并刷新一次数据与 UI
+            EditorApplication.projectChanged -= OnProjectChanged;
+            EditorApplication.projectChanged += OnProjectChanged;
+            CollectScenes();
+            RefreshContent();
+        }
+
+        public void OnExit()
+        {
+            // 离开页面：注销全局订阅与未触发的合并刷新（进页时会重新收集，不丢数据）
+            EditorApplication.projectChanged -= OnProjectChanged;
+            EditorApplication.delayCall -= HandleProjectChanged;
+            _projectDirty = false;
         }
 
         private void CollectScenes()

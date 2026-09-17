@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using AxuFrameKit._Core.Extension;
+using AxuFrameKit._Core.Utility.Common;
 
 namespace AxuFrameKit._Core.Utility.RandomX
 {
@@ -20,7 +20,7 @@ namespace AxuFrameKit._Core.Utility.RandomX
         {
             if (count > InnerNicknames.Length)
             {
-                Debug.LogWarning("获取随机名称数组时，数量超出了内置名称数组！");
+                Logger.Warning("获取随机名称数组时，数量超出了内置名称数组！");
                 return InnerNicknames;
             }
 

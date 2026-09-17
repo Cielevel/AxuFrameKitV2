@@ -333,7 +333,8 @@ namespace AxuFrameKit._Core.Extension
         }
         
         /// <summary>
-        /// 获取n个不重复元素，如果count大于了集合大小，则返回集合本身（Array）；以Hash晒重
+        /// 获取n个不重复元素（以 Hash 去重）。源集合允许含重复元素：先去重得到候选池，
+        /// 若 n 不小于去重后的候选数量，则直接返回全部唯一元素（原实现会因去重上限不足而死循环）。
         /// </summary>
         public static T[] GetRandomUniqueItems<T>(this IEnumerable<T> source, int n)
         {
@@ -344,17 +345,19 @@ namespace AxuFrameKit._Core.Extension
             }
 
             var list = source as IReadOnlyList<T> ?? source.ToArray();
-            
-            if (n >= list.Count)
-                return list.ToArray(); // 如果 n >= 集合大小，直接返回整个集合
 
-            var random = new Random();
+            // 源集合可能含重复元素：先按元素去重，否则可选取的唯一元素不足 n 时 while 将永不满足
+            var uniqueItems = list.Distinct().ToArray();
+
+            if (n >= uniqueItems.Length)
+                return uniqueItems; // n >= 去重后上限，直接返回全部唯一元素
+
             var result = new HashSet<T>(); // 使用 HashSet 去重
 
             while (result.Count < n)
             {
-                var randomIndex = random.Next(list.Count);
-                result.Add(list[randomIndex]); // 自动去重
+                var randomIndex = Ran.Next(uniqueItems.Length); // 复用文件顶部共享随机源，避免每次新建 Random
+                result.Add(uniqueItems[randomIndex]); // 自动去重
             }
 
             return result.ToArray();

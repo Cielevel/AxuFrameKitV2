@@ -45,10 +45,9 @@ namespace AxuFrameKit.Common.UI.Kit.Toast
         // 用于跟踪当前显示的 Unit 列表
         private readonly IndexedList<T> _showingUnitList = new(DefaultCapacity);
 
-        protected override void Start()
+        private void Awake()
         {
-            base.Start();
-
+            // 池在 Awake 创建：外部在实例化同帧（Start 之前）调用 Toast() 时 _toastPool 已可用，避免 NRE
             // PoolOnGet 和 PoolOnRelease 不再进行动画操作，只负责通知 Unit 状态改变
             _toastPool = new SimpleObjPool<T>(PoolConstructor, PoolOnGet, PoolOnRelease);
         }

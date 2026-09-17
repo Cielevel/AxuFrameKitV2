@@ -23,6 +23,10 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
         private List<Type> _availableItemTypes;
         private string[] _itemTypeNames;
 
+        // 列表元素头部样式与内容的静态缓存，避免 drawElementCallback 内每个元素每帧 new
+        private static GUIStyle _headerStyle;
+        private static GUIContent _headerContent;
+
 
 
         private void OnEnable()
@@ -147,19 +151,27 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
                 string displayTitle = itemName;
 
                 // 准备样式 - 使用普通 foldout 样式（透明无背景），但加上粗体和裁剪
-                var headerStyle = new GUIStyle(EditorStyles.foldout);
-                headerStyle.fontStyle = FontStyle.Bold;
-                headerStyle.fixedWidth = 0;
-                headerStyle.stretchWidth = true;
+                // 样式与内容均静态缓存复用，仅原地更新文本，避免每个元素每帧分配
+                if (_headerStyle == null)
+                {
+                    _headerStyle = new GUIStyle(EditorStyles.foldout)
+                    {
+                        fontStyle = FontStyle.Bold,
+                        fixedWidth = 0,
+                        stretchWidth = true
+                    };
+                }
+                if (_headerContent == null) _headerContent = new GUIContent();
 
                 // 调整一下文字颜色，确保在深色自定义背景上清晰可见（可选，视情况而定，默认颜色通常没问题）
-                // headerStyle.normal.textColor = Color.white; 
+                // _headerStyle.normal.textColor = Color.white;
 
                 // 使用 GUIContent 以便支持 Tooltip
-                GUIContent labelContent = new GUIContent(displayTitle, displayTitle);
+                _headerContent.text = displayTitle;
+                _headerContent.tooltip = displayTitle;
 
                 // 直接使用 element.isExpanded 存储状态
-                element.isExpanded = EditorGUI.Foldout(foldoutRect, element.isExpanded, labelContent, true, headerStyle);
+                element.isExpanded = EditorGUI.Foldout(foldoutRect, element.isExpanded, _headerContent, true, _headerStyle);
 
                 if (element.isExpanded)
                 {

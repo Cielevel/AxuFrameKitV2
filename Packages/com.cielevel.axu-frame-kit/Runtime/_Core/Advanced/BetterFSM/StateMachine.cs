@@ -38,7 +38,7 @@ namespace AxuFrameKit._Core.Advanced.BetterFSM
         /// <param name="state">目标状态实例</param>
         public void SetState(IState state)
         {
-            _current = _nodes[state.GetType()];
+            _current = GetOrAddNode(state);
             _current.State?.OnEnter();
         }
 
@@ -51,11 +51,11 @@ namespace AxuFrameKit._Core.Advanced.BetterFSM
             if (state == _current.State) return;
 
             var previousState = _current.State;
-            var nextState = _nodes[state.GetType()].State;
+            var nextNode = GetOrAddNode(state);
 
             previousState?.OnExit();
-            nextState?.OnEnter();
-            _current = _nodes[state.GetType()];
+            nextNode.State?.OnEnter();
+            _current = nextNode;
         }
 
         /// <summary>

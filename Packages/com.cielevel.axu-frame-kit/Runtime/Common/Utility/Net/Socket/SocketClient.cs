@@ -158,7 +158,7 @@ namespace AxuFrameKit.Common.Utility.Net
             }
             catch (Exception ex)
             {
-                try { client?.Close(); } catch { }
+                try { client?.Close(); } catch { Log("Ignored exception while closing socket after failed connect."); }
                 HandleError(ex);
 
                 if (isReconnect)
@@ -301,13 +301,13 @@ namespace AxuFrameKit.Common.Utility.Net
 
                 if (_stream != null)
                 {
-                    try { _stream.Close(); } catch { }
+                    try { _stream.Close(); } catch { Log("Ignored exception while closing stream."); }
                     _stream = null;
                 }
 
                 if (_tcpClient != null)
                 {
-                    try { _tcpClient.Close(); } catch { }
+                    try { _tcpClient.Close(); } catch { Log("Ignored exception while closing tcp client."); }
                     _tcpClient = null;
                 }
             }
@@ -384,8 +384,10 @@ namespace AxuFrameKit.Common.Utility.Net
                             await ConnectCoreAsync(_host, _port, isReconnect: true, _disposeCts.Token).ConfigureAwait(false);
                             return;
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            Log($"Reconnect attempt {_reconnectAttempt} failed: {ex.Message}");
+
                             lock (_stateLock)
                             {
                                 _reconnectAttempt++;

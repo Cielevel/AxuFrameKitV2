@@ -15,6 +15,9 @@ namespace AxuFrameKit.Common.Utility.Net
         private const string PostMethod = "POST";
         private const string GetMethod = "GET";
 
+        /// <summary> 请求超时（秒）。UnityWebRequest 默认 0 = 永不超时，挂起的请求会永久占住调用方 </summary>
+        private const int DefaultTimeoutSeconds = 30;
+
 #if UNI_TASK
         /// <summary>
         /// 发送Post请求，将发送一个json，返回json字符串
@@ -24,6 +27,7 @@ namespace AxuFrameKit.Common.Utility.Net
         public static async UniTask<string> Post(string url, string jsonData)
         {
             using UnityWebRequest uwr = new (url, PostMethod);
+            uwr.timeout = DefaultTimeoutSeconds;
             uwr.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonData));
             uwr.downloadHandler = new DownloadHandlerBuffer();
             uwr.SetRequestHeader("Content-Type", "application/json");
@@ -45,6 +49,7 @@ namespace AxuFrameKit.Common.Utility.Net
             VerifyHeader(url, PostMethod, @params);
             
             using UnityWebRequest uwr = new(url, PostMethod);
+            uwr.timeout = DefaultTimeoutSeconds;
 
             if (jsonData != null && jsonData.IsNotNullOrEmpty())
             {
@@ -73,6 +78,7 @@ namespace AxuFrameKit.Common.Utility.Net
             VerifyHeader(url, GetMethod, @params);
             
             using UnityWebRequest uwr = new(url, GetMethod);
+            uwr.timeout = DefaultTimeoutSeconds;
             uwr.downloadHandler = new DownloadHandlerBuffer();
             for (int i = 0; i < @params.Length; i++)
                 uwr.SetRequestHeader(@params[i].headName, @params[i].headValue);
@@ -94,6 +100,7 @@ namespace AxuFrameKit.Common.Utility.Net
         public static async Task<string> Post(string url, string jsonData)
         {
             using UnityWebRequest uwr = new(url, PostMethod);
+            uwr.timeout = DefaultTimeoutSeconds;
             uwr.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonData));
             uwr.downloadHandler = new DownloadHandlerBuffer();
             uwr.SetRequestHeader("Content-Type", "application/json");
@@ -115,6 +122,7 @@ namespace AxuFrameKit.Common.Utility.Net
             VerifyHeader(url, PostMethod, @params);
 
             using UnityWebRequest uwr = new(url, PostMethod);
+            uwr.timeout = DefaultTimeoutSeconds;
 
             if (jsonData != null && jsonData.IsNotNullOrEmpty())
             {
@@ -143,6 +151,7 @@ namespace AxuFrameKit.Common.Utility.Net
             VerifyHeader(url, GetMethod, @params);
 
             using UnityWebRequest uwr = new(url, GetMethod);
+            uwr.timeout = DefaultTimeoutSeconds;
             uwr.downloadHandler = new DownloadHandlerBuffer();
             for (int i = 0; i < @params.Length; i++)
                 uwr.SetRequestHeader(@params[i].headName, @params[i].headValue);
@@ -164,10 +173,6 @@ namespace AxuFrameKit.Common.Utility.Net
 
         private static readonly HashSet<string> _reservedHeaders = new()
         {
-            "host",
-            "content-length",
-            "connection",
-            "transfer-encoding",
             "host",
             "content-length",
             "connection",

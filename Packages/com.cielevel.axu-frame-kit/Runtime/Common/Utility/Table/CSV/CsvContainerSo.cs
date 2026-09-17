@@ -64,7 +64,10 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
             }
         }
 
-        public int Count => TableUnitList?.Count ?? -1;
+        /// <summary>
+        /// 当前元素数量。未加载时与 foreach 口径一致，返回 0（空集合），不再返回 -1。
+        /// </summary>
+        public int Count => TableUnitList?.Count ?? 0;
 
         #region Dictionary
 
@@ -86,9 +89,16 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
 
         public void SetSelfDictionary(Func<T, string> converter)
         {
+            var list = TableUnitList;
+            if (list == null)
+            {
+                Debug.LogError($"[{GetType().Name}] SetSelfDictionary: 表数据未加载（TableUnitList 为 null），跳过字符串字典构建。");
+                return;
+            }
+
             try
             {
-                _tableUnitStrDictionary = TableUnitList.ToDictionary(converter);
+                _tableUnitStrDictionary = list.ToDictionary(converter);
             }
             catch (ArgumentException ex)
             {
@@ -98,9 +108,16 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
 
         public void SetSelfDictionary(Func<T, int> converter)
         {
+            var list = TableUnitList;
+            if (list == null)
+            {
+                Debug.LogError($"[{GetType().Name}] SetSelfDictionary: 表数据未加载（TableUnitList 为 null），跳过整数字典构建。");
+                return;
+            }
+
             try
             {
-                _tableUnitIntDictionary = TableUnitList.ToDictionary(converter);
+                _tableUnitIntDictionary = list.ToDictionary(converter);
             }
             catch (ArgumentException ex)
             {
@@ -110,9 +127,16 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
 
         public void SetSelfDictionary(Func<T, long> converter)
         {
+            var list = TableUnitList;
+            if (list == null)
+            {
+                Debug.LogError($"[{GetType().Name}] SetSelfDictionary: 表数据未加载（TableUnitList 为 null），跳过长整型字典构建。");
+                return;
+            }
+
             try
             {
-                _tableUnitLongDictionary = TableUnitList.ToDictionary(converter);
+                _tableUnitLongDictionary = list.ToDictionary(converter);
             }
             catch (ArgumentException ex)
             {
@@ -258,12 +282,12 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
         #region IDisposable（标准模式）
 
         /// <summary>
-        /// 手动释放资源。调用后将抑制析构函数，避免二次释放。
+        /// 手动释放资源，清空已加载的表数据与字典。
+        /// ScriptableObject 属托管资源，不挂 finalizer（析构会与 Unity 生命周期冲突）。
         /// </summary>
         public void Dispose()
         {
             Dispose(true);
-            GC.SuppressFinalize(this);
         }
 
         /// <param name="disposing">true = 由 Dispose() 主动调用；false = 由析构函数调用（仅释放非托管资源）。</param>
@@ -287,11 +311,6 @@ namespace AxuFrameKit.Common.Utility.Table.CSV
             }
 
             _disposed = true;
-        }
-
-        ~CsvContainerSo()
-        {
-            Dispose(false);
         }
 
         #endregion

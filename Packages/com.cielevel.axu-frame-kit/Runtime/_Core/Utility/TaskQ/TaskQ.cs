@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
 using AxuFrameKit._Core.Utility.Multiton;
 using AxuFrameKit._Core.Utility.Common;
 
@@ -11,58 +10,28 @@ namespace AxuFrameKit._Core.Utility.TaskQ
     /// </summary>
     public class TaskQ : Multiton<TaskQ>, ITaskQ
     {
-        public bool IsRunning { get; private set; }
+        private readonly TaskQueueEngine _engine;
 
-        private readonly ConcurrentQueue<Func<Task>> _taskQueue = new();
+        public TaskQ() => _engine = new TaskQueueEngine(ex => Logger.Error($"任务执行失败: {ex}"));
 
-        private Task _currentTask;
-
-        private async Task ProcessQueueAsync()
-        {
-            try
-            {
-                while (IsRunning)
-                {
-                    if (_taskQueue.TryDequeue(out var taskFunc))
-                    {
-                        try
-                        {
-                            await taskFunc.Invoke();
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Error($"任务执行失败: {ex}");
-                        }
-                    }
-                    else
-                        await Task.Yield();
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                Logger.Error("任务队列已取消，TaskQ.Key：" + Key);
-            }
-            finally
-            {
-                IsRunning = false;
-            }
-        }
+        public bool IsRunning => _engine.IsRunning;
 
         public ITaskQ EnQ(Func<Task> func)
         {
-            _taskQueue.Enqueue(func);
+            // 本队列无取消语义，统一适配为忽略令牌的引擎任务
+            _engine.Enqueue(_ => func());
             return this;
         }
 
         ITaskQ ITaskQ.Then(Func<Task> func)
         {
-            _taskQueue.Enqueue(func);
+            _engine.Enqueue(_ => func());
             return this;
         }
 
         ITaskQ ITaskQ.Then(Action action)
         {
-            _taskQueue.Enqueue(() =>
+            _engine.Enqueue(_ =>
             {
                 action?.Invoke();
                 return Task.CompletedTask;
@@ -72,39 +41,20 @@ namespace AxuFrameKit._Core.Utility.TaskQ
 
         public ITaskQ Delay(float delay)
         {
-            _taskQueue.Enqueue(async () => { await Task.Delay(TimeSpan.FromSeconds(delay)); });
+            // 不携带取消令牌：Stop 需等当前 Delay 自然结束（保持旧语义）
+            _engine.Enqueue(async _ => { await Task.Delay(TimeSpan.FromSeconds(delay)); });
             return this;
         }
 
         /// <summary>
         /// 运行当前的同步队列，在stop后，也可再次Run实现Continue
         /// </summary>
-        public async void Run()
-        {
-            try
-            {
-                if (IsRunning)
-                    return;
-                IsRunning = true;
-                await ProcessQueueAsync();
-            }
-            catch (Exception e)
-            {
-                Logger.Exception(e);
-            }
-        }
+        public void Run() => _engine.Run();
 
-        public void Stop()
-        {
-            IsRunning = false;
-        }
+        public void Stop() => _engine.Stop();
 
-        public void StopAndClear()
-        {
-            IsRunning = false;
-            _taskQueue.Clear();
-        }
+        public void StopAndClear() => _engine.StopAndClear();
 
-        public override void OnDispose() => _taskQueue.Clear();
+        public override void OnDispose() => _engine.StopAndClear();
     }
 }

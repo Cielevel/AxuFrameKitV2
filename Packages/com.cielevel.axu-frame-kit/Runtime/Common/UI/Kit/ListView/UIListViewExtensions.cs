@@ -17,6 +17,8 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
         {
             if (adapter == null)
             {
+                // 解绑旧适配器订阅并清空列表
+                listView.UnbindAdapter();
                 listView.Clear();
                 return;
             }
@@ -24,9 +26,9 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
             // 设置初始数据
             listView.SetDataSource(adapter.GetDataList());
 
-            // 监听数据变更
-            adapter.OnDataChanged -= () => OnAdapterDataChanged(listView, adapter);
-            adapter.OnDataChanged += () => OnAdapterDataChanged(listView, adapter);
+            // 订阅数据变更：委托缓存在 listView 内部（BindAdapter），
+            // 保证同一适配器重复 SetAdapter 不叠加订阅，listView 销毁时自动退订
+            listView.BindAdapter(adapter, () => OnAdapterDataChanged(listView, adapter));
         }
 
         private static void OnAdapterDataChanged(UIListView listView, UIListViewAdapter adapter)
@@ -74,16 +76,6 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
             // 通过反射或扩展方式调用内部方法
             // 由于 ScrollToItem 已经在 UIListView 中实现，这里直接调用
             listView.ScrollToItem(index, animated, duration);
-        }
-
-        /// <summary>
-        /// 获取当前可见项的索引范围
-        /// </summary>
-        public static (int start, int end) GetVisibleRange(this UIListView listView)
-        {
-            // 此扩展需要通过反射获取私有字段，这里提供接口说明
-            // 实际实现可以在 UIListView 中添加公共方法
-            return (0, 0);
         }
     }
 }

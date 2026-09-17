@@ -25,7 +25,7 @@ namespace AxuFrameKit.Common.Utility.Math.Interpolation
         public static void Replay(IAxuTweener tween)
         {
             tween.Replay();
-            Runner.AddTween(tween); // TODO Replay存在隐患：对于在运行中的Tweener，进行Replay，会重复添加到Runner中。
+            Runner.AddTween(tween); // 运行中的Tweener重复添加已由 AxuTweenRunner.AddTween 内部去重防护
         }
 
         public static AxuTweener<object> Custom(float start, float end, float duration, Action<float> setter)
@@ -73,7 +73,10 @@ namespace AxuFrameKit.Common.Utility.Math.Interpolation
         void IAxuTweenRunner.AddTween(IAxuTweener tweener)
         {
             tweener.Startup();
-            _tweenList.Add(tweener);
+
+            // 防止运行中的Tweener被Replay等重复添加到Runner，导致每帧被Tik两次
+            if (_tweenList.Contains(tweener) == false)
+                _tweenList.Add(tweener);
         }
 
         T IAxuTweenRunner.TryGetTweener<T>()

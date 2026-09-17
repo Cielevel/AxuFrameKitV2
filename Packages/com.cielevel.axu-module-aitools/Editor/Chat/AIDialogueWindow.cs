@@ -27,6 +27,9 @@ namespace AxuFrameKit.Modules.AITools
 
         private List<Message> _messageHistory = new List<Message>();
 
+        // 挂起的 update 轮询回调集合：上一条请求未完成时仍可继续发送，存在并发挂起请求，需用集合统一注销
+        private readonly List<EditorApplication.CallbackFunction> _pendingUpdateCallbacks = new List<EditorApplication.CallbackFunction>();
+
         [MenuItem("AxuFrameKit/Modules/AI Tools/Chat Window")]
         public static void ShowWindow()
         {
@@ -210,6 +213,28 @@ namespace AxuFrameKit.Modules.AITools
             }
         }
 
+        private void RegisterUpdateCallback(EditorApplication.CallbackFunction callback)
+        {
+            _pendingUpdateCallbacks.Add(callback);
+            EditorApplication.update += callback;
+        }
+
+        private void UnregisterUpdateCallback(EditorApplication.CallbackFunction callback)
+        {
+            _pendingUpdateCallbacks.Remove(callback);
+            EditorApplication.update -= callback;
+        }
+
+        // 窗口关闭/销毁时兜底注销所有挂起回调，避免委托泄漏及触碰已销毁窗口的 UI
+        private void OnDisable()
+        {
+            foreach (var pendingCallback in _pendingUpdateCallbacks)
+            {
+                EditorApplication.update -= pendingCallback;
+            }
+            _pendingUpdateCallbacks.Clear();
+        }
+
         private void PostRequest(string url, string token, string jsonBody)
         {
             var request = new UnityWebRequest(url, "POST");
@@ -218,6 +243,8 @@ namespace AxuFrameKit.Modules.AITools
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type", "application/json");
             request.SetRequestHeader("Authorization", token);
+            // 对话请求设置 60 秒超时：超时后 isDone 置真并走下方错误分支，避免回调永久轮询
+            request.timeout = 60;
 
             // Handle async operation in Editor
             var operation = request.SendWebRequest();
@@ -227,7 +254,7 @@ namespace AxuFrameKit.Modules.AITools
             {
                 if (!operation.isDone) return;
 
-                EditorApplication.update -= callback;
+                UnregisterUpdateCallback(callback);
 
                 if (request.result != UnityWebRequest.Result.Success)
                 {
@@ -240,7 +267,7 @@ namespace AxuFrameKit.Modules.AITools
                 request.Dispose();
             };
 
-            EditorApplication.update += callback;
+            RegisterUpdateCallback(callback);
         }
 
         private void PostRequestStream(string url, string token, string jsonBody)
@@ -251,6 +278,8 @@ namespace AxuFrameKit.Modules.AITools
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type", "application/json");
             request.SetRequestHeader("Authorization", token);
+            // 对话流式请求同样设置 60 秒超时：超时后 result 进入错误态，走下方错误分支结束轮询
+            request.timeout = 60;
 
             var operation = request.SendWebRequest();
 
@@ -263,16 +292,9 @@ namespace AxuFrameKit.Modules.AITools
             EditorApplication.CallbackFunction callback = null;
             callback = () =>
             {
-                // Safety check: if window closed or req disposed
-                if (request == null)
-                {
-                    EditorApplication.update -= callback;
-                    return;
-                }
-
                 if (request.result != UnityWebRequest.Result.InProgress && request.result != UnityWebRequest.Result.Success)
                 {
-                    EditorApplication.update -= callback;
+                    UnregisterUpdateCallback(callback);
                     if (request.result != UnityWebRequest.Result.Success)
                     {
                         if (aiLabel != null) aiLabel.text = $"[Error: {request.error}]";
@@ -320,9 +342,11 @@ namespace AxuFrameKit.Modules.AITools
                                     }
                                 }
                             }
-                            catch
+                            catch (Exception ex)
                             {
-                                // Ignore json parse error for partial lines or invalid data
+                                // 解析失败不再静默吞掉：输出异常与原始数据片段（截断到 300 字符），便于排查坏响应
+                                string snippet = data.Length > 300 ? data.Substring(0, 300) : data;
+                                Debug.LogWarning($"[AIDialogueWindow] 流式响应分片解析失败: {ex.Message} | data: {snippet}");
                             }
                         }
                     }
@@ -330,12 +354,12 @@ namespace AxuFrameKit.Modules.AITools
 
                 if (operation.isDone)
                 {
-                    EditorApplication.update -= callback;
+                    UnregisterUpdateCallback(callback);
                     request.Dispose();
                 }
             };
 
-            EditorApplication.update += callback;
+            RegisterUpdateCallback(callback);
         }
 
         private void HandleResponse(string jsonResponse)

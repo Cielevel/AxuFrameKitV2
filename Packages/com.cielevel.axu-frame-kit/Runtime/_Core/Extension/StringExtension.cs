@@ -41,13 +41,13 @@ namespace AxuFrameKit._Core.Extension
         public static string NullIfWhiteSpace(this string self) => string.IsNullOrWhiteSpace(self) ? null : self;
 
         /// <summary>
-        /// 将路径中的反斜杠替换为正斜杠
+        /// 将路径中的备用分隔符替换为系统主分隔符（Windows 上为 '/' → '\'；Unix 上两种分隔符相同，实际无变化）
         /// </summary>
         public static string MakeSureFilePath(this string self) =>
             self.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-        
+
         /// <summary>
-        /// 将路径中的正斜杠替换为反斜杠
+        /// 将路径中的系统主分隔符替换为备用分隔符（Windows 上为 '\' → '/'；Unix 上两种分隔符相同，实际无变化）
         /// </summary>
         public static string MakeSureFilePathInverse(this string self) =>
             self.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);

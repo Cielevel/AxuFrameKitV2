@@ -21,9 +21,14 @@ namespace AxuFrameKit._Core.Utility.Computed
         {
             get
             {
-                // 若当前有正在进行的 Computed 计算，则建立依赖关系
+                // 若当前有正在进行的 Computed 计算，则建立依赖关系，
+                // 并让下游记录本源头为上游（供其 Dispose / 重算时反注册）
                 if (ComputedContext.Evaluating.Count > 0)
-                    RegisterDownstream(ComputedContext.Evaluating.Peek().Invalidate);
+                {
+                    var consumer = ComputedContext.Evaluating.Peek();
+                    RegisterDownstream(consumer.Invalidate);
+                    consumer.NoteUpstream(this);
+                }
                 return _value;
             }
             set
@@ -39,6 +44,9 @@ namespace AxuFrameKit._Core.Utility.Computed
         public void RegisterDownstream(Action onInvalidate) => _downstream.Add(onInvalidate);
 
         public void UnregisterDownstream(Action onInvalidate) => _downstream.Remove(onInvalidate);
+
+        /// <summary>源头不求值、无上游，无需记录依赖</summary>
+        public void NoteUpstream(IComputedNode upstream) { }
 
         private void NotifyDownstream()
         {

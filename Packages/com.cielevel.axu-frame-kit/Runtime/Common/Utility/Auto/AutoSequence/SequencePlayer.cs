@@ -28,7 +28,15 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
         private void Awake()
         {
             if (_playMode == PlayMode.ByChannel)
+            {
+                if (_eventChannel == null)
+                {
+                    Debug.LogWarning($"{nameof(SequencePlayer)}: PlayMode 为 ByChannel 但 _eventChannel 未赋值，跳过事件注册。", this);
+                    return;
+                }
+
                 _eventChannel.TryRegister(Play);
+            }
         }
 
         private void Start()
@@ -39,7 +47,8 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
 
         private void OnDestroy()
         {
-            if (_playMode == PlayMode.ByChannel)
+            // 未赋值时 Awake 已警告过，拆除期不再重复刷日志
+            if (_playMode == PlayMode.ByChannel && _eventChannel != null)
                 _eventChannel.Unregister(Play);
         }
 
@@ -225,7 +234,10 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
 
             public override IEnumerator Run()
             {
-                eventChannel.RaiseEvent();
+                if (eventChannel == null)
+                    Debug.LogWarning("SequencePlayer.RaiseEvent: eventChannel 未赋值，跳过本次触发。");
+                else
+                    eventChannel.RaiseEvent();
                 yield return null;
             }
         }
@@ -243,7 +255,10 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoSequence
 
             public override IEnumerator Run()
             {
-                eventChannel.RaiseEventDefaultValue();
+                if (eventChannel == null)
+                    Debug.LogWarning("SequencePlayer.RaiseEventDefaultValue: eventChannel 未赋值，跳过本次触发。");
+                else
+                    eventChannel.RaiseEventDefaultValue();
                 yield return null;
             }
         }

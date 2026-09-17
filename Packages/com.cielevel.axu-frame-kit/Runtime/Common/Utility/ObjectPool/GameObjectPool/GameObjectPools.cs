@@ -20,10 +20,16 @@ namespace AxuFrameKit.Common.Utility.ObjectPool.GameObjectPool
 
             foreach (var unit in _objectUnitList)
             {
-                var newPool = new SimpleObjPool<Poolable<T>>(() => Instantiate(unit.Prefab, defaultRoot), onGet, onRelease, defaultCapacity);
-
+                // 重复 ObjID：记错误并跳过该条目，避免 Dictionary.Add 抛异常中断整个初始化
                 if (idSet.Add(unit.ObjID) == false)
-                    Debug.LogError("GameObjectIntPools初始化失败，包含重复的ObjID：" + unit.ObjID);
+                {
+                    Debug.LogError("GameObjectPools初始化失败，包含重复的ObjID：" + unit.ObjID + "，已跳过该条目。");
+                    continue;
+                }
+
+                var newPool = new SimpleObjPool<Poolable<T>>(
+                    () => Instantiate(unit.Prefab, defaultRoot), onGet, onRelease, defaultCapacity,
+                    p => p != null); // 注入 Unity 销毁判定：被外部 Destroy 的实例不再出池/入池
 
                 _poolDict.Add(unit.ObjID, newPool);
             }

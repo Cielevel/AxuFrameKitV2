@@ -20,6 +20,9 @@ namespace AxuFrameKit.Common.UI.Kit.DataBind
         string TargetId { get; }
         int TargetIndex { get; }
 
+        /// <summary>该数据单元是否为 Index 寻址（false 表示 ID 寻址），用于与绑定模式做匹配校验</summary>
+        bool UseIndex { get; }
+
         /// <summary>
         /// 尝试将数据应用到组件上
         /// </summary>

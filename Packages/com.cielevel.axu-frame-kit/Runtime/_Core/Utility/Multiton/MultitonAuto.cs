@@ -15,7 +15,28 @@ namespace AxuFrameKit._Core.Utility.Multiton
 
         private static readonly Dictionary<ulong, T> Instances = new(8);
 
+        static MultitonAuto() => MultitonRegistry.Register(typeof(T), ClearAllInstances);
+
         public bool IsDisposed { get; private set; }
+
+        /// <summary>
+        /// 清理当前多例类型的全部实例（逐个 Dispose），供域重载关闭时统一重置使用。
+        /// </summary>
+        public static void ClearAllInstances()
+        {
+            T[] snapshot;
+            lock (Lock)
+            {
+                if (Instances.Count == 0)
+                    return;
+
+                snapshot = new T[Instances.Count];
+                Instances.Values.CopyTo(snapshot, 0);
+            }
+
+            foreach (var instance in snapshot)
+                instance?.Dispose();
+        }
 
         public static T GetInstance(ulong key = 0)
         {
@@ -51,16 +72,7 @@ namespace AxuFrameKit._Core.Utility.Multiton
             }
         }
 
-        public static void DisposeAll()
-        {
-            lock (Lock)
-            {
-                foreach (var instance in Instances.Values)
-                    instance.Dispose();
-
-                Instances.Clear();
-            }
-        }
+        public static void DisposeAll() => ClearAllInstances();
 
         public void Dispose()
         {

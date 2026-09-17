@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using AxuFrameKit._Core.Utility.Multiton;
 using Object = UnityEngine.Object;
 
 namespace AxuFrameKit.Common.Utility.UseMono
@@ -22,8 +23,16 @@ namespace AxuFrameKit.Common.Utility.UseMono
 
     public static class IUseMonoBehaviourCommonExtension
     {
-        private static readonly Lazy<IMonoHandlerCommon> _monoHandler = new(() => new MonoHandlerCommon());
+        private static Lazy<IMonoHandlerCommon> _monoHandler = new(() => new MonoHandlerCommon());
         private static IMonoHandlerCommon MonoHandler => _monoHandler.Value;
+
+        static IUseMonoBehaviourCommonExtension()
+        {
+            // 域重载关闭时重建 handler，避免上一轮 Play 已销毁的共享载体残留
+            MultitonRegistry.Register(typeof(IUseMonoBehaviourCommon), ResetHandler);
+        }
+
+        internal static void ResetHandler() => _monoHandler = new Lazy<IMonoHandlerCommon>(() => new MonoHandlerCommon());
 
         public static Coroutine StartCoroutine(this IUseMonoBehaviourCommon self, IEnumerator enumerator)
         {
