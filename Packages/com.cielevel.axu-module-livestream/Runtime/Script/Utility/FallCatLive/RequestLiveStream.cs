@@ -56,22 +56,34 @@ namespace AxuFrameKit.Modules.LiveStream
             while (true)
             {
                 using UnityWebRequest req = UnityWebRequest.Get(URL);
+                // 设置超时（秒），避免本地服务假死时请求无限挂起、轮询停摆
+                req.timeout = 15;
                 yield return req.SendWebRequest();
                 if (req.result == UnityWebRequest.Result.Success)
                 {
-                    JObject parsedJson = JObject.Parse(req.downloadHandler.text);
-                    JArray  messages   = (JArray)parsedJson["message"];
-                    if (messages != null)
-                        foreach (var jToken in messages)
-                        {
-                            var    message = (JObject)jToken;
-                            string type    = message["type"]?.ToString();
-                            if (type != null && TypeMap.TryGetValue(type, out var t))
+                    string responseText = req.downloadHandler.text;
+                    try
+                    {
+                        JObject parsedJson = JObject.Parse(responseText);
+                        JArray  messages   = (JArray)parsedJson["message"];
+                        if (messages != null)
+                            foreach (var jToken in messages)
                             {
-                                var obj = JsonConvert.DeserializeObject(message.ToString(), t);
-                                HandleMsg(obj);
+                                var    message = (JObject)jToken;
+                                string type    = message["type"]?.ToString();
+                                if (type != null && TypeMap.TryGetValue(type, out var t))
+                                {
+                                    var obj = JsonConvert.DeserializeObject(message.ToString(), t);
+                                    HandleMsg(obj);
+                                }
                             }
-                        }
+                    }
+                    catch (Exception e)
+                    {
+                        // 畸形响应不应杀死轮询协程：记录警告后等待下一轮重试
+                        string snippet = responseText.Length > 120 ? responseText.Substring(0, 120) : responseText;
+                        Debug.LogWarning($"解析直播消息响应失败，已跳过本轮（{e.GetType().Name}: {e.Message}），响应片段：{snippet}");
+                    }
                 }
                 else
                 {

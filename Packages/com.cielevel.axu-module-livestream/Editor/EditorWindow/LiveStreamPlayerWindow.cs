@@ -31,8 +31,9 @@ namespace AxuFrameKit.Modules.LiveStream
         private IReadOnlyList<TimestampedSnapshot<LiveStreamOpData>> _snapshots;
         private int _cursor;
         private bool _playing;
-        private float _playStartRealtime;
-        private float _firstTimestamp;
+        // 用 double 记时间基准：编辑器长开会话时 realtimeSinceStartup 量级大，float 大数相减误差会累积
+        private double _playStartRealtime;
+        private double _firstTimestamp;
         private const int MaxLogCount = 200;
 
         // === UI Elements ===
@@ -385,8 +386,10 @@ namespace AxuFrameKit.Modules.LiveStream
             if (_cursor >= _snapshots.Count) _cursor = 0;
 
             _playing = true;
-            _playStartRealtime = Time.realtimeSinceStartup;
             _firstTimestamp = _snapshots[0].Timestamp;
+            // 恢复播放时把已回放部分的时间偏移计入基准，让剩余快照从暂停位置立即继续，而非从头重新等待
+            _playStartRealtime = Time.realtimeSinceStartupAsDouble
+                                 - Math.Max(0d, _snapshots[_cursor].Timestamp - _firstTimestamp);
             _statusLabel.text = "● 回放中";
             EditorApplication.update += OnEditorUpdate;
             UpdateUIState();
@@ -396,11 +399,11 @@ namespace AxuFrameKit.Modules.LiveStream
         {
             if (!_playing) return;
 
-            float elapsed = Time.realtimeSinceStartup - _playStartRealtime;
+            double elapsed = Time.realtimeSinceStartupAsDouble - _playStartRealtime;
             while (_cursor < _snapshots.Count)
             {
                 // 以第一条录制时间为基准取相对偏移，兼容 RecordFromInit / RecordFromGameStart 两种录制模式
-                float delay = Mathf.Max(0f, _snapshots[_cursor].Timestamp - _firstTimestamp);
+                double delay = Math.Max(0d, _snapshots[_cursor].Timestamp - _firstTimestamp);
                 if (delay > elapsed) break;
 
                 var snapshot = _snapshots[_cursor];

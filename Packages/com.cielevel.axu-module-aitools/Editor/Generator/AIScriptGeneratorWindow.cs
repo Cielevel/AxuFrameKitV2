@@ -730,6 +730,8 @@ namespace AxuFrameKit.Modules.AITools
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type", "application/json");
             request.SetRequestHeader("Authorization", _currentConfig.AuthToken);
+            // 脚本生成请求设置 120 秒超时：超时后 isDone 置真并走错误分支，避免下方忙等永久挂起导致 _isGenerating 无法复位
+            request.timeout = 120;
 
             var operation = request.SendWebRequest();
 
