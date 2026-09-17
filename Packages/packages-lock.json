@@ -72,6 +72,12 @@
         "com.unity.nuget.newtonsoft-json": "3.2.2"
       }
     },
+    "com.cielevel.axu-unity-cli-kit": {
+      "version": "file:com.cielevel.axu-unity-cli-kit",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.termway.ide.antigravity": {
       "version": "https://github.com/TermWay/unity-ide-antigravity.git",
       "depth": 0,

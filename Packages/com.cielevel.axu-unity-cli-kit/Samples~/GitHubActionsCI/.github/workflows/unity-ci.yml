@@ -1,0 +1,115 @@
+# Sample: Unity CI driven entirely by the `unity` CLI.
+#
+# Copy this file to <your-repo>/.github/workflows/unity-ci.yml and set the secrets it reads:
+#   UNITY_SERVICE_ACCOUNT_ID, UNITY_SERVICE_ACCOUNT_SECRET   (CI auth, optional but recommended)
+#   UNITY_LICENSE_* or a serial — see Documentation~/05-recipes.md
+#
+# The exit-code branching in the test job is the important part: `unity test` exits 8 when the
+# tests ran and failed (never retry that) and 6 when the run never produced a verdict (retryable).
+
+name: Unity CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  UNITY_CLI_CHANNEL: beta
+  UNITY_NO_BANNER: "1"
+  UNITY_NON_INTERACTIVE: "1"
+
+jobs:
+  test:
+    name: EditMode + PlayMode
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json') }}
+          restore-keys: Library-
+
+      - name: Install the unity CLI
+        run: curl -fsSL https://public-cdn.cloud.unity3d.com/hub/prod/cli/install.sh | bash
+
+      - name: Sign in (service account)
+        if: ${{ env.UNITY_SERVICE_ACCOUNT_ID != '' }}
+        env:
+          UNITY_SERVICE_ACCOUNT_ID: ${{ secrets.UNITY_SERVICE_ACCOUNT_ID }}
+          UNITY_SERVICE_ACCOUNT_SECRET: ${{ secrets.UNITY_SERVICE_ACCOUNT_SECRET }}
+        run: unity auth login --client-id "$UNITY_SERVICE_ACCOUNT_ID" --secret-from-stdin <<<"$UNITY_SERVICE_ACCOUNT_SECRET"
+
+      - name: Activate a license
+        run: unity license activate
+
+      - name: Run tests
+        id: tests
+        run: |
+          set +e
+          unity test . \
+            --mode EditMode \
+            --report-format junit --output ./test-results.xml \
+            --allow-install --timeout 900
+          code=$?
+          set -e
+          echo "exit=$code" >> "$GITHUB_OUTPUT"
+          case $code in
+            0) echo "All tests passed" ;;
+            8) echo "::error::Tests failed. This is a real failure — do not retry the job."; exit 8 ;;
+            *) echo "::warning::The test run never produced a verdict (infrastructure). Safe to retry."; exit 6 ;;
+          esac
+
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results.xml
+          if-no-files-found: warn
+
+  build:
+    name: Build player
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-build-${{ hashFiles('Packages/manifest.json') }}
+          restore-keys: Library-
+
+      - name: Install the unity CLI
+        run: curl -fsSL https://public-cdn.cloud.unity3d.com/hub/prod/cli/install.sh | bash
+
+      - name: Activate a license
+        run: unity license activate
+
+      - name: Build
+        run: |
+          unity build . \
+            --target StandaloneLinux64 \
+            --execute-method Builder.PerformBuild \
+            --output-path ./Build/Game \
+            --allow-install
+          echo "exit=$?"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: player
+          path: Build/Game
+
+      - name: Return the seat
+        if: always()
+        run: unity license return --yes || true

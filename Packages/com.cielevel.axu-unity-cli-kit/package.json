@@ -1,0 +1,40 @@
+{
+  "name": "com.cielevel.axu-unity-cli-kit",
+  "version": "0.1.0",
+  "displayName": "Axu CLI Agent Kit",
+  "description": "Package-level documentation plus agent skills for driving Unity from a terminal: the unity CLI, the com.unity.pipeline live-Editor API, CI build/test recipes and troubleshooting. Ships an Editor installer that materializes the skill into this project's AI-client folders (.claude, .zcode, .agents, .cursor, .windsurf, .clinerules, .github, AGENTS.md) and can pull the official Unity skills on demand.",
+  "unity": "2021.3",
+  "keywords": [
+    "unity-cli",
+    "pipeline",
+    "agent",
+    "skill",
+    "ai",
+    "automation",
+    "ci",
+    "editor-tools"
+  ],
+  "author": {
+    "name": "Cielevel"
+  },
+  "documentationUrl": "https://github.com/Cielevel/axu-unity-cli-kit/blob/main/Packages/com.cielevel.axu-unity-cli-kit/README.md",
+  "changelogUrl": "https://github.com/Cielevel/axu-unity-cli-kit/blob/main/Packages/com.cielevel.axu-unity-cli-kit/CHANGELOG.md",
+  "licensesUrl": "https://github.com/Cielevel/axu-unity-cli-kit/blob/main/Packages/com.cielevel.axu-unity-cli-kit/LICENSE.md",
+  "samples": [
+    {
+      "displayName": "GitHub Actions CI",
+      "description": "Workflow that installs the unity CLI, runs EditMode/PlayMode tests with a JUnit report and uploads it as a GitHub check.",
+      "path": "Samples~/GitHubActionsCI"
+    },
+    {
+      "displayName": "Agent Rules Snippet",
+      "description": "Drop-in AGENTS.md / CLAUDE.md block that points any agent at the installed skill and states the live-Editor-first rule.",
+      "path": "Samples~/AgentRules"
+    },
+    {
+      "displayName": "Custom Skill Template",
+      "description": "A minimal skill folder (SKILL.md + references/) to copy when adding your own project skill to this package.",
+      "path": "Samples~/CustomSkill"
+    }
+  ]
+}
