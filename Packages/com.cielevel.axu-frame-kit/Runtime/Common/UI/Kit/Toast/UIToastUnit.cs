@@ -44,8 +44,11 @@ namespace AxuFrameKit.Common.UI.Kit.Toast
         public void OnGet(Vector2 startPos, Vector2 endPos)
         {
             CurrentState = ToastState.In;
+
+            // 直接控制物体激活（Content 可能为空，不能只依赖 Show/Hide 的 Content 逻辑）
+            gameObject.SetActive(true);
             Show();
-            
+
             // 确保 Unit 在起始位置，并且不透明
             RtTsf.anchoredPosition = startPos;
             _canvasGroup.alpha     = 1f;
@@ -64,8 +67,10 @@ namespace AxuFrameKit.Common.UI.Kit.Toast
         public void OnRelease()
         {
             CurrentState = ToastState.Recycled;
-            Hide();
-            
+
+            // 直接关闭物体激活：基类 Hide 只做 Content?.SetActive(false)，Content 为空时物体会保持激活
+            gameObject.SetActive(false);
+
             // 停止所有正在进行的动画和协程
             if (_lifetimeCoroutine != null)
             {

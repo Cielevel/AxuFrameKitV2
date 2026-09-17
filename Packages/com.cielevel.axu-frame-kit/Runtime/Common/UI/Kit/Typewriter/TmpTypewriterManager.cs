@@ -97,6 +97,13 @@ namespace AxuFrameKit.Common.UI.Kit.Typewriter
             _totalCharCount = _textInfo.characterCount;
             Duration = _totalCharCount * CharInterval;
 
+            // 空文本：没有可显示的字符，直接置完成，避免条目永久注册在 Manager 中
+            if (_totalCharCount == 0)
+            {
+                _isComplete = true;
+                return;
+            }
+
             // 初始全部隐藏
             SetAllAlpha(0);
             Label.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
@@ -112,6 +119,13 @@ namespace AxuFrameKit.Common.UI.Kit.Typewriter
 
         public void Tick(float deltaTime)
         {
+            // Label 已销毁（Unity 假 null）：置完成让 Manager 回收本条目，避免每帧 MissingReferenceException
+            if (Label == null)
+            {
+                _isComplete = true;
+                return;
+            }
+
             if (_isComplete || _totalCharCount == 0)
                 return;
 

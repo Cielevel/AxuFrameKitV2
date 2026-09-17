@@ -96,13 +96,25 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
         // 数据与Item管理
         private IList<object> _dataSource;
         private List<UIListViewItem> _activeItems = new List<UIListViewItem>();
+        // 活跃项索引表：DataIndex -> Item，与 _activeItems 同步维护，供 O(1) 查询
+        private Dictionary<int, UIListViewItem> _activeItemDict = new Dictionary<int, UIListViewItem>();
         private HashSet<UIListViewItem> _selectedItems = new HashSet<UIListViewItem>();
 
         // 布局缓存
         private int _totalItemCount;
         private int _visibleItemCount;
         private int _currentStartIndex = -1;
+        private int _currentEndIndex = -1;
         private bool _isInitialized;
+
+        // 视口尺寸脏标记：OnRectTransformDimensionsChange 只打标记，延迟到 Update 统一重算（防递归/防首帧抖动）
+        private bool _viewportDirty;
+        // 视口监视器（viewport 为独立子节点时挂在 viewport 上转发尺寸变化消息）
+        private UIListViewViewportWatcher _viewportWatcher;
+
+        // 适配器订阅缓存（由 UIListViewExtensions.SetAdapter 使用）：保证重复绑定不叠加、销毁时退订
+        private UIListViewAdapter _boundAdapter;
+        private Action _adapterDataChangedHandler;
 
         // 布局引擎
         private IListViewLayoutEngine _layoutEngine;
@@ -140,6 +152,13 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
             if (_scrollRect != null)
                 _scrollRect.onValueChanged.RemoveListener(OnScrollValueChanged);
 
+            // 退订适配器数据变更事件，避免长命适配器持有已销毁列表的悬垂引用
+            UnbindAdapter();
+
+            // 解除视口监视器的反向引用
+            if (_viewportWatcher != null)
+                _viewportWatcher.Owner = null;
+
             _itemPool?.Dispose();
         }
 
@@ -153,6 +172,15 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
             _scrollRect = GetComponent<ScrollRect>();
             _content = _scrollRect.content;
             _viewport = _scrollRect.viewport != null ? _scrollRect.viewport : transform as RectTransform;
+
+            // 视口若为独立子节点，OnRectTransformDimensionsChange 只发到该节点上的组件，需挂监视器转发
+            if (_viewport != null && _viewport != (transform as RectTransform))
+            {
+                _viewportWatcher = _viewport.GetComponent<UIListViewViewportWatcher>();
+                if (_viewportWatcher == null)
+                    _viewportWatcher = _viewport.gameObject.AddComponent<UIListViewViewportWatcher>();
+                _viewportWatcher.Owner = this;
+            }
 
             // 禁用可能冲突的组件
             DisableConflictingComponents();
@@ -258,14 +286,13 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
             // 计算可见Item数量
             _visibleItemCount = _layoutEngine.CalculateVisibleItemCount() + settings.bufferCount;
 
-            // 回收所有当前Item
+            // 回收所有当前Item（内部会重置范围缓存 _currentStartIndex/_currentEndIndex）
             RecycleAllItems();
 
             // 重置位置
             if (resetPosition)
             {
                 _content.anchoredPosition = Vector2.zero;
-                _currentStartIndex = -1;
                 _scrollRect.velocity = Vector2.zero;
             }
 
@@ -299,6 +326,35 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
             RecycleAllItems();
             _totalItemCount = 0;
             _layoutEngine.CalculateContentSize(0);
+        }
+
+        #endregion
+
+        #region Adapter Binding
+
+        /// <summary>
+        /// 绑定适配器的数据变更订阅（由 SetAdapter 扩展方法调用）。
+        /// 先退订旧适配器/旧委托，再缓存并订阅新委托，保证同一适配器重复 SetAdapter 不会叠加订阅
+        /// </summary>
+        internal void BindAdapter(UIListViewAdapter adapter, Action onDataChanged)
+        {
+            UnbindAdapter();
+
+            _boundAdapter = adapter;
+            _adapterDataChangedHandler = onDataChanged;
+            adapter.OnDataChanged += onDataChanged;
+        }
+
+        /// <summary>
+        /// 退订并清空当前适配器订阅（OnDestroy / SetAdapter(null) 时调用，避免悬垂引用）
+        /// </summary>
+        internal void UnbindAdapter()
+        {
+            if (_boundAdapter != null && _adapterDataChangedHandler != null)
+                _boundAdapter.OnDataChanged -= _adapterDataChangedHandler;
+
+            _boundAdapter = null;
+            _adapterDataChangedHandler = null;
         }
 
         #endregion
@@ -411,10 +467,13 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
             int startIndex = visibleRange.start;
             int endIndex = visibleRange.end;
 
-            if (startIndex == _currentStartIndex)
+            // 范围未变且当前已有活跃项覆盖该范围时早退（避免滚动事件重复刷新）。
+            // 注意必须同时比较 end：视口尺寸变化导致 _visibleItemCount 重算后 end 会变，此时需要重建
+            if (startIndex == _currentStartIndex && endIndex == _currentEndIndex && _activeItems.Count > 0)
                 return;
 
             _currentStartIndex = startIndex;
+            _currentEndIndex = endIndex;
 
             // 回收超出范围的Item
             RecycleOutOfRangeItems(startIndex, endIndex);
@@ -430,6 +489,8 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
                 var item = _activeItems[i];
                 if (item.DataIndex < startIndex || item.DataIndex >= endIndex)
                 {
+                    // 先从索引表移除（RecycleItem 会把 DataIndex 重置为 -1，之后再取不到原键）
+                    _activeItemDict.Remove(item.DataIndex);
                     RecycleItem(item);
                     _activeItems.RemoveAt(i);
                 }
@@ -455,27 +516,18 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
                 UpdateItemData(item, i);
 
                 _activeItems.Add(item);
+                _activeItemDict[i] = item;
             }
         }
 
         private bool IsItemActive(int index)
         {
-            foreach (var item in _activeItems)
-            {
-                if (item.DataIndex == index)
-                    return true;
-            }
-            return false;
+            return _activeItemDict.ContainsKey(index);
         }
 
         private UIListViewItem GetActiveItemByIndex(int index)
         {
-            foreach (var item in _activeItems)
-            {
-                if (item.DataIndex == index)
-                    return item;
-            }
-            return null;
+            return _activeItemDict.TryGetValue(index, out var item) ? item : null;
         }
 
         #endregion
@@ -508,10 +560,10 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
                     item = itemGo.AddComponent<UIListViewItem>();
                 }
 
-                // 初始化Item
+                // 初始化Item（顺序与池模式对齐：先置新创建标记，再触发创建回调）
                 item.Initialize(this);
-                OnItemCreated?.Invoke(item, -1);
                 item.IsNewlyCreated = true;
+                OnItemCreated?.Invoke(item, -1);
             }
 
             item.gameObject.SetActive(true);
@@ -531,7 +583,15 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
             }
 
             if (settings.usePooling)
+            {
                 _itemPool.Return(item);
+            }
+            else
+            {
+                // 非池模式不复用：触发隐藏生命周期回调后直接销毁，避免每次刷新 Instantiate 的克隆无限堆积
+                item.OnHideInternal();
+                Destroy(item.gameObject);
+            }
         }
 
         private void RecycleAllItems()
@@ -540,6 +600,12 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
                 RecycleItem(item);
 
             _activeItems.Clear();
+            _activeItemDict.Clear();
+
+            // 全部回收后范围缓存失效，必须重置：
+            // 否则滚动位置不变时（AppendData / RefreshList(false) / 适配器刷新）早退条件仍命中，列表将不再重建而空白
+            _currentStartIndex = -1;
+            _currentEndIndex = -1;
         }
 
         private void UpdateItemData(UIListViewItem item, int index)
@@ -604,6 +670,55 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
                 settings.gridConstraintCount = 1;
         }
 #endif
+
+        #endregion
+
+        #region Viewport Resize Handling
+
+        private void Update()
+        {
+            // 视口尺寸变化：延迟到帧内统一重算可见数量，避免在布局回调期间递归刷新/首帧抖动
+            if (!_viewportDirty)
+                return;
+
+            _viewportDirty = false;
+            if (!_isInitialized || _dataSource == null)
+                return;
+
+            int newVisibleCount = _layoutEngine.CalculateVisibleItemCount() + settings.bufferCount;
+            if (newVisibleCount != _visibleItemCount)
+            {
+                _visibleItemCount = newVisibleCount;
+                // 可见数量变化会改变范围 end（start + visibleCount），RefreshVisibleItems 会据此重建/回收 Item
+                RefreshVisibleItems();
+            }
+        }
+
+        private void OnRectTransformDimensionsChange()
+        {
+            // 自身 RectTransform 即视口时收到尺寸变化（视口为子节点的情况由监视器转发）
+            NotifyViewportDimensionsChanged();
+        }
+
+        private void NotifyViewportDimensionsChanged()
+        {
+            if (_isInitialized)
+                _viewportDirty = true;
+        }
+
+        /// <summary>
+        /// 视口尺寸监视器：viewport 常是 ScrollRect 的独立子节点，
+        /// OnRectTransformDimensionsChange 只会发送到该节点上的组件，由此转发给所属列表
+        /// </summary>
+        private class UIListViewViewportWatcher : MonoBehaviour
+        {
+            public UIListView Owner { get; set; }
+
+            private void OnRectTransformDimensionsChange()
+            {
+                Owner?.NotifyViewportDimensionsChanged();
+            }
+        }
 
         #endregion
     }

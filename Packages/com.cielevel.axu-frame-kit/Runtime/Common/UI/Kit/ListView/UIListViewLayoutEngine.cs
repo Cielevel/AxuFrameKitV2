@@ -315,11 +315,27 @@ namespace AxuFrameKit.Common.UI.Kit.ListView
             float xPos = settings.paddingLeft + col * (itemWidth + GetSpacing());
             float yPos = -settings.paddingTop - row * (GetItemSize() + GetSpacing());
 
+            // 锚点/轴点与位置对齐到左上角（与 Vertical/Horizontal 引擎一致，保证网格定位确定性）
             rt.anchorMin = new Vector2(0, 1);
             rt.anchorMax = new Vector2(0, 1);
             rt.pivot = new Vector2(0, 1f);
             rt.anchoredPosition = new Vector2(xPos, yPos);
-            rt.sizeDelta = new Vector2(itemWidth, GetItemSize());
+
+            if (settings.controlChildSize)
+            {
+                // 填充模式：宽度按列宽均分铺满，高度固定为 itemSize
+                rt.sizeDelta = new Vector2(itemWidth, GetItemSize());
+            }
+            else
+            {
+                // 固定宽度模式（照搬 Vertical 引擎开关分支的做法）：
+                // 不覆盖 Item 预制体自身的宽度，仅固定高度（行高始终由 itemSize 控制）；
+                // 列间距仍按均分列宽 itemWidth 计算，若预制体宽度与之不符需要自行调整预制体
+                var sizeDelta = rt.sizeDelta;
+                sizeDelta.y = GetItemSize();
+                rt.sizeDelta = sizeDelta;
+            }
+
             rt.localScale = Vector3.one;
         }
 

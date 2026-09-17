@@ -112,7 +112,8 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
                 // 如果当前是开，想关 -> 检查是否允许全关
                 if (currentState)
                 {
-                    var onCount = _runtimeChildren.Count(c => c.IsOn);
+                    // 用 Unity 对象存活性（隐式 bool）过滤已销毁的子物体，再统计开启数
+                    var onCount = _runtimeChildren.Count(c => c && c.IsOn);
 
                     if (_allowNoneOn == false && onCount <= 1)
                         // 已经是最后一个开启的了，且不允许全关 -> 禁止操作
@@ -144,8 +145,8 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
                 }
                 else
                 {
-                    // 当前是关闭，点击开启 -> 互斥逻辑
-                    foreach (var child in _runtimeChildren.Where(child => child != clickedChild && child.IsOn))
+                    // 当前是关闭，点击开启 -> 互斥逻辑（跳过已销毁的子物体）
+                    foreach (var child in _runtimeChildren.Where(child => child && child != clickedChild && child.IsOn))
                         child.SetState(false);
 
                     clickedChild.SetState(true);
@@ -206,8 +207,12 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
         /// </summary>
         public void SelectIndex(int index)
         {
-            if (index < 0 || index >= _runtimeChildren.Count) return;
-            var child = _runtimeChildren[index];
+            if (index < 0) return;
+
+            // 按 Index 属性解析目标：与 OnIndexChanged 派发的口径一致
+            // （原按列表位置直取 _runtimeChildren[index]，在配置/嵌套结构下与 child.Index 错位）
+            var child = _runtimeChildren.FirstOrDefault(c => c && c.Index == index);
+            if (!child) return;
 
             // 复用点击逻辑，保证规则一致
             // 但如果需要强制选中而不受规则限制，可另写逻辑
@@ -236,7 +241,8 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
 
         private void NotifyMultipleChange()
         {
-            var onCollection = _runtimeChildren.Where(c => c.IsOn).ToArray();
+            // 跳过已销毁的子物体，避免向外部派发失效条目
+            var onCollection = _runtimeChildren.Where(c => c && c.IsOn).ToArray();
 
             var ids = onCollection.Select(c => c.ID).ToList();
             var indexes = onCollection.Select(c => c.Index).ToList();
@@ -269,14 +275,17 @@ namespace AxuFrameKit.Common.UI.Kit.ToggleBtnGroup
         {
             _childConfigs.Clear();
             var children = GetComponentsInChildren<UIToggleChild>();
-            foreach (var child in children)
+            // 用收集顺序的序号填充 index：与 InitializeGroup 的运行时收集顺序同口径
+            // （原 GetSiblingIndex() 在嵌套结构下会与收集顺序错位，导致配置与运行时 Index 不一致）
+            for (int i = 0; i < children.Length; i++)
             {
+                var child = children[i];
                 child.CollectUnits(); // 顺便帮子物体收集一下Unit
                 _childConfigs.Add(new ToggleChildConfig
                 {
                     child = child,
                     id = child.name,
-                    index = child.transform.GetSiblingIndex(),
+                    index = i,
                     defaultState = false
                 });
             }

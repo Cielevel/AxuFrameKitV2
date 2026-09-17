@@ -39,12 +39,5 @@ namespace AxuFrameKit.Common.UI.Kit.Group
             if (_image == null)
                 _image = GetComponent<Image>();
         }
-
-        [System.Serializable]
-        private class SpriteWrapper
-        {
-            public Sprite sprite;
-            public string id;
-        }
     }
 }
