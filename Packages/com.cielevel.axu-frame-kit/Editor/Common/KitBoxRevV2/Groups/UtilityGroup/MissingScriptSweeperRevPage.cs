@@ -222,7 +222,8 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             if (removableTotal == 0) return;
 
             string message = $"确定要清扫 {_reports.Count} 个资产中的 {removableTotal} 处缺失脚本吗？\n\n" +
-                             "该操作不可撤销，Prefab/场景修改将直接落盘保存。";
+                             "该操作不可撤销：Prefab 与未打开场景的修改将直接落盘保存；" +
+                             "已打开场景仅标记为已修改，不会自动保存（需手动保存）。";
             if (!EditorUtility.DisplayDialog("确认一键清扫", message, "清扫", "取消")) return;
 
             _busy = true;
@@ -245,8 +246,11 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             EditorUtility.DisplayDialog("清扫结果",
                 $"已处理 {removeSummary.ProcessedAssetCount} 个资产\n" +
                 $"移除 {removeSummary.RemovedCount} 处缺失脚本\n" +
-                $"跳过 {removeSummary.SkippedCount} 个资产（无可移除项）\n\n" +
-                "已完成自动重扫，请查看最新结果。",
+                $"跳过 {removeSummary.SkippedCount} 个资产（无可移除项）\n" +
+                (removeSummary.ModifiedOpenSceneCount > 0
+                    ? $"\n{removeSummary.ModifiedOpenSceneCount} 个已打开场景已修改未保存，请手动保存。\n"
+                    : "") +
+                "\n已完成自动重扫，请查看最新结果。",
                 "确定");
         }
 
@@ -506,6 +510,10 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
         }
 
         public void Refresh() { }
+
+        // 本页无全局事件订阅，生命周期钩子留空
+        public void OnEnter() { }
+        public void OnExit() { }
 
         public void DrawIMGUI() { }
     }

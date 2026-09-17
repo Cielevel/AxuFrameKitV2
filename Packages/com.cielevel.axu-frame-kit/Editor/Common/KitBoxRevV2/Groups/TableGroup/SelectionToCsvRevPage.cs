@@ -186,8 +186,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
             _exportButton.AddToClassList("mt-20");
             root.Add(_exportButton);
 
-            // Monitor selection
-            Selection.selectionChanged += UpdateSelection;
+            // 初次同步当前选中（全局订阅改在 OnEnter 中进行，OnExit 注销，避免进页叠加）
             UpdateSelection();
 
             return root;
@@ -282,6 +281,9 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
 
         private void UpdateSelection()
         {
+            // UI 未构建（OnEnter 早于 CreateContent 的防御路径）时不处理
+            if (_assetListView == null || _exportButton == null) return;
+
             _currentGuids.Clear();
             _currentGuids.AddRange(Selection.assetGUIDs);
             _countLabel.text = $"{_currentGuids.Count} 个资产";
@@ -559,6 +561,20 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.TableGroup
         public void Refresh()
         {
             UpdateSelection();
+        }
+
+        public void OnEnter()
+        {
+            // 进入页面：订阅选中变化（先防御性注销，防止重复叠加），并同步一次当前选中
+            Selection.selectionChanged -= UpdateSelection;
+            Selection.selectionChanged += UpdateSelection;
+            UpdateSelection();
+        }
+
+        public void OnExit()
+        {
+            // 离开页面：注销全局选中订阅，避免切页后回调仍触发
+            Selection.selectionChanged -= UpdateSelection;
         }
 
         public void DrawIMGUI() { }

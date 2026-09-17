@@ -31,7 +31,8 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
     /// JSON 落盘 ProjectSettings/AxuSceneSets.json：随工程走、不入 Assets（不产生资产导入），
     /// ProjectSettings 目录本身正常入库，组合预设可随版本库团队共享。
     /// 所有存取方法提供可选 path 参数（默认 DefaultPath），测试用临时路径注入。
-    /// 文件损坏时把原文件改名 .bak 后从空档重建，不向上抛异常。
+    /// 保存走"写 .tmp → 原子替换"防止写一半崩溃留下截断损坏文件；
+    /// 文件损坏时把原文件改名 .corrupt 保留后从空档重建（默认路径下弹窗告知用户），不向上抛异常。
     /// </summary>
     public static class SceneSetPresetStore
     {
@@ -40,7 +41,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
 
         #region 存取
 
-        /// <summary>读取预设列表。文件不存在或损坏时返回空列表（损坏文件先备份为 .bak）。</summary>
+        /// <summary>读取预设列表。文件不存在或损坏时返回空列表（损坏文件保留为 .corrupt 并告知用户）。</summary>
         public static List<SceneSetPreset> LoadPresets(string path = null)
         {
             path = path ?? DefaultPath;
@@ -54,6 +55,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
                 {
                     // 反序列化结果残缺同样视同损坏（防御 JsonUtility 宽松解析出空壳对象）
                     BackupCorruptedFile(path);
+                    NotifyCorrupted(path);
                     return new List<SceneSetPreset>();
                 }
 
@@ -61,13 +63,14 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             }
             catch (Exception)
             {
-                // JSON 非法（如手改坏）等读取异常：备份原文件后从空档重建，不向上抛
+                // JSON 非法（如手改坏）等读取异常：保留损坏文件为 .corrupt 后从空档重建，不向上抛
                 BackupCorruptedFile(path);
+                NotifyCorrupted(path);
                 return new List<SceneSetPreset>();
             }
         }
 
-        /// <summary>写入预设列表（整文件覆盖式保存）。目录不存在时自动创建；presets 为 null 视为空列表。</summary>
+        /// <summary>写入预设列表（整文件覆盖式保存，写 .tmp 后原子替换）。目录不存在时自动创建；presets 为 null 视为空列表。</summary>
         public static void SavePresets(List<SceneSetPreset> presets, string path = null)
         {
             path = path ?? DefaultPath;
@@ -77,10 +80,32 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
                 Directory.CreateDirectory(dir);
 
             var file = new SceneSetPresetFile { Presets = presets ?? new List<SceneSetPreset>() };
-            File.WriteAllText(path, JsonUtility.ToJson(file, true));
+
+            // 原子替换：先完整写入临时文件，再整体替换目标——避免写一半崩溃/中断
+            // 在目标路径留下截断的损坏存档（旧存档在替换成功前始终完好）
+            var tmp = path + ".tmp";
+            File.WriteAllText(tmp, JsonUtility.ToJson(file, true));
+
+            if (File.Exists(path))
+            {
+                try
+                {
+                    File.Replace(tmp, path, null); // 同卷原子替换
+                }
+                catch (IOException)
+                {
+                    // 个别文件系统不支持 Replace：退化为 Copy 整体覆盖 + 删除临时文件
+                    File.Copy(tmp, path, true);
+                    File.Delete(tmp);
+                }
+            }
+            else
+            {
+                File.Move(tmp, path);
+            }
         }
 
-        /// <summary>损坏文件备份：改名 *.bak（旧备份直接覆盖）。备份失败静默，不阻断"从空档重建"。</summary>
+        /// <summary>损坏文件保留：改名 *.corrupt（旧 .corrupt 直接覆盖），供用户手动排查抢救。失败静默，不阻断"从空档重建"。</summary>
         private static void BackupCorruptedFile(string path)
         {
             try
@@ -88,16 +113,30 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
                 if (!File.Exists(path))
                     return;
 
-                var bak = path + ".bak";
-                if (File.Exists(bak))
-                    File.Delete(bak);
+                var corrupt = path + ".corrupt";
+                if (File.Exists(corrupt))
+                    File.Delete(corrupt);
 
-                File.Move(path, bak);
+                File.Move(path, corrupt);
             }
             catch (Exception)
             {
-                // 备份本身失败也静默：目标是"Load 永远可用"，不能因备份动作卡死
+                // 保留动作本身失败也静默：目标是"Load 永远可用"，不能因备份动作卡死
             }
+        }
+
+        /// <summary>
+        /// 存档损坏时告知用户即将按空档重建（损坏原件已保留为 .corrupt）。
+        /// 仅默认存档路径（用户真实数据）弹窗；测试注入的临时路径不弹窗，避免阻断自动化测试。
+        /// </summary>
+        private static void NotifyCorrupted(string path)
+        {
+            if (path != DefaultPath) return;
+
+            EditorUtility.DisplayDialog("多场景组合预设已损坏",
+                $"读取预设文件失败，原文件已保留为：\n{path}.corrupt\n\n" +
+                "预设列表将按空重建；如需抢救旧数据，请先查看该保留文件。",
+                "知道了");
         }
 
         #endregion

@@ -40,8 +40,8 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
         {
             _kitBox = kitBox;
             ReloadPresets();
-            // 打开场景集合变化时同步"保存当前组合"按钮的可用态（CreateGUI 时机之外也要生效）
-            EditorApplication.hierarchyChanged += UpdateSaveButtonState;
+            // hierarchyChanged 订阅移至 OnEnter/OnExit：页面在窗口启动时即被 Init，
+            // 在此订阅会在未展示期间持续接收回调且切页后无法注销
         }
 
         public VisualElement CreateContent()
@@ -465,6 +465,20 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
         {
             ReloadPresets();
             UpdateSaveButtonState();
+        }
+
+        public void OnEnter()
+        {
+            // 进入页面：订阅层级变化以同步"保存当前组合"按钮可用态（先防御性注销，防止重复叠加）
+            EditorApplication.hierarchyChanged -= UpdateSaveButtonState;
+            EditorApplication.hierarchyChanged += UpdateSaveButtonState;
+            UpdateSaveButtonState();
+        }
+
+        public void OnExit()
+        {
+            // 离开页面：注销全局层级订阅
+            EditorApplication.hierarchyChanged -= UpdateSaveButtonState;
         }
 
         public void DrawIMGUI() { }

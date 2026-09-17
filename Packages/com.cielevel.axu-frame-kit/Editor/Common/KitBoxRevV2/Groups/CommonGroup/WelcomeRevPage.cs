@@ -60,6 +60,8 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.CommonGroup
         }
 
         public void Refresh() { }
+        public void OnEnter() { }
+        public void OnExit() { }
         public void DrawIMGUI() { }
     }
 }

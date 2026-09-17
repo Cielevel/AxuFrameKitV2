@@ -86,12 +86,11 @@ namespace AxuFrameKit.Common.Editor.Hierarchy
         }
     }
 
-    private static Texture GetIconForComponent(Component comp, string typeName)
-    {
-        if (iconCache.TryGetValue(typeName, out Texture cachedIcon))
+        private static Texture GetIconForComponent(Component comp, string typeName)
         {
-            if (cachedIcon != null) return cachedIcon;
-        }
+            // TryGetValue 命中即返回：null 也算已缓存，否则下方"含 null 缓存"的设计永不生效
+            if (iconCache.TryGetValue(typeName, out Texture cachedIcon))
+                return cachedIcon;
 
         Texture icon = EditorGUIUtility.ObjectContent(comp, comp.GetType()).image;
 

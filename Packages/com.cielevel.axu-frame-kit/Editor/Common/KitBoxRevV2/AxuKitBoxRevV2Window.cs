@@ -28,6 +28,10 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
         private int _currentPageIndex = -1;
         private IKitPageRevV2 _currentPage;
 
+        // 当前页持久化键（窗口类型名前缀，避免与其他窗口的偏好冲突）
+        private const string PrefKeyCurrentGroup = nameof(AxuKitBoxRevV2Window) + ".CurrentGroup";
+        private const string PrefKeyCurrentPage = nameof(AxuKitBoxRevV2Window) + ".CurrentPage";
+
         [MenuItem("AxuFrameKit/AxuEditor工具集V2-Rev %#m")]
         public static void Open()
         {
@@ -41,6 +45,12 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
         {
             SetupGroups();
             InitializeGroups();
+        }
+
+        private void OnDisable()
+        {
+            // 窗口关闭/卸载时让当前页退出（注销全局订阅等），与 OnEnter 成对
+            _currentPage?.OnExit();
         }
 
         private void CreateGUI()
@@ -74,15 +84,34 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
 
             RenderSidebar();
 
-            // Set default page
-            if (_currentPage == null && _groups.Count > 0 && _groups[0].Pages.Length > 0)
+            // 选择初始页面：优先恢复上次停留页（EditorPrefs 持久化），无记录或记录失效则回落首页
+            if (_currentPage == null)
             {
-                OnSelectPage(_groups[0].GroupName, 0);
+                if (!TrySelectRestoredPage() && _groups.Count > 0 && _groups[0].Pages.Length > 0)
+                {
+                    OnSelectPage(_groups[0].GroupName, 0);
+                }
             }
-            else if (_currentPage != null)
+            else
             {
                 DisplayPage(_currentPage);
+                // 窗口重建 UI 后页面重新进入（订阅全局事件）
+                _currentPage.OnEnter();
             }
+        }
+
+        /// <summary>按 EditorPrefs 记录恢复上次停留页；无记录或记录失效（组不存在 / 索引越界）返回 false。</summary>
+        private bool TrySelectRestoredPage()
+        {
+            string savedGroup = EditorPrefs.GetString(PrefKeyCurrentGroup, "");
+            if (string.IsNullOrEmpty(savedGroup)) return false;
+
+            int savedIndex = EditorPrefs.GetInt(PrefKeyCurrentPage, -1);
+            var group = _groups.Find(g => g.GroupName == savedGroup);
+            if (group == null || savedIndex < 0 || savedIndex >= group.Pages.Length) return false;
+
+            OnSelectPage(group.GroupName, savedIndex);
+            return true;
         }
 
         /// <summary>构建主题选择下拉（置于 content-header 右侧）</summary>
@@ -178,6 +207,9 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
 
         public void OnSelectPage(string groupName, int pageIndex)
         {
+            // 记录旧页，切页时先让其退出（注销全局订阅等）
+            var previousPage = _currentPage;
+
             _currentGroupName = groupName;
             _currentPageIndex = pageIndex;
 
@@ -190,8 +222,18 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2
                 }
             }
 
+            if (previousPage != null && !ReferenceEquals(previousPage, _currentPage))
+                previousPage.OnExit();
+
+            // 当前页持久化，下次打开窗口时恢复
+            EditorPrefs.SetString(PrefKeyCurrentGroup, _currentGroupName);
+            EditorPrefs.SetInt(PrefKeyCurrentPage, _currentPageIndex);
+
             RenderSidebar();
             DisplayPage(_currentPage);
+
+            // 进入新页（在 CreateContent 之后调用，页面 UI 引用已就绪）
+            _currentPage?.OnEnter();
         }
 
         private void DisplayPage(IKitPageRevV2 page)

@@ -90,6 +90,9 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
 
         /// <summary>跳过的资产数（无可移除项、资产缺失或处理失败）。</summary>
         public int SkippedCount;
+
+        /// <summary>已打开场景中发生移除但未保存（仅标脏，需用户手动保存）的场景数。</summary>
+        public int ModifiedOpenSceneCount;
     }
 
     /// <summary>
@@ -99,7 +102,7 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
     /// 输出资产级报告与逐组件条目；
     /// 支持会话级"干净缓存"（依赖 hash 未变且上次干净则跳过）与一键移除
     /// （Prefab 经 LoadPrefabContents → GameObjectUtility.RemoveMonoBehavioursWithMissingScript → SaveAsPrefabAsset 直接落盘，
-    /// 场景按打开状态就地保存或 Additive 打开后保存再关闭）。
+    /// 已打开场景就地移除后仅标脏不保存（防静默提交用户无关未保存修改），未打开场景 Additive 打开后保存再关闭）。
     /// KitBox 缺脚本清扫器页面与单元测试共用；Packages/ 下资产一律不扫描。
     /// </summary>
     public static class MissingScriptScanner
@@ -216,9 +219,10 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
         /// <summary>
         /// 按报告逐资产移除"可移除"的缺失脚本组件（执行时在资产内重新检测，不依赖扫描时的瞬时下标）：
         /// Prefab → LoadPrefabContents → GameObjectUtility.RemoveMonoBehavioursWithMissingScript → SaveAsPrefabAsset 直接落盘 → Unload；
-        /// 已打开场景 → 官方移除 API + MarkSceneDirty + SaveScene；未打开场景 → Additive 打开 → 移除 → SaveScene → 关闭（不重复保存）。
+        /// 已打开场景 → 官方移除 API + 仅 MarkSceneDirty（不 SaveScene，避免把用户场景里无关的未保存修改一并静默提交，
+        /// 统计的 ModifiedOpenSceneCount 提示用户手动保存）；未打开场景 → Additive 打开 → 移除 → SaveScene → 关闭（不重复保存）。
         /// 嵌套 prefab 实例上的缺失组件（Removable=false）不在当前资产移除，由其源资产负责。
-        /// 返回统计（处理资产数 / 移除处数 / 跳过数）；处理过的资产会清除会话缓存结论，下次扫描全量重检。
+        /// 返回统计（处理资产数 / 移除处数 / 跳过数 / 已打开场景修改未保存数）；处理过的资产会清除会话缓存结论，下次扫描全量重检。
         /// </summary>
         public static MissingScriptRemoveSummary RemoveMissingScripts(
             List<MissingScriptReport> reports,
@@ -243,14 +247,17 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
 
                 try
                 {
+                    // modifiedOpenScene：该资产是"已打开场景"且发生了移除（未落盘，需用户手动保存）
+                    bool modifiedOpenScene = false;
                     int removed = report.AssetType == TypePrefab
                         ? RemoveFromPrefab(report.AssetPath)
-                        : RemoveFromScene(report.AssetPath);
+                        : RemoveFromScene(report.AssetPath, out modifiedOpenScene);
 
                     if (removed > 0)
                     {
                         summary.ProcessedAssetCount++;
                         summary.RemovedCount += removed;
+                        if (modifiedOpenScene) summary.ModifiedOpenSceneCount++;
                     }
                     else
                     {
@@ -375,13 +382,19 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
             }
         }
 
-        /// <summary>移除单个场景上的可移除缺失组件（有移除才 MarkSceneDirty + SaveScene）。</summary>
-        private static int RemoveFromScene(string path)
+        /// <summary>
+        /// 移除单个场景上的可移除缺失组件。
+        /// 已打开场景：只移除 + MarkSceneDirty，不 SaveScene——保存会把用户在该场景里的
+        /// 全部无关未保存修改一并静默提交，故交由用户确认后手动保存（modifiedOpenScene 置真供上层提示）；
+        /// 未打开场景：保持 Additive 打开 → 移除 → SaveScene 落盘 → 关闭 的既有流程。
+        /// </summary>
+        private static int RemoveFromScene(string path, out bool modifiedOpenScene)
         {
             var scene = EditorSceneManager.GetSceneByPath(path);
             bool wasOpen = scene.IsValid() && scene.isLoaded;
             if (!wasOpen) scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive);
 
+            modifiedOpenScene = false;
             try
             {
                 int removed = 0;
@@ -391,7 +404,10 @@ namespace AxuFrameKit.Common.Editor.KitBoxRevV2.Groups.UtilityGroup
                 if (removed > 0)
                 {
                     EditorSceneManager.MarkSceneDirty(scene);
-                    EditorSceneManager.SaveScene(scene);
+                    if (wasOpen)
+                        modifiedOpenScene = true; // 已打开场景仅标脏，等用户手动保存
+                    else
+                        EditorSceneManager.SaveScene(scene);
                 }
                 return removed;
             }
