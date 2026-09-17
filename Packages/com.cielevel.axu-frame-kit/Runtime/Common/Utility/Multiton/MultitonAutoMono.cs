@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using AxuFrameKit._Core.Utility.Multiton;
 
 namespace AxuFrameKit.Common.Utility.Multiton
 {
@@ -22,6 +23,13 @@ namespace AxuFrameKit.Common.Utility.Multiton
         private static readonly object Lock = new object();
         
         private static readonly Dictionary<ulong, T> Instances = new(16);
+
+        static MultitonAutoMono() => MultitonRegistry.Register(typeof(T), () =>
+        {
+            // 域重载关闭时清掉上一轮 Play 的死条目与父物体引用（GetInstance 的假 null 判定本可自愈，这里避免字典积压）
+            Instances.Clear();
+            _parent = null;
+        });
 
         private bool _isDestroyed = false;
 

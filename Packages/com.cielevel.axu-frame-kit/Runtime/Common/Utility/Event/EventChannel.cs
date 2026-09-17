@@ -10,6 +10,37 @@ namespace AxuFrameKit.Common.Utility.Event
     /// </summary>
     public abstract class EventChannelCore : ScriptableObject
     {
+        private static readonly object _liveLock = new object();
+        private static readonly System.Collections.Generic.List<EventChannelCore> _liveInstances
+            = new System.Collections.Generic.List<EventChannelCore>();
+
+        /// <summary> 资产加载时登记实例，用于域重载关闭时统一清理订阅 </summary>
+        private void OnEnable()
+        {
+            lock (_liveLock)
+                _liveInstances.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            lock (_liveLock)
+                _liveInstances.Remove(this);
+        }
+
+        /// <summary>
+        /// 清理所有已加载通道实例的订阅。
+        /// 每次进入 Play 前由 AxuStaticResetGuard 调用，防止关闭域重载时上一轮 Play 的订阅残留。
+        /// 注意：子类如自行实现 OnEnable/OnDisable 会隐藏基类钩子，导致该实例不被登记。
+        /// </summary>
+        public static void ResetAllInstances()
+        {
+            lock (_liveLock)
+            {
+                for (int i = 0; i < _liveInstances.Count; i++)
+                    _liveInstances[i].Clear();
+            }
+        }
+
         public abstract void RaiseEvent();
         public abstract void RaiseEventDefaultValue();
         public abstract IUnRegisterChannel Register(Action action);

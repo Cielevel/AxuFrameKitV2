@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
+using AxuFrameKit._Core.Utility.Multiton;
 using Object = UnityEngine.Object;
 
 namespace AxuFrameKit.Common.Utility.UseMono
@@ -22,8 +24,16 @@ namespace AxuFrameKit.Common.Utility.UseMono
     public static class IUseMonoBehaviourSeparateExtension
     {
         // 与 Common 对齐，使用 Lazy<T> 保证线程安全的延迟初始化
-        private static readonly Lazy<IMonoHandler> _monoHandler = new(() => new MonoHandler());
+        private static Lazy<IMonoHandler> _monoHandler = new(() => new MonoHandler());
         private static IMonoHandler MonoHandler => _monoHandler.Value;
+
+        static IUseMonoBehaviourSeparateExtension()
+        {
+            // 域重载关闭时重建 handler，避免上一轮 Play 已销毁的挂载器残留
+            MultitonRegistry.Register(typeof(IUseMonoBehaviourSeparate), ResetHandler);
+        }
+
+        internal static void ResetHandler() => _monoHandler = new Lazy<IMonoHandler>(() => new MonoHandler());
 
         public static Coroutine StartCoroutine(this IUseMonoBehaviourSeparate self, IEnumerator enumerator)
         {
@@ -87,8 +97,12 @@ namespace AxuFrameKit.Common.Utility.UseMono
 
         private readonly Dictionary<object, MonoSingle> _memberDict = new(DefaultCapacity);
 
-        // Destroy 是延迟的，记录已销毁对象，防止同帧内重新注册
-        private readonly HashSet<object> _destroyedObjects = new();
+        // Destroy 是延迟的，记录已销毁对象，防止同帧内重新注册。
+        // 用 ConditionalWeakTable 弱引用标记：HashSet 强引用会导致已销毁对象永远无法被 GC
+        private static readonly ConditionalWeakTable<object, object> _destroyedObjects = new();
+        private static readonly object _destroyedMarker = new();
+
+        private static bool IsMarkedDestroyed(object obj) => _destroyedObjects.TryGetValue(obj, out _);
 
         /// <summary>
         /// 确保对象对应的 MonoSingle 已存在，不存在则按类型创建
@@ -119,7 +133,7 @@ namespace AxuFrameKit.Common.Utility.UseMono
                 return null;
             }
 
-            if (_destroyedObjects.Contains(obj))
+            if (IsMarkedDestroyed(obj))
             {
                 Debug.LogWarning($"StartCoroutine: 对象 {obj.GetType().Name} 已被销毁，无法启动协程。");
                 return null;
@@ -162,7 +176,7 @@ namespace AxuFrameKit.Common.Utility.UseMono
                 return;
             }
 
-            if (_destroyedObjects.Contains(obj))
+            if (IsMarkedDestroyed(obj))
             {
                 Debug.LogWarning($"RegisterUpdate: 对象 {obj.GetType().Name} 已被销毁，无法注册 Update。");
                 return;
@@ -189,7 +203,7 @@ namespace AxuFrameKit.Common.Utility.UseMono
                 return;
             }
 
-            if (_destroyedObjects.Contains(obj))
+            if (IsMarkedDestroyed(obj))
             {
                 Debug.LogWarning($"RegisterUpdate: 对象 {obj.GetType().Name} 已被销毁，无法注册 Update。");
                 return;
@@ -215,15 +229,15 @@ namespace AxuFrameKit.Common.Utility.UseMono
             if (_memberDict.TryGetValue(obj, out var mono) == false)
                 return;
 
-            // 标记为已销毁，防止 Object.Destroy 延迟期间同帧重新注册
-            _destroyedObjects.Add(obj);
+            // 标记为已销毁，防止 Object.Destroy 延迟期间同帧重新注册（弱标记，不阻碍 GC）
+            _destroyedObjects.Remove(obj);
+            _destroyedObjects.Add(obj, _destroyedMarker);
 
             Object.Destroy(mono.gameObject);
             _memberDict.Remove(obj);
 
-            // Object.Destroy 延迟一帧，下一帧移除标记（通过协程驱动清理）
-            // 此处利用共享的 MonoCommon 或直接接受标记长期存在均可
-            // 保守选择：标记保留直到对象被 GC（HashSet 以 object 引用为 key，对象消亡后自然无法再被索引）
+            // Object.Destroy 延迟一帧；标记为弱引用（ConditionalWeakTable），
+            // 对象被 GC 后标记自动消失，不会阻碍回收
         }
     }
 
