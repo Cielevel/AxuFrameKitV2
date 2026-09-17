@@ -76,6 +76,27 @@ namespace AxuFrameKit._Core.Structure
         }
 
         /// <summary>
+        /// 尝试移除并返回最早添加的元素（FIFO 消费）；缓冲区为空时不抛异常，返回 false。
+        /// 不改变 Add/Peek 的既有语义。
+        /// </summary>
+        /// <param name="item">出队的元素；缓冲区为空时为 default</param>
+        /// <returns>成功移除返回 true</returns>
+        public bool TryDequeue(out T item)
+        {
+            if (_count == 0)
+            {
+                item = default;
+                return false;
+            }
+
+            item = _buffer[_start];
+            _buffer[_start] = default; // 释放引用，避免已消费对象滞留缓冲区
+            _start = (_start + 1) % Capacity;
+            _count--;
+            return true;
+        }
+
+        /// <summary>
         /// 是否已满
         /// </summary>
         public bool IsFull => _count == Capacity;

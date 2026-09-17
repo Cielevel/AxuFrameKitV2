@@ -44,7 +44,6 @@ namespace AxuFrameKit.Common.Utility.Analysis
         #endregion
 
         #region 私有变量
-        private float _accumDeltaTime = 0f;
         private int _frames = 0;
         private float _timeLeft;
 
@@ -62,7 +61,6 @@ namespace AxuFrameKit.Common.Utility.Analysis
         {
             // 1. 计算 FPS 核心逻辑 (累积法，避免每帧跳变)
             _timeLeft -= Time.unscaledDeltaTime;
-            _accumDeltaTime += Time.unscaledDeltaTime; // 如果使用了TimeScale，建议用 unscaled
             _frames++;
 
             // 2. 计算每帧的 GC Allocation (核心逻辑：当前帧内存 - 上一帧内存)

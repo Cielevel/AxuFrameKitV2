@@ -12,6 +12,12 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoDestroy
 
         private void Awake()
         {
+            if (eventChannel == null)
+            {
+                Debug.LogWarning($"{nameof(GoEventChannelDestroy)}: eventChannel 未赋值，跳过事件注册。", this);
+                return;
+            }
+
             eventChannel.Register(Trigger);
         }
 
@@ -22,6 +28,9 @@ namespace AxuFrameKit.Common.Utility.Auto.AutoDestroy
 
         private void OnDestroy()
         {
+            // 未赋值时 Awake 已警告过，拆除期不再重复刷日志
+            if (eventChannel == null) return;
+
             eventChannel.Unregister(Trigger);
         }
     }

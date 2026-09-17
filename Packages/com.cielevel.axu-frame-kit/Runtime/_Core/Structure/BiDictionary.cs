@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using AxuFrameKit._Core.Utility.Common;
 
 namespace AxuFrameKit._Core.Structure
 {
@@ -33,16 +32,11 @@ namespace AxuFrameKit._Core.Structure
         /// <exception cref="ArgumentException">当键或值已存在时抛出</exception>
         public void Add(TKey key, TValue value)
         {
+            // 重复键/值直接抛异常，由调用方捕获处理，不再先行打日志造成双重上报
             if (_forward.ContainsKey(key))
-            {
-                Logger.Error("BiDictionary: 重复键值->" + key);
                 throw new ArgumentException("Duplicate key.", nameof(key));
-            }
             if (_backward.ContainsKey(value))
-            {
-                Logger.Error("BiDictionary: 重复键值->" + value);
                 throw new ArgumentException("Duplicate value.", nameof(value));
-            }
 
             _forward.Add(key, value);
             _backward.Add(value, key);
