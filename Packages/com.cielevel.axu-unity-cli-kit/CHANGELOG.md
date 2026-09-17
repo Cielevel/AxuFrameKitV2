@@ -8,7 +8,7 @@ Each entry names the `unity` CLI version the documentation was verified against.
 
 ## [0.1.0] — 2026-09-17
 
-First release. Verified against `unity` CLI `1.0.0-beta.10` and `com.unity.pipeline` `0.5.0-exp.1`
+First release. Verified against `unity` CLI `1.0.0-beta.10` and `com.unity.pipeline` `0.7.0-exp.1`
 (Unity `6000.0.23f1`, macOS).
 
 ### Added
@@ -21,7 +21,7 @@ First release. Verified against `unity` CLI `1.0.0-beta.10` and `com.unity.pipel
   - `live-editor.md` — `com.unity.pipeline` connection model, ports, command discovery,
     targeting one of several Editors, the async recompile/test loop, C# eval, scene /
     GameObject / prefab / asset authoring commands, Project Auditor, runtime server and
-    hot reload.
+    code reload.
   - `recipes.md` — end-to-end recipes: machine bootstrap, open-with-right-Editor, live
     scene edit, package add, CI test with JUnit, headless build, dev Player, batch asset
     operations, diagnostics, skill refresh.
@@ -55,6 +55,20 @@ First release. Verified against `unity` CLI `1.0.0-beta.10` and `com.unity.pipel
 - **Samples** (`Samples~/`) — a GitHub Actions CI workflow, a ready-made `AGENTS.md` block,
   and a custom-skill template.
 - **EditMode self-checks** (`Tests/`) — installer path/hash/frontmatter behaviour.
+
+### Command-surface alignment (pipeline 0.7.0-exp.1, 2026-09-17)
+
+The `com.unity.pipeline` package renamed part of its surface; the skill and docs were updated
+to match (verified against a live 0.7.0 Editor, command count 160 → 171):
+
+- `get_console_logs` → **`console`** (with `--tail`, `--level`, `--since` cursor; `clear_console`
+  unchanged).
+- `[HotReload]` → **`[CodeReload]`**, plus two new interpreter commands
+  (`reload_file_editor_interpreter`, `reload_file_player_interpreter` — the latter reaches
+  **IL2CPP** players over PlayerConnection). `reload_file_override` / `hotreload_status` /
+  `cleanup_hotreload` and `progress` were **removed**.
+- `RuntimePipelineManager` (the scene component) was replaced by
+  `RuntimePipelineDriver` / `RuntimePipelineBootstrap`.
 
 ### Notes
 

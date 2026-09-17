@@ -20,9 +20,13 @@ Desktop.ini
 $RECYCLE.BIN/
 # Linux
 *~
-# UPM 包的 Samples~ 目录是必须入库的包内容，不能被上面的备份文件模式吞掉（2026-09-01 修复：
-# 该规则曾导致 axu-test-framework 的 Samples~ 永远无法提交，package.json samples 声明悬空）
+# UPM 包的 Samples~ / Skills~ / Documentation~ 目录是必须入库的包内容，不能被上面的备份文件模式吞掉。
+# 2026-09-01 修复 Samples~：该规则曾导致 axu-test-framework 的 Samples~ 永远无法提交，package.json samples 声明悬空。
+# 2026-09-18 修复 Skills~ / Documentation~：同一个坑第二次踩——axu-unity-cli-kit 的 skill 正文与 8 篇文档
+# 因此从未入库，从 git 拉包的工程会拿到一个空 Skills~/（只有 Samples~ 因为已有反选规则才进得去）。
 !**/Samples~/
+!**/Skills~/
+!**/Documentation~/
 
 # ==================== IDE / 工具的每机本地文件 ====================
 # Rider / JetBrains（跨平台切换时持续产生噪音）
