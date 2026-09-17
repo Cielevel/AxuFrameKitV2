@@ -55,11 +55,30 @@ namespace Unity.Pipeline.Commands
         public IReadOnlyList<CommandParameterInfo> Parameters { get; }
 
         /// <summary>
+        /// Instance to invoke <see cref="Method"/> on, or null when <see cref="Method"/> is static.
+        /// Commands declared with a [CliCommand] attribute are always static and leave this null;
+        /// a dynamically registered command bound to an instance method carries its receiver here.
+        /// </summary>
+        public object Target { get; }
+
+        /// <summary>
         /// Create command information from discovery.
         /// </summary>
+        /// <param name="name">Unique name of the command for CLI execution.</param>
+        /// <param name="description">Human-readable description of the command.</param>
+        /// <param name="mainThreadRequired">Whether this command requires Unity main thread execution.</param>
+        /// <param name="method">Method that implements this command.</param>
+        /// <param name="parameters">Parameters that this command accepts.</param>
+        /// <param name="runtimeOnly">Whether this command is part of the runtime (Player) command surface only.</param>
+        /// <param name="tags">Hierarchical tags used to group and browse commands.</param>
+        /// <param name="package">Name of the assembly this command originates from.</param>
+        /// <param name="target">
+        /// Instance to invoke <paramref name="method"/> on, or null when it is static. Only a
+        /// dynamically registered command bound to an instance method supplies one.
+        /// </param>
         public CommandInfo(string name, string description, bool mainThreadRequired,
             MethodInfo method, IReadOnlyList<CommandParameterInfo> parameters, bool runtimeOnly = false,
-            IReadOnlyList<string> tags = null, string package = null)
+            IReadOnlyList<string> tags = null, string package = null, object target = null)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Description = description ?? throw new ArgumentNullException(nameof(description));
@@ -69,8 +88,11 @@ namespace Unity.Pipeline.Commands
             RuntimeOnly = runtimeOnly;
             Tags = tags ?? Array.Empty<string>();
             Package = package;
+            Target = target;
         }
 
+        /// <summary>A short diagnostic summary of the command.</summary>
+        /// <returns>The summary string.</returns>
         public override string ToString()
         {
             return $"{Name} MainThreadRequired:{MainThreadRequired} Parameters:{Parameters.Count}";

@@ -8,7 +8,7 @@ namespace Unity.Pipeline.Models
     /// Response from code evaluation commands containing results, output, and diagnostics.
     /// </summary>
     [Serializable]
-    public class EvalResponse :CommandExecutionResponse
+    class EvalResponse :CommandExecutionResponse
     {
         /// <summary>
         /// Console output captured during execution.
@@ -25,6 +25,11 @@ namespace Unity.Pipeline.Models
         /// <summary>
         /// Create a successful evaluation response.
         /// </summary>
+        /// <param name="result">The evaluated expression's result.</param>
+        /// <param name="output">Console output captured during execution.</param>
+        /// <param name="executionTimeMs">How long execution took, in milliseconds.</param>
+        /// <param name="diagnostics">Compilation diagnostics (errors, warnings) from Roslyn.</param>
+        /// <returns>A successful response wrapping <paramref name="result"/>.</returns>
         public static EvalResponse EvalSuccess(object result, string output = null, long executionTimeMs = 0, List<DiagnosticInfo> diagnostics = null)
         {
             return new EvalResponse
@@ -42,6 +47,11 @@ namespace Unity.Pipeline.Models
         /// <summary>
         /// Create a failed evaluation response.
         /// </summary>
+        /// <param name="error">Error message.</param>
+        /// <param name="errorDetails">Additional error details for debugging.</param>
+        /// <param name="executionTimeMs">How long execution took, in milliseconds.</param>
+        /// <param name="diagnostics">Compilation diagnostics (errors, warnings) from Roslyn.</param>
+        /// <returns>A failed response.</returns>
         public static EvalResponse EvalFailure(string error, string errorDetails = null, long executionTimeMs = 0, List<DiagnosticInfo> diagnostics = null)
         {
             return new EvalResponse
@@ -92,5 +102,25 @@ namespace Unity.Pipeline.Models
         /// </summary>
         [JsonProperty("id")]
         public string Id { get; set; }
+
+        /// <summary>
+        /// User source file the diagnostic maps to through a <c>#line</c> directive, or null when
+        /// the compiled source carries no mapping (eval snippets, generated scaffolding).
+        /// </summary>
+        [JsonProperty("file", NullValueHandling = NullValueHandling.Ignore)]
+        public string File { get; set; }
+
+        /// <summary>
+        /// 1-based line in <see cref="File"/>; null when <see cref="File"/> is null.
+        /// </summary>
+        [JsonProperty("fileLine", NullValueHandling = NullValueHandling.Ignore)]
+        public int? FileLine { get; set; }
+
+        /// <summary>
+        /// Trimmed text of the compiled source line the diagnostic points at. For code reload that
+        /// is the generated override source, which is what actually failed to compile.
+        /// </summary>
+        [JsonProperty("source", NullValueHandling = NullValueHandling.Ignore)]
+        public string Source { get; set; }
     }
 }

@@ -7,10 +7,10 @@ using UnityEngine;
 namespace Unity.Pipeline.Tests.Editor
 {
     /// <summary>
-    /// Tests for the build-time collection of hot reload roots. The build injection itself runs only
+    /// Tests for the build-time collection of code reload roots. The build injection itself runs only
     /// inside a real player build, but the root-collection helper is editor-callable and verifiable.
     /// </summary>
-    public class PipelineRuntimeBuildProcessorTests
+    class PipelineRuntimeBuildProcessorTests
     {
         [Test]
         public void CollectProjectRoots_IncludesAssetsFolder()
@@ -35,7 +35,7 @@ namespace Unity.Pipeline.Tests.Editor
         public void CollectProjectRoots_IncludesThisPackage()
         {
             // com.unity.pipeline is loaded into the test project, so its resolved location must be a
-            // baked root - this is the "package source can be hot reloaded" guarantee.
+            // baked root - this is the "package source can be reloaded" guarantee.
             var roots = PipelineRuntimeBuildProcessor.CollectProjectRoots();
 
             Assert.IsTrue(roots.Count > 1, "Expected at least one package root in addition to Assets.");

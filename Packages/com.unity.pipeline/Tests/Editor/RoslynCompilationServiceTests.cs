@@ -8,10 +8,38 @@ namespace Unity.Pipeline.Tests.Editor
 {
     /// <summary>
     /// Tests for the shared RoslynCompilationService to verify core compilation functionality.
-    /// This service is used by both EvalCodeCompiler and HotReloadCompiler.
+    /// This service is used by both EvalCodeCompiler and CodeReloadCompiler.
     /// </summary>
-    public class RoslynCompilationServiceTests
+    class RoslynCompilationServiceTests
     {
+        [Test] // A background compile that runs before any main-thread parse must not see an
+               // empty define set — SnapshotProjectDefines (called at editor load) seeds it.
+        public void ProjectParseOptions_OffThread_SeesSeededDefines()
+        {
+            var field = typeof(RoslynCompilationService).GetField("s_LastProjectDefines",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var saved = field.GetValue(null);
+            try
+            {
+                // Simulate the pre-seed state (fresh domain, no main-thread parse yet): an
+                // off-thread caller gets an EMPTY define set — the hazard under test.
+                field.SetValue(null, System.Array.Empty<string>());
+                var before = Task.Run(() =>
+                    RoslynCompilationService.ProjectParseOptions().PreprocessorSymbolNames.ToArray()).Result;
+                CollectionAssert.IsEmpty(before, "off-thread defines before seeding (documents the hazard)");
+
+                // The editor-load seed (PipelineServerStartup) makes the snapshot available off-thread.
+                RoslynCompilationService.SnapshotProjectDefines();
+                var after = Task.Run(() =>
+                    RoslynCompilationService.ProjectParseOptions().PreprocessorSymbolNames.ToArray()).Result;
+                CollectionAssert.Contains(after, "UNITY_EDITOR");
+            }
+            finally
+            {
+                field.SetValue(null, saved);
+            }
+        }
+
         [Test]
         public void Compile_ValidCode_ReturnsSuccessfulResult()
         {
@@ -167,7 +195,7 @@ public static class TestClass
         public void GetMetadataReferences_WithAdditionalPrefixes_IncludesSpecifiedAssemblies()
         {
             // Arrange
-            var additionalPrefixes = new[] { "Microsoft.CodeAnalysis", "Newtonsoft.Json" };
+            var additionalPrefixes = new[] { "UnityPipeline.Microsoft.CodeAnalysis", "Newtonsoft.Json" };
 
             // Act
             var references = RoslynCompilationService.GetMetadataReferences(additionalPrefixes);
@@ -177,27 +205,27 @@ public static class TestClass
             Assert.Greater(references.Count, 0, "Should have references");
 
             // Should include additional prefixes if those assemblies are loaded
-            var hasCodeAnalysis = references.Any(r => r.Display?.Contains("Microsoft.CodeAnalysis") == true);
+            var hasCodeAnalysis = references.Any(r => r.Display?.Contains("UnityPipeline.Microsoft.CodeAnalysis") == true);
             var hasNewtonsoft = references.Any(r => r.Display?.Contains("Newtonsoft.Json") == true);
         }
 
         [Test]
-        public void Compile_WithHotReloadExample_CompilesCorrectly()
+        public void Compile_WithCodeReloadExample_CompilesCorrectly()
         {
-            // Arrange - Test hot reload specific compilation
+            // Arrange - Test code reload specific compilation
             var request = new CompilationRequest
             {
                 SourceCode = @"
 using System;
 using UnityEngine;
-using Unity.Pipeline.HotReload;
+using Unity.Pipeline.CodeReload;
 
-public static class HotReloadTestClass
+public static class CodeReloadTestClass
 {
-    [HotReloadOverrideMethod(""TargetClass.TargetMethod"")]
+    [CodeReloadOverrideMethod(""TargetClass.TargetMethod"")]
     public static void OverrideMethod(TargetClass instance)
     {
-        Debug.Log(""Hot reload method executed"");
+        Debug.Log(""Code reload method executed"");
     }
 }
 
@@ -208,19 +236,19 @@ public class TargetClass
         Debug.Log(""Original method"");
     }
 }",
-                AssemblyName = "HotReloadTestAssembly",
-                AdditionalAssemblyPrefixes = new[] { "Microsoft.CodeAnalysis" } // For hot reload attributes
+                AssemblyName = "CodeReloadTestAssembly",
+                AdditionalAssemblyPrefixes = new[] { "UnityPipeline.Microsoft.CodeAnalysis" } // For code reload attributes
             };
 
             // Act
             var result = RoslynCompilationService.Compile(request);
 
             // Assert
-            Assert.IsTrue(result.Success, $"Hot reload code should compile. Errors: {string.Join(", ", result.Diagnostics?.Select(d => d.Message) ?? new string[0])}");
+            Assert.IsTrue(result.Success, $"Code reload code should compile. Errors: {string.Join(", ", result.Diagnostics?.Select(d => d.Message) ?? new string[0])}");
             Assert.IsNotNull(result.Assembly, "Should return compiled assembly");
 
             var types = result.Assembly.GetTypes();
-            Assert.Contains("HotReloadTestClass", types.Select(t => t.Name).ToList(), "Should contain hot reload class");
+            Assert.Contains("CodeReloadTestClass", types.Select(t => t.Name).ToList(), "Should contain code reload class");
             Assert.Contains("TargetClass", types.Select(t => t.Name).ToList(), "Should contain target class");
         }
 
@@ -320,6 +348,42 @@ public static class NoDebugClass
             // Assert
             Assert.IsTrue(result.Success, "Should compile");
             Assert.IsNull(result.PdbBytes, "Default path must not emit a PDB (behavior unchanged)");
+        }
+
+        [Test]
+        public void Compile_WithEmbedDebugInformation_EmbedsPortablePdbInAssemblyBytes()
+        {
+            var request = new CompilationRequest
+            {
+                SourceCode = @"
+public static class EmbeddedDebugClass
+{
+    public static int Execute()
+    {
+        return 7;
+    }
+}",
+                AssemblyName = "EmbedPdbTestAssembly_" + System.Guid.NewGuid().ToString("N"),
+                EmbedDebugInformation = true,
+                DocumentPath = "EmbedPdbTest.cs",
+                SkipLoad = true
+            };
+
+            var result = RoslynCompilationService.Compile(request);
+
+            Assert.IsTrue(result.Success, $"Should compile. Errors: {string.Join(", ", result.Diagnostics?.Select(d => d.Message) ?? new string[0])}");
+            Assert.IsNull(result.PdbBytes, "Embedded mode must not produce separate PDB bytes");
+
+            // The PDB must ride inside the assembly bytes (PE debug directory) — that is the only
+            // place the IlInterpreter interpreter looks for sequence points.
+            using (var stream = new System.IO.MemoryStream(result.AssemblyBytes))
+            using (var pe = new UnityPipeline.System.Reflection.PortableExecutable.PEReader(stream))
+            {
+                Assert.IsTrue(
+                    pe.ReadDebugDirectory().Any(e =>
+                        e.Type == UnityPipeline.System.Reflection.PortableExecutable.DebugDirectoryEntryType.EmbeddedPortablePdb),
+                    "Assembly bytes should contain an embedded portable PDB debug directory entry");
+            }
         }
 
         [Test]

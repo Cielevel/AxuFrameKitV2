@@ -80,7 +80,7 @@ Click [here](Documentation~/connectivity.md) for more details on Connectivity tr
 
 ## Documentation
 
-For the full command reference, connectivity details, runtime setup, and hot-reload guides, see the [Pipeline documentation](Documentation~/index.md).
+For the full command reference, connectivity details, runtime setup, and code-reload guides, see the [Pipeline documentation](Documentation~/index.md).
 
 ## License
 

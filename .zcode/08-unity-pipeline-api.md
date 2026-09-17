@@ -109,6 +109,27 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/
   回环（原先 `+` 会绑全部网卡再靠代码层回环校验兜底），比原实现更安全。
 - **升级该包版本时补丁会丢失，需按上述内容重打。**
 
+### 升级记录：0.5.0-exp.1 → 0.7.0-exp.1（2026-09-17）
+
+CLI `1.0.0-beta.10` 要求 pipeline `≥0.6.0-exp.1`（否则**带参数**的命令一律被拒：
+`too old to parse command lines`，只读命令仍可用）。升级过程与要点：
+
+- 取包：`https://download.packages.unity.com/com.unity.pipeline/-/com.unity.pipeline-0.7.0-exp.1.tgz`
+  （`unity pipeline upgrade` 会走 registry 解析，会丢掉"嵌入式 + 打补丁"的形态，故手工替换）。
+- 替换方式：`rsync -a --delete --exclude='*.meta' --exclude='.signature' --exclude='.attestation.p7m'`
+  把**已打好补丁**的新版内容覆盖 `Packages/com.unity.pipeline`。
+  **关键**：*已存在*的文件保留本地 `.meta`（GUID 不变——`RuntimePipelineManager.cs` 的 GUID 被
+  场景引用，改名即断链）；*新增*文件必须用**包内自带**的 `.meta`（DLL 的导入设置/引用校验写在 meta 里，
+  用 Unity 默认设置会报 `IlInterpreterAnalyzer.dll ... Unable to resolve reference`）。
+- 补丁重打位置不变：`Runtime/Common/BasePipelineServer.cs` 的 `AddLoopbackPrefixes`
+  （0.7.0 上游仍是 `http://+:{port}/`，**该 bug 未修**，必须重打）。
+- 破坏性变更：`Runtime/HotReload/**` → `Runtime/CodeReload/**`（`[HotReload]`→`[CodeReload]`，
+  override 机制移除）；`RuntimePipelineManager` → `RuntimePipelineDriver`/`RuntimePipelineBootstrap`；
+  `get_console_logs` → `console`；`progress`/`hotreload_status`/`cleanup_hotreload` 移除；
+  命令总数 160 → 171。工程内测试框架只依赖 `CliCommand`/`CliArg`，两者公开面未变，无需改动。
+- 验证：服务 ready（7800）、带参数命令可用（`eval`/`console --tail`）、编译 `completed`、
+  console 0 error。
+
 **排查教训**：Editor 出现"不自动刷新、不重编译、AppleScript quit/activate 无响应、Editor.log 长时间静默"
 时，先怀疑资产管道僵死（本次伴随 `Unexpected transport error from import worker 0`）。此时 `sample`
 主线程只见空闲事件循环（非模态卡死），`osascript quit` 无效，但 `kill -TERM` 可 2 秒内优雅退出，

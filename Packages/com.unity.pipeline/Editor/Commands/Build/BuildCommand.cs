@@ -10,6 +10,9 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
+#if UNITY_6000_5_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace Unity.Pipeline.Editor.Commands.Build
 {
@@ -32,7 +35,10 @@ namespace Unity.Pipeline.Editor.Commands.Build
     /// survives the domain reload a build can incur, so the last report is retained until the next build.
     /// </summary>
     [InitializeOnLoad]
-    public static class BuildCommand
+#if UNITY_6000_5_OR_NEWER
+    [NoAutoStaticsCleanup]
+#endif
+    static class BuildCommand
     {
         const string StatusFile = "Temp/pipeline_build_status.json";
 
@@ -65,6 +71,14 @@ namespace Unity.Pipeline.Editor.Commands.Build
         static BuildTarget s_PendingTarget;
         static string s_PendingOutput;
         static BuildOptions s_PendingOptions;
+
+        /// <summary>
+        /// BuildOptions of the scripted build currently inside BuildPipeline.BuildPlayer, or null
+        /// when no `build` command is running. Build processors read it because a scripted build
+        /// with BuildOptions.Development is a development build even when the Build Settings
+        /// toggle (EditorUserBuildSettings.development) is off.
+        /// </summary>
+        internal static BuildOptions? ActiveScriptedBuildOptions { get; private set; }
         static string[] s_PendingScenes;
         static string s_PendingProfile;
         static string s_PendingBuildId;
@@ -325,7 +339,10 @@ namespace Unity.Pipeline.Editor.Commands.Build
                 options = options
             };
 
-            var report = BuildPipeline.BuildPlayer(buildOptions);
+            ActiveScriptedBuildOptions = options;
+            BuildReport report;
+            try { report = BuildPipeline.BuildPlayer(buildOptions); }
+            finally { ActiveScriptedBuildOptions = null; }
             WriteStatusJson(Project(buildId, report));
         }
 

@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.Pipeline.Security;
@@ -13,17 +16,35 @@ namespace Unity.Pipeline.Tests.Editor
     ///
     /// Wrap in a `using` (or SetUp/TearDown) so the server is stopped after each test.
     /// </summary>
-    public sealed class PipelineTestServer : IDisposable
+    sealed class PipelineTestServer : IDisposable
     {
         private readonly TestEditorPipelineServer m_Server;
         private readonly PipelineClient m_Client;
+        // Appended from the HTTP thread, read by the test afterwards.
+        private readonly ConcurrentQueue<CommandExecutionInfo> m_Reported = new ConcurrentQueue<CommandExecutionInfo>();
+        private readonly ConcurrentQueue<CommandExecutionInfo> m_ReportedOnMainThread = new ConcurrentQueue<CommandExecutionInfo>();
 
         public int Port => m_Server.Port;
         public PipelineClient Client => m_Client;
 
+        /// <summary>
+        /// Everything the server reported when a command finished, oldest first — including a
+        /// request rejected before any command ran, which carries a transaction and no command.
+        /// </summary>
+        public IReadOnlyList<CommandExecutionInfo> Reported => m_Reported.ToArray();
+
+        /// <summary>
+        /// What crossed to the main thread, which is the subset carrying a command. The crossing is
+        /// a dispatcher post, normally pumped by the editor update loop; that loop does not tick
+        /// inside a synchronous test, so <see cref="Execute"/> pumps it before returning.
+        /// </summary>
+        public IReadOnlyList<CommandExecutionInfo> ReportedOnMainThread => m_ReportedOnMainThread.ToArray();
+
         public PipelineTestServer()
         {
             m_Server = new TestEditorPipelineServer();
+            m_Server.CommandDoneRecorder = info => m_Reported.Enqueue(info);
+            m_Server.CommandDoneMainThreadRecorder = info => m_ReportedOnMainThread.Enqueue(info);
             m_Server.Start(); // auto-assigns a port in 7850-7899; writes no descriptor
             m_Client = new PipelineClient($"http://localhost:{m_Server.Port}", SecurityTokenManager.GetOrCreateToken());
         }
@@ -41,6 +62,7 @@ namespace Unity.Pipeline.Tests.Editor
             // back to the main thread, which this method deliberately blocks below while pumping —
             // the task could never complete (sync-over-async deadlock). The server side still needs
             // the main thread, which the ProcessWorkQueue pump below provides.
+            var reportedBefore = m_Reported.Count;
             var task = Task.Run(() => m_Client.ExecuteCommandAsync(command, parameters));
 
             var start = DateTime.UtcNow;
@@ -53,6 +75,19 @@ namespace Unity.Pipeline.Tests.Editor
 
                 Thread.Sleep(1);
             }
+
+            // The server writes the response bytes first and reports the finished interaction
+            // afterwards, still on its HTTP thread, so the client task can complete a few
+            // milliseconds before OnCommandDone runs. Wait for that report (bounded), otherwise a
+            // test reading Reported right after Execute races it. Then pump once more, standing in
+            // for the editor update tick, so ReportedOnMainThread is current on return too.
+            var reportWait = DateTime.UtcNow;
+            while (m_Reported.Count <= reportedBefore && (DateTime.UtcNow - reportWait).TotalMilliseconds < 2000)
+            {
+                m_Server.Dispatcher.ProcessWorkQueue();
+                Thread.Sleep(1);
+            }
+            m_Server.Dispatcher.ProcessWorkQueue(int.MaxValue);
 
             return task.GetAwaiter().GetResult();
         }
