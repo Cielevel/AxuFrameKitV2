@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using System.Numerics;
-using UnityEngine;
 
 namespace AxuFrameKit._Core.Extension
 {
@@ -9,8 +8,8 @@ namespace AxuFrameKit._Core.Extension
     {
         private const float Epsilon = 0.01f; // 取近值使用的误差值
 
-        public static bool NearZero(this float self) => Mathf.Abs(self) <= Epsilon;
-        public static bool Near(this float self, float target) => Mathf.Abs(self - target) <= Epsilon;
+        public static bool NearZero(this float self) => Math.Abs(self) <= Epsilon;
+        public static bool Near(this float self, float target) => Math.Abs(self - target) <= Epsilon;
 
         public static float SelfMult(this float self) => self * self;
 
