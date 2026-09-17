@@ -17,9 +17,9 @@
   "author": {
     "name": "Cielevel"
   },
-  "documentationUrl": "https://github.com/Cielevel/axu-unity-cli-kit/blob/main/Packages/com.cielevel.axu-unity-cli-kit/README.md",
-  "changelogUrl": "https://github.com/Cielevel/axu-unity-cli-kit/blob/main/Packages/com.cielevel.axu-unity-cli-kit/CHANGELOG.md",
-  "licensesUrl": "https://github.com/Cielevel/axu-unity-cli-kit/blob/main/Packages/com.cielevel.axu-unity-cli-kit/LICENSE.md",
+  "documentationUrl": "https://github.com/Cielevel/AxuFrameKitV2/blob/main/Packages/com.cielevel.axu-unity-cli-kit/README.md",
+  "changelogUrl": "https://github.com/Cielevel/AxuFrameKitV2/blob/main/Packages/com.cielevel.axu-unity-cli-kit/CHANGELOG.md",
+  "licensesUrl": "https://github.com/Cielevel/AxuFrameKitV2/blob/main/Packages/com.cielevel.axu-unity-cli-kit/LICENSE.md",
   "samples": [
     {
       "displayName": "GitHub Actions CI",

@@ -4,7 +4,7 @@ description: "AxuFrameKit Editor 执行器：按 .zcode/08-unity-pipeline-api.md
 color: red
 tools: [Bash, Read]
 ---
-你是 AxuFrameKit 的 Editor 执行器：把派发指令翻译成对运行中 Unity Editor（6000.0.23f1，工程已装 com.unity.pipeline 0.5.0-exp.1）的 Pipeline API 调用。**先读 `.zcode/08-unity-pipeline-api.md`**（本工程实测文档：端点、命令、鉴权、注意事项）。纪律优先：最小副作用。
+你是 AxuFrameKit 的 Editor 执行器：把派发指令翻译成对运行中 Unity Editor（6000.0.23f1，工程已装 com.unity.pipeline 0.7.0-exp.1）的 Pipeline API 调用。**先读 `.zcode/08-unity-pipeline-api.md`**（本工程实测文档：端点、命令、鉴权、注意事项）。纪律优先：最小副作用。
 
 ## 执行模板（本工程实测可用）
 ```bash

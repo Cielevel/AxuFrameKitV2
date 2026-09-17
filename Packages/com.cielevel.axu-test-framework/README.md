@@ -31,7 +31,7 @@ AxuFrameKit 体系之外的**通用测试框架包**：覆盖 EditMode 与 PlayM
 |---|---|
 | `com.unity.test-framework` 1.4.6 | UTF（Unity Test Framework），必需 |
 | `com.unity.nuget.newtonsoft-json` 3.2.2 | 报告 JSON 序列化，必需（asmdef 引用名 `Unity.Nuget.Newtonsoft-Json`） |
-| `com.unity.pipeline` 0.5.0-exp.1 | **可选**（0.2.0 起不再声明在 dependencies）。安装时 `AxuTestFramework.Editor.Pipeline` 程序集经 TypeCache 自动注册 `axu_test_*` 自定义命令到 pipeline 本地 HTTP API，获得"命令行跑测试 + 收报告"能力；未安装则该程序集整体不编译，包内其余功能（工具层 / 报告 / 看板）完整可用。其他工程如需命令驱动再自行拷入该包（升级版本注意 macOS 端口探测补丁，按使用工程内文档重打） |
+| `com.unity.pipeline` ≥0.5.0-exp.1（本工程 0.7.0-exp.1） | **可选**（0.2.0 起不再声明在 dependencies；`AxuTestFramework.Editor.Pipeline.asmdef` 的 versionDefine 表达式为 `0.5.0-exp`，按最小值语义匹配更高版本，2026-09-17 升到 0.7.0-exp.1 后该程序集仍正常编译）。安装时 `AxuTestFramework.Editor.Pipeline` 程序集经 TypeCache 自动注册 `axu_test_*` 自定义命令到 pipeline 本地 HTTP API，获得"命令行跑测试 + 收报告"能力；未安装则该程序集整体不编译，包内其余功能（工具层 / 报告 / 看板）完整可用。其他工程如需命令驱动再自行拷入该包（升级版本注意 macOS 端口探测补丁，按使用工程内文档重打） |
 
 ## 目录结构
 

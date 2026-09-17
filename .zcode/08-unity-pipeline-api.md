@@ -1,6 +1,6 @@
 # 08 · Unity Pipeline 本地 API 使用指南（AI Agent 直连 Editor）
 
-> 2026-08-29 实测验证（2026-08-30 修复 macOS 启动失败，见第 8 节）。本工程的 `com.unity.pipeline 0.5.0-exp.1`
+> 2026-08-29 实测验证（2026-08-30 修复 macOS 启动失败，见第 8 节；**2026-09-17 升级至 0.7.0-exp.1**，见文末升级记录）。本工程的 `com.unity.pipeline 0.7.0-exp.1`
 > 已提升为**嵌入式包**（`Packages/com.unity.pipeline`，含 macOS 端口探测补丁；manifest.json 不再声明该条目），
 > Unity 编辑器运行时会启动一个 **仅回环（127.0.0.1）的 HTTP 服务**，任何本机脚本/AI Agent 都可以直接调用它驱动 Editor。
 > 已验证：读状态、枚举命令、执行 `console` 命令均成功。**注意：本文件包含的用法可让 agent 实际修改工程，使用时保持谨慎。**
@@ -88,7 +88,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/
 - 服务仅监听回环地址（2026-08-30 起在 socket 层即真回环，见第 8 节），token 门控 eval——不暴露局域网；
   `Library/` 在 .gitignore 中，token 不会入库。
 - Play 模式/`--runtime <player>` 的监听默认关闭（仅 dev 构建手动开启）。
-- 包为 experimental（0.5.0-exp.1），API 可能随版本演进。
+- 包为 experimental（0.7.0-exp.1），API 可能随版本演进。
 
 ## 8. 修复记录：macOS "No available ports in range 7800-7849"（2026-08-30）
 

@@ -1,7 +1,7 @@
 # AxuFrameKit Project Guide
 
 > 本文档供 AI Coding Agent 阅读，用于快速了解本项目架构与开发规范。
-> （2026-08-31 更新：新增 AxuTestFramework 通用测试体系与 axu_test_* pipeline 命令；2026-08-29 已同步框架迁移到 UPM 嵌入式包后的现状；详细模块清单见 `.zcode/` 知识库）
+> （2026-09-18 更新：补入 `com.cielevel.axu-unity-cli-kit` 独立包，修正 `com.unity.pipeline` 版本为 0.7.0-exp.1；2026-08-31 更新：新增 AxuTestFramework 通用测试体系与 axu_test_* pipeline 命令；2026-08-29 已同步框架迁移到 UPM 嵌入式包后的现状；详细模块清单见 `.zcode/` 知识库）
 
 ## 项目概览
 
@@ -171,6 +171,10 @@ Packages/com.cielevel.axu-frame-kit/Editor/Common/
 
 独立工具包（零依赖、互相独立）：`com.cielevel.axu-indie-scene-jumper`、`-selection-to-csv`、`-sprite-to-animation`、`-stat-pipeline`（各自 Editor-only 或 Runtime+Editor asmdef）。
 
+另有两个非"模块"性质的嵌入式包（合计 10 个可选包）：
+- `com.cielevel.axu-test-framework` — 测试基建（UTF 工具层 + 场景测试平台），详见下方「测试」章节
+- `com.cielevel.axu-unity-cli-kit` — Axu CLI Agent Kit，**无运行时代码**，交付的是文档 + 安装器：包级 `unity` CLI / Pipeline 用法文档，并经包内安装器把 skill 写进各 AI 客户端目录（`.claude` / `.zcode` / `.agents` / `.cursor` / `.windsurf` / `.clinerules` / `.github` / `AGENTS.md` 共 8 个目标），另可调 `unity skill install <client> --local` 拉取 Unity 官方 skill。零依赖，`com.unity.pipeline` 是可选的实时能力来源，不在其 package.json 中声明。
+
 **命名空间规范**: 模块家族 `AxuFrameKit.Modules.{模块名}`、独立模块 `AxuIndieModules.{模块名}`（均保持不变）。
 
 ---
@@ -209,7 +213,8 @@ Assets/
 - **Editor 层**: `AxuFrameKit.Common.Editor.{区域}`
 - **Modules 层**: `AxuFrameKit.Modules.{模块名}`
 - **独立模块**: `AxuIndieModules.{模块名}`
-- **测试代码**: `AxuFrameKit.Tests.{Editor|Runtime}`（框架包）、`TestAndSample.{路径}`（Assets 工程级入口）、`AxuTestFramework(.Editor).*`（测试基建包自身）、模块包 `{被测程序集}.Tests.*`
+- **CLI Kit**: `AxuCliKit.{Editor}`（`com.cielevel.axu-unity-cli-kit`，程序集 `AxuCliKit.Editor` 仅 Editor 且 `autoReferenced: false`）
+- **测试代码**: `AxuFrameKit.Tests.{Editor|Runtime}`（框架包）、`TestAndSample.{路径}`（Assets 工程级入口）、`AxuTestFramework(.Editor).*`（测试基建包自身）、模块包 `{被测程序集}.Tests.*`（cli-kit 为 `AxuCliKit.Tests.Editor`，只依赖 UTF runner，未引用 AxuTestFramework）
 
 ### 类命名
 - **单例基类**: `Singleton<T>`, `SingletonMono<T>`, `SingletonLazy<T>`, `SingletonMonoCr<T>`, `SingletonMonoCrDs<T>`
@@ -241,6 +246,7 @@ Assets/
   "com.cielevel.axu-indie-sprite-to-animation": "嵌入式包 - 序列帧转动画（零依赖）",
   "com.cielevel.axu-indie-stat-pipeline": "嵌入式包 - 数值管线（零依赖）",
   "com.cielevel.axu-test-framework": "嵌入式包 - 通用测试框架 AxuTestFramework 0.3.0（UTF 工具层 + 场景测试平台：八能力 Agent 运行时、axu_test_* / axu_scenario_* / axu_player_* / axu_trend_* pipeline 命令、AxuTestRunner 看板（总览/Tests/Scenario/Trend 四页签，总览为默认页））",
+  "com.cielevel.axu-unity-cli-kit": "嵌入式包 - Axu CLI Agent Kit 0.1.0（unity CLI / Pipeline 用法文档 + Agent Skill 安装器，无运行时代码，零依赖）",
   "com.termway.ide.antigravity": "Git 包 - IDE 增强",
   "com.unity.ai.navigation": "2.0.4",
   "com.unity.collab-proxy": "2.9.3",
@@ -249,7 +255,7 @@ Assets/
   "com.unity.inputsystem": "1.11.1",
   "com.unity.multiplayer.center": "1.0.0",
   "com.unity.nuget.newtonsoft-json": "3.2.2",
-  "com.unity.pipeline": "嵌入式包 (embedded, 0.5.0-exp.1) - Unity CLI agent 集成（已修补 macOS HttpListener 端口探测，见 .zcode/08 第 8 节）",
+  "com.unity.pipeline": "嵌入式包 (embedded, 0.7.0-exp.1) - Unity CLI agent 集成（2026-09-17 自 0.5.0-exp.1 升级并重打 macOS 回环补丁，见 .zcode/08 第 8 节与升级记录）",
   "com.unity.render-pipelines.universal": "17.0.3",
   "com.unity.test-framework": "1.4.6",
   "com.unity.timeline": "1.8.7",
@@ -365,6 +371,7 @@ UIBindTextStr.Bind(myTextComponent, () => model.PlayerName);
     `Runtime/Common/Utility/{Math,Table/CSV}/Doc_*.md`、`Runtime/Common/UI/Framework/UI框架.md` 等——**查文档先看包 README 的索引**
 - **模块包文档**: 8 个模块包（`Packages/com.cielevel.axu-module-*`、`com.cielevel.axu-indie-*`）各自带 README.md / CHANGELOG.md
 - **测试框架文档**: `Packages/com.cielevel.axu-test-framework/README.md`（UTF 工具层 API、axu_test_* / axu_scenario_* / axu_player_* / axu_trend_* 命令参数表、两套报告 schema、场景测试接入一页纸、各包接入约定；schema 细节在包内 `DOC/ScenarioSchema.md`）
+- **CLI Kit 文档**: `Packages/com.cielevel.axu-unity-cli-kit/README.md` + 包内 `Documentation~/`（01 安装与更新 / 02 Agent 集成 / 03 unity CLI 基础 / 04 实时 Editor Pipeline / 05 配方 / 06 排障 / 07 扩展，索引进 `Documentation~/index.md`）；`Skills~/unity-cli-workflows/` 为可被 AI 客户端读取的 skill 本体
 - **开发文档**: `Assets/DevDoc/`（Socket 技术设计等）、`Assets/_CommonDoc/`（包迁移评估）
 
 ---

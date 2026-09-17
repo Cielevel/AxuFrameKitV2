@@ -1,6 +1,7 @@
 # 01 · 项目概览与工程配置
 
 > 勘察时间：2026-08-29。来源：Packages/manifest.json、packages-lock.json、ProjectSettings/、根 README.md。
+> （2026-09-18 局部同步：`com.unity.pipeline` 版本、可选包数量口径；其余数据仍为 2026-08-29 快照。）
 
 ## 基本信息
 
@@ -19,7 +20,7 @@
 ## 三层架构（当前形态）
 
 ```
-Modules (8 个独立嵌入式包 com.cielevel.axu-module-* / axu-indie-*，各含 asmdef；仅 LiveStream 依赖框架包)
+Modules (10 个可选嵌入式包：com.cielevel.axu-module-* / axu-indie-* 各 4 个，加测试基建 axu-test-framework 与 axu-unity-cli-kit；仅 LiveStream 依赖框架包)
    │  依赖
    ▼
 Common (包内 Runtime/Common，151 个 .cs，asmdef: AxuFrameKit.Runtime)  ── 依赖 ──►
@@ -60,7 +61,7 @@ packages-lock.json 中解析为 `"source": "embedded", "depth": 0`，依赖 ugui
 | com.unity.inputsystem | 1.11.1 | 输入系统 |
 | com.unity.ai.navigation | 2.0.4 | AI 导航 |
 | com.unity.nuget.newtonsoft-json | 3.2.2 | Newtonsoft JSON（CSV/存档等依赖） |
-| com.unity.pipeline | 0.5.0-exp.1 | Unity CLI/Agent 桥接（实验包，配合 Unity CLI beta 驱动 Editor；2026-08-29 加入） |
+| com.unity.pipeline | 0.7.0-exp.1 | Unity CLI/Agent 桥接（实验包，配合 Unity CLI beta 驱动 Editor；2026-08-29 加入，2026-09-17 自 0.5.0-exp.1 升级并重打 macOS 回环补丁） |
 | com.unity.test-framework | 1.4.6 | 测试框架 |
 | com.unity.timeline | 1.8.7 | 时间轴 |
 | com.unity.ugui | 2.0.0 | uGUI |
@@ -73,7 +74,7 @@ packages-lock.json 中解析为 `"source": "embedded", "depth": 0`，依赖 ugui
 ## 根目录 README.md 现状
 
 面向 GitHub 的门面文档（2026-08-29 二次改版）：居中 Logo + shields 徽章、特性列表、mermaid 架构图、
-9 包一览表（链接各包 README）、三种安装方式、快速上手代码、**文档导航表（相对链接指向各包内文档，不在根 README 重复内容）**、
+11 包一览表（链接各包 README）、三种安装方式、快速上手代码、**文档导航表（相对链接指向各包内文档，不在根 README 重复内容）**、
 仓库结构树。改版原则：细节留在对应目录的文档里，根 README 只做导流。
 
 ## 命名与代码规范速记（详见根 AGENTS.md，部分已过时）

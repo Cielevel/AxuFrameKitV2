@@ -37,7 +37,7 @@ Editor 在跑，`unity command` 列出它当前暴露的命令，`unity command 
 Package Manager → **Add package from git URL**：
 
 ```
-https://github.com/<your-org>/<your-repo>.git?path=/Packages/com.cielevel.axu-unity-cli-kit
+https://github.com/Cielevel/AxuFrameKitV2.git?path=/Packages/com.cielevel.axu-unity-cli-kit
 ```
 
 或直接写进 `Packages/manifest.json`：
@@ -45,12 +45,14 @@ https://github.com/<your-org>/<your-repo>.git?path=/Packages/com.cielevel.axu-un
 ```json
 {
   "dependencies": {
-    "com.cielevel.axu-unity-cli-kit": "https://github.com/<your-org>/<your-repo>.git?path=/Packages/com.cielevel.axu-unity-cli-kit#v0.1.0"
+    "com.cielevel.axu-unity-cli-kit": "https://github.com/Cielevel/AxuFrameKitV2.git?path=/Packages/com.cielevel.axu-unity-cli-kit"
   }
 }
 ```
 
-`#v0.1.0` 是 git tag，**生产工程建议锁 tag**；想跟随最新就把 `#...` 去掉。
+> 本包当前随 `Cielevel/AxuFrameKitV2` 仓库发布（该仓库为**私有**，目标工程需有访问权限）。
+> 仓库目前**未打 tag**，所以示例不锁版本；生产工程建议用 `#<commit>` 锚定具体提交
+> （`git rev-parse HEAD` 取），避免上游变动突袭。
 
 ### 作为嵌入式包（本包当前的形态）
 
@@ -73,7 +75,7 @@ UPM 会自动识别，无需在 `manifest.json` 声明。
 
 | 安装方式 | 更新方法 |
 |---|---|
-| Git 依赖（锁 tag） | 改 `manifest.json` 里的 tag，或在 Package Manager 里点 **Update**（需先移除 tag 锁定） |
+| Git 依赖（锁 commit/tag） | 改 `manifest.json` 里的 `#...` 锚点，或在 Package Manager 里点 **Update**（需先移除锚定） |
 | Git 依赖（不锁） | Package Manager → **Update**；CLI：`unity command package_resolve` 后重开工程 |
 | 嵌入式 / 本地路径 | 直接覆盖目录；本包无 Runtime 代码，刷新即生效 |
 
@@ -177,8 +179,11 @@ com.cielevel.axu-unity-cli-kit/
 
 ## 发布清单（把本包发到自己的仓库时）
 
-1. `package.json` 里的 `documentationUrl` / `changelogUrl` / `licensesUrl` 指向真实仓库地址。
-2. 打 tag：`git tag v0.1.0 && git push --tags`（消费方用 `#v0.1.0` 锁定）。
+> 当前形态：本包作为**嵌入式包**随 `Cielevel/AxuFrameKitV2` 一并版本化，`package.json` 的三个 URL 已指向该仓库。
+> 以下清单供日后把本包拆成独立仓库时逐条执行。
+
+1. `package.json` 里的 `documentationUrl` / `changelogUrl` / `licensesUrl` 改指新仓库地址。
+2. 打 tag：`git tag v0.1.0 && git push --tags`（消费方即可用 `#v0.1.0` 锁定）。
 3. 若有本地改动：同步更新 `CHANGELOG.md` 与 `Skills~/unity-cli-workflows/CHANGELOG.md`。
 4. 包更新后回到本工程，用窗口 **Refresh Installed Skills** 对齐项目内副本。
 

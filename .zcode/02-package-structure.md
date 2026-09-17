@@ -79,4 +79,8 @@ com.cielevel.axu-frame-kit/
 `com.cielevel.axu-indie-{scene-jumper,selection-to-csv,sprite-to-animation,stat-pipeline}`（零依赖独立工具）；
 各包含 package.json/README/CHANGELOG/独立 asmdef，示例在 `Samples~/`。
 
-即当前完整分层：包内 `_Core`（纯 C#）→ 包内 `Common`（Unity 运行时/UI）→ 8 个模块包，Editor 工具层在框架包内 `Editor/`。
+**此后新增的可选包（2026-09，非"模块"性质）**：`com.cielevel.axu-test-framework`（测试基建：UTF 工具层 + 场景测试平台）、
+`com.cielevel.axu-unity-cli-kit`（Axu CLI Agent Kit：CLI / Pipeline 文档 + Agent Skill 安装器，程序集 `AxuCliKit.Editor`，无运行时代码）。
+`Packages/` 下另有 Unity 官方实验包 `com.unity.pipeline`（非本仓库自有包）。
+
+即当前完整分层：包内 `_Core`（纯 C#）→ 包内 `Common`（Unity 运行时/UI）→ 10 个可选包，Editor 工具层在框架包内 `Editor/`。

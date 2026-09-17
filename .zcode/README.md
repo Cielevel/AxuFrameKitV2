@@ -6,10 +6,12 @@
 ## 项目速览
 
 **AxuFrameKit**（阿修框架工具包，by Cielevel）是面向 **Unity 6（6000.0.23f1 / URP 17.0.3）** 的应用程序框架。
-分层架构：`_Core`（纯 C# 核心库，无 Unity 依赖）→ `Common`（Unity 运行时组件与 UI 框架）→ `Modules`（业务模块，待包化）。
+分层架构：`_Core`（纯 C# 核心库，无 Unity 依赖）→ `Common`（Unity 运行时组件与 UI 框架）→ `Modules`（业务模块，2026-08-29 起已全部包化）。
 
 关键现状：**框架本体（_Core 80 + Common 151 + Editor 29 个 .cs）在嵌入式包 `Packages/com.cielevel.axu-frame-kit`（3 个 asmdef）**；
-2026-08-29 起 8 个可选模块也全部拆分为独立嵌入式包（4 个 `axu-module-*` + 4 个 `axu-indie-*`，其中仅 LiveStream 依赖框架包），
+2026-08-29 起 8 个功能模块也全部拆分为独立嵌入式包（4 个 `axu-module-*` + 4 个 `axu-indie-*`，其中仅 LiveStream 依赖框架包）；
+此后又增 2 个可选包——测试基建 `com.cielevel.axu-test-framework` 与 `com.cielevel.axu-unity-cli-kit`（后者无运行时代码），
+**可选包共 10 个**，`Packages/` 下另有 Unity 官方实验包 `com.unity.pipeline`。
 `Assets/AxuFrameKit/` 与 `Assets/AxuIndieModules/` 已整体移除。
 
 ## 文件导航（建议按编号顺序阅读）
@@ -30,7 +32,8 @@
 
 ## 重要提醒（信息时效性）
 
-- 根目录 `AGENTS.md` 与 `README.md` 已于 2026-08-29 重写，与包化现状同步；若发现二者与本库描述冲突，以更新时间较新者为准并回报修正。
-- 框架文档已于 2026-08-29 迁入包内、随代码放置（19 份散落 + 6 份 KitDoc），包根新增 README.md（含文档索引）/ CHANGELOG.md；
-  `Assets/AxuFrameKit/` 下仅剩 `Modules/`（待包化）。07 号文档的文档清单为迁移前快照，仅供历史对照。
-- 命名空间规范：`AxuFrameKit._Core.*`（Core 层）、`AxuFrameKit.Common.*`（Common 层）、`AxuFrameKit.Common.Editor.*`（Editor 层）。
+- 根目录 `AGENTS.md` 与 `README.md` 已于 2026-08-29 重写、2026-09-18 再次同步（补入 `axu-unity-cli-kit`、修正 `com.unity.pipeline` 版本为 0.7.0-exp.1）；若发现二者与本库描述冲突，以更新时间较新者为准并回报修正。
+- 框架文档已于 2026-08-29 迁入包内、随代码放置（19 份散落 + 6 份 KitDoc），包根新增 README.md（含文档索引）/ CHANGELOG.md。
+  07 号文档的文档清单为迁移前快照，仅供历史对照。
+- 本库 01/02/06 号文档的核心数据为 **2026-08-29 快照**（包化刚完成时），此后新增的包与测试体系未逐一回填，需要精确现状时以根 `AGENTS.md` 与各包 README 为准。
+- 命名空间规范：`AxuFrameKit._Core.*`（Core 层）、`AxuFrameKit.Common.*`（Common 层）、`AxuFrameKit.Common.Editor.*`（Editor 层）、`AxuCliKit.*`（CLI Kit 包）。

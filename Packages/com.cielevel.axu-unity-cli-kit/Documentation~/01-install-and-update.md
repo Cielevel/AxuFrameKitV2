@@ -9,7 +9,7 @@
 Package Manager → **Add package from git URL**：
 
 ```
-https://github.com/<org>/<repo>.git?path=/Packages/com.cielevel.axu-unity-cli-kit
+https://github.com/Cielevel/AxuFrameKitV2.git?path=/Packages/com.cielevel.axu-unity-cli-kit
 ```
 
 或写进 `Packages/manifest.json`：
@@ -17,14 +17,15 @@ https://github.com/<org>/<repo>.git?path=/Packages/com.cielevel.axu-unity-cli-ki
 ```json
 {
   "dependencies": {
-    "com.cielevel.axu-unity-cli-kit": "https://github.com/<org>/<repo>.git?path=/Packages/com.cielevel.axu-unity-cli-kit#v0.1.0"
+    "com.cielevel.axu-unity-cli-kit": "https://github.com/Cielevel/AxuFrameKitV2.git?path=/Packages/com.cielevel.axu-unity-cli-kit"
   }
 }
 ```
 
 - `?path=` 指定仓库里的子目录（本包在仓库的 `Packages/` 下）。
-- `#v0.1.0` 是 git tag。**生产工程锁 tag**：升级是显式动作，不会被上游改动突袭。
-  不锁 tag 则跟随默认分支 HEAD，Package Manager 的 **Update** 会拉到最新。
+- 本包随 `Cielevel/AxuFrameKitV2` 仓库发布，该仓库为**私有**，目标工程需有访问权限；且目前**未打 tag**。
+  生产工程建议用 `#<commit>` 锚定具体提交：升级是显式动作，不会被上游改动突袭。
+  不加锚点则跟随默认分支 HEAD，Package Manager 的 **Update** 会拉到最新。
 
 ### 嵌入式包
 
@@ -43,7 +44,7 @@ https://github.com/<org>/<repo>.git?path=/Packages/com.cielevel.axu-unity-cli-ki
 
 | 安装形态 | 动作 |
 |---|---|
-| Git 依赖（锁 tag） | 改 tag → 保存 `manifest.json` → Unity 自动重解析 |
+| Git 依赖（锁 commit/tag） | 改锚点 → 保存 `manifest.json` → Unity 自动重解析 |
 | Git 依赖（不锁） | Package Manager → **Update**，或 `unity command package_resolve` |
 | 嵌入式 / 本地路径 | 覆盖目录 → Unity 自动重导入 |
 
