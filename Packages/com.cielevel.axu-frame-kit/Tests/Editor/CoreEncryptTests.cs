@@ -30,6 +30,29 @@ namespace AxuFrameKit.Tests.Editor
         }
 
         [Test]
+        public void AesCrypto_Pbkdf2口令接口_往返还原且字节接口拒绝短密钥()
+        {
+            // Arrange
+            var aes = new AesCrypto();
+            const string plain = "阿修框架 AxuFrameKit 123!";
+            const string password = "short-pwd"; // 任意长度口令，经 PBKDF2 派生密钥
+
+            // Act
+            var cipher1 = aes.EncryptStringWithPbkdf2(plain, password);
+            var cipher2 = aes.EncryptStringWithPbkdf2(plain, password);
+
+            // Assert：随机盐下同口令两次密文不同、往返还原
+            Assert.That(cipher1, Is.Not.EqualTo(cipher2), "随机盐下同口令两次加密应产生不同密文");
+            Assert.That(aes.DecryptStringWithPbkdf2(cipher1, password), Is.EqualTo(plain));
+
+            // 字节级接口改为严格校验：非法长度密钥直接拒绝（旧版静默补零的行为已移除）
+            Assert.Throws<EncryptException>(() =>
+            {
+                aes.Encrypt(new byte[] { 1, 2, 3 }, Encoding.UTF8.GetBytes(password));
+            });
+        }
+
+        [Test]
         public void MD5与SHA256_标准向量_摘要一致()
         {
             // Arrange & Act & Assert：RFC 1321 / NIST 标准向量（UTF8）

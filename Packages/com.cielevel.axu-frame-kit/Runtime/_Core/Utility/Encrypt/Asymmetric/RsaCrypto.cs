@@ -4,6 +4,20 @@ using System.Security.Cryptography;
 namespace AxuFrameKit._Core.Utility.Encrypt
 {
     /// <summary>
+    /// RSA 加密填充方式选择。
+    /// 不显式指定时维持历史行为：按编译目标自动选择（Unity=Pkcs1，非 Unity=OaepSha256），
+    /// 以保证跨端旧密文仍可解；需要跨端互操作的场景请显式传入同一填充方式。
+    /// </summary>
+    public enum RsaPaddingChoice
+    {
+        /// <summary>PKCS#1 v1.5 填充（Unity 编译目标默认值；单次明文上限为 keySize/8-11 字节）</summary>
+        Pkcs1,
+
+        /// <summary>OAEP-SHA256 填充（非 Unity 编译目标默认值，安全性更高；单次明文上限为 keySize/8-66 字节）</summary>
+        OaepSha256
+    }
+
+    /// <summary>
     /// RSA 非对称加密实现
     /// 线程安全：每次操作创建新的 RSA 实例
     /// </summary>
@@ -28,26 +42,41 @@ namespace AxuFrameKit._Core.Utility.Encrypt
         /// <summary>
         /// 使用公钥加密
         /// </summary>
-        public byte[] Encrypt(byte[] data, string publicKey)
+        /// <param name="data">原始数据</param>
+        /// <param name="publicKey">公钥</param>
+        /// <param name="padding">填充方式；不传时按编译目标选择（Unity=Pkcs1，非 Unity=OaepSha256），维持历史行为</param>
+        public byte[] Encrypt(byte[] data, string publicKey, RsaPaddingChoice? padding = null)
         {
             if (data == null || data.Length == 0)
                 throw new EncryptException(EncryptOperation.Encrypt, "数据不能为空");
             if (string.IsNullOrEmpty(publicKey))
                 throw new EncryptException(EncryptOperation.Encrypt, "公钥不能为空");
 
+            var paddingChoice = ResolvePadding(padding);
+
             using var rsa = RSA.Create();
             rsa.FromXmlString(publicKey);
-#if UNITY_5_3_OR_NEWER || UNITY_2017_1_OR_NEWER
-            return rsa.Encrypt(data, RSAEncryptionPadding.Pkcs1);
-#else
-            return rsa.Encrypt(data, RSAEncryptionPadding.OaepSHA256);
-#endif
+
+            // PKCS#1 v1.5 单次明文上限为 keySize/8-11 字节：超长提前抛带说明的异常，而非裸 CryptographicException
+            if (paddingChoice == RsaPaddingChoice.Pkcs1)
+            {
+                int maxPlainLength = rsa.KeySize / 8 - 11;
+                if (data.Length > maxPlainLength)
+                    throw new EncryptException(EncryptOperation.Encrypt,
+                        $"PKCS1 填充下单次加密明文过长：{data.Length} 字节，超过上限 {maxPlainLength} 字节（密钥 {rsa.KeySize} 位）。" +
+                        "请分块加密，或显式改用 RsaPaddingChoice.OaepSha256 / 对称加密");
+            }
+
+            return rsa.Encrypt(data, ToRsaPadding(paddingChoice));
         }
 
         /// <summary>
         /// 使用私钥解密
         /// </summary>
-        public byte[] Decrypt(byte[] cipherData, string privateKey)
+        /// <param name="cipherData">加密数据</param>
+        /// <param name="privateKey">私钥</param>
+        /// <param name="padding">填充方式；不传时按编译目标选择（Unity=Pkcs1，非 Unity=OaepSha256），维持历史行为</param>
+        public byte[] Decrypt(byte[] cipherData, string privateKey, RsaPaddingChoice? padding = null)
         {
             if (cipherData == null || cipherData.Length == 0)
                 throw new EncryptException(EncryptOperation.Decrypt, "密文不能为空");
@@ -58,16 +87,42 @@ namespace AxuFrameKit._Core.Utility.Encrypt
             {
                 using var rsa = RSA.Create();
                 rsa.FromXmlString(privateKey);
-#if UNITY_5_3_OR_NEWER || UNITY_2017_1_OR_NEWER
-                return rsa.Decrypt(cipherData, RSAEncryptionPadding.Pkcs1);
-#else
-                return rsa.Decrypt(cipherData, RSAEncryptionPadding.OaepSHA256);
-#endif
+                return rsa.Decrypt(cipherData, ToRsaPadding(ResolvePadding(padding)));
             }
             catch (CryptographicException ex)
             {
                 throw new EncryptException(EncryptOperation.Decrypt, "RSA 解密失败", ex);
             }
+        }
+
+        // 接口显式实现：带可选参数的公共签名不满足 IAsymmetricCrypto 契约，这里补齐不带 padding 的旧签名（走默认填充）
+        byte[] IAsymmetricCrypto.Encrypt(byte[] data, string publicKey) => Encrypt(data, publicKey, null);
+
+        byte[] IAsymmetricCrypto.Decrypt(byte[] cipherData, string privateKey) => Decrypt(cipherData, privateKey, null);
+
+        /// <summary>
+        /// 解析填充方式：显式传入优先；未传入时按编译目标选择以兼容既有密文。
+        /// </summary>
+        private static RsaPaddingChoice ResolvePadding(RsaPaddingChoice? padding)
+        {
+            if (padding.HasValue)
+                return padding.Value;
+
+#if UNITY_5_3_OR_NEWER || UNITY_2017_1_OR_NEWER
+            return RsaPaddingChoice.Pkcs1;
+#else
+            return RsaPaddingChoice.OaepSha256;
+#endif
+        }
+
+        /// <summary>
+        /// 枚举转 .NET 填充实例
+        /// </summary>
+        private static RSAEncryptionPadding ToRsaPadding(RsaPaddingChoice choice)
+        {
+            return choice == RsaPaddingChoice.OaepSha256
+                ? RSAEncryptionPadding.OaepSHA256
+                : RSAEncryptionPadding.Pkcs1;
         }
 
         /// <summary>

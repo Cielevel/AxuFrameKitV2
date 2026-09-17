@@ -87,10 +87,18 @@ namespace AxuFrameKit.Common.Utility.Save
         {
             string fullKey = GetFullKey(key);
 
-            // 1. 检查缓存
+            // 1. 检查缓存（类型匹配才直接返回，避免 (T) 强转抛 InvalidCastException）
             if (_cache.TryGetValue(fullKey, out var cachedValue))
             {
-                return (T)cachedValue;
+                if (cachedValue is T typedValue)
+                    return typedValue;
+
+                // 缓存值为 null：保持与旧版强转一致的语义（引用/可空类型返回 default），不视为错误
+                if (cachedValue == null && (!typeof(T).IsValueType || Nullable.GetUnderlyingType(typeof(T)) != null))
+                    return default;
+
+                // 类型不匹配：记录错误并按缓存未命中处理，回退到存储读取路径
+                Debug.LogError($"[SaveUtil] 缓存类型不匹配 key: {key}，缓存类型: {cachedValue?.GetType().Name ?? "null"}，请求类型: {typeof(T).Name}，改为从存储读取");
             }
 
             // 2. 检查存储是否存在
@@ -141,23 +149,24 @@ namespace AxuFrameKit.Common.Utility.Save
         {
             string fullKey = GetFullKey(key);
 
-            // 1. 获取旧值用于回调
-            T oldValue = _cache.TryGetValue(fullKey, out var cached) ? (T)cached : default;
+            // 1. 获取旧值用于回调（缓存类型不匹配时按 default 处理，避免 (T) 强转抛 InvalidCastException）
+            T oldValue = _cache.TryGetValue(fullKey, out var cached) && cached is T cachedOld ? cachedOld : default;
 
-            // 2. 更新缓存
-            _cache[fullKey] = data;
-
-            // 3. 序列化
+            // 2. 序列化
             string content = _serializer.Serialize(data);
 
-            // 4. 加密 (如果有配置)
+            // 3. 加密 (如果有配置)
             if (_crypto != null && !string.IsNullOrEmpty(_cryptoKey))
             {
                 content = _crypto.EncryptString(content, _cryptoKey);
             }
 
-            // 5. 写入存储介质
+            // 4. 先写入存储介质，成功后才提交缓存——避免写盘异常时缓存与磁盘不一致
+            //    （序列化/加密/写盘任一环节抛异常时，缓存保持旧值不被污染）
             _storage.Write(fullKey, content);
+
+            // 5. 写入成功，更新缓存
+            _cache[fullKey] = data;
 
             // 6. 触发回调
             TriggerCallback(fullKey, oldValue, data);
@@ -169,7 +178,8 @@ namespace AxuFrameKit.Common.Utility.Save
         public void SaveDelayed<T>(string key, T data)
         {
             string fullKey = GetFullKey(key);
-            T oldValue = _cache.TryGetValue(fullKey, out var cached) ? (T)cached : default;
+            // 缓存类型不匹配时按 default 处理，避免 (T) 强转抛 InvalidCastException
+            T oldValue = _cache.TryGetValue(fullKey, out var cached) && cached is T cachedOld ? cachedOld : default;
             _cache[fullKey] = data;
             TriggerCallback(fullKey, oldValue, data);
         }

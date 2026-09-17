@@ -191,12 +191,77 @@ namespace AxuFrameKit.Common.Utility.Timer
 
             _cdRunningList.Add(unit);
 
-            return unit;
+            // 句柄与单元分离：句柄记录创建时版本，单元归还池后再复用会递增版本，旧句柄的写操作自动失效
+            return new CdHandle(unit);
         }
+
+        #region CdHandle
+
+        /// <summary>
+        /// 倒计时句柄：持有单元引用与创建时的版本号。
+        /// 单元归还对象池后（OnGet/OnRelease 重置时）版本号递增，
+        /// 之后通过旧句柄的任何写操作都会被忽略，防止串写到已复用的单元上。
+        /// </summary>
+        private class CdHandle : ICountdownHandle
+        {
+            private readonly CdUnit _unit;
+            private readonly int _version;   // 创建时单元版本
+            private bool _staleWarned;       // 失效告警只提示一次
+
+            public CdHandle(CdUnit unit)
+            {
+                _unit = unit;
+                _version = unit.Version;
+            }
+
+            /// <summary>句柄是否仍指向当前代次的单元</summary>
+            private bool IsValid
+            {
+                get
+                {
+                    if (_unit.Version == _version)
+                        return true;
+
+                    if (!_staleWarned)
+                    {
+                        _staleWarned = true;
+                        Debug.LogWarning("[CountdownManager] 计时器已结束/取消并回收，句柄失效，本次写操作被忽略");
+                    }
+                    return false;
+                }
+            }
+
+            // 读属性直接透传：完成后的 IsCompleted 等查询语义与旧版保持一致
+            public float RemainingTime => _unit.RemainingTime;
+            public float RemainingRatio => _unit.RemainingRatio;
+            public float PassedRatio => _unit.PassedRatio;
+            public bool IsCompleted => _unit.IsCompleted;
+            public bool IsPaused => _unit.IsPaused;
+            public bool IsCancelled => _unit.IsCancelled;
+
+            public ICountdownHandle OnTick(Action<float> onTick) { if (IsValid) _unit.OnTick(onTick); return this; }
+            public ICountdownHandle OnComplete(Action onComplete) { if (IsValid) _unit.OnComplete(onComplete); return this; }
+            public ICountdownHandle OnPause(Action onPause) { if (IsValid) _unit.OnPause(onPause); return this; }
+            public ICountdownHandle OnPause(Action<float> onPause) { if (IsValid) _unit.OnPause(onPause); return this; }
+            public ICountdownHandle OnResume(Action onResume) { if (IsValid) _unit.OnResume(onResume); return this; }
+            public ICountdownHandle OnResume(Action<float> onResume) { if (IsValid) _unit.OnResume(onResume); return this; }
+            public ICountdownHandle OnCancel(Action onCancel) { if (IsValid) _unit.OnCancel(onCancel); return this; }
+            public ICountdownHandle SetIgnoreTimeScale(bool ignoreTimeScale) { if (IsValid) _unit.SetIgnoreTimeScale(ignoreTimeScale); return this; }
+
+            public void Cancel() { if (IsValid) _unit.Cancel(); }
+            public void Pause() { if (IsValid) _unit.Pause(); }
+            public void Resume() { if (IsValid) _unit.Resume(); }
+            public void Restart() { if (IsValid) _unit.Restart(); }
+        }
+
+        #endregion
 
         #region CdUnit
 
-        private class CdUnit : ICountdownHandle
+        /// <summary>
+        /// 倒计时单元：由管理器驱动与池化，不再直接作为句柄暴露（见 <see cref="CdHandle"/>）。
+        /// </summary>
+        private class CdUnit
         {
             private Action<float> _onTick;
             private Action _onComplete;
@@ -208,6 +273,9 @@ namespace AxuFrameKit.Common.Utility.Timer
             private bool _ignoreTimeScale;
 
             private float _totalTime;
+
+            /// <summary>单元版本号：每次 Reset（含池的 OnGet/OnRelease）递增，用于句柄失效判定</summary>
+            public int Version { get; private set; }
 
             public float RemainingTime { get; private set; }
             public float RemainingRatio => _totalTime > 0f ? Mathf.Clamp01(RemainingTime / _totalTime) : 0f;
@@ -223,49 +291,49 @@ namespace AxuFrameKit.Common.Utility.Timer
                 RemainingTime = time;
             }
 
-            public ICountdownHandle OnTick(Action<float> onTick)
+            public CdUnit OnTick(Action<float> onTick)
             {
                 _onTick += onTick;
                 return this;
             }
 
-            public ICountdownHandle OnComplete(Action onComplete)
+            public CdUnit OnComplete(Action onComplete)
             {
                 _onComplete += onComplete;
                 return this;
             }
 
-            public ICountdownHandle OnPause(Action onPause)
+            public CdUnit OnPause(Action onPause)
             {
                 _onPause += onPause;
                 return this;
             }
 
-            public ICountdownHandle OnPause(Action<float> onPause)
+            public CdUnit OnPause(Action<float> onPause)
             {
                 _onPauseWithTime += onPause;
                 return this;
             }
 
-            public ICountdownHandle OnResume(Action onResume)
+            public CdUnit OnResume(Action onResume)
             {
                 _onResume += onResume;
                 return this;
             }
 
-            public ICountdownHandle OnResume(Action<float> onResume)
+            public CdUnit OnResume(Action<float> onResume)
             {
                 _onResumeWithTime += onResume;
                 return this;
             }
 
-            public ICountdownHandle OnCancel(Action onCancel)
+            public CdUnit OnCancel(Action onCancel)
             {
                 _onCancel += onCancel;
                 return this;
             }
 
-            public ICountdownHandle SetIgnoreTimeScale(bool ignoreTimeScale)
+            public CdUnit SetIgnoreTimeScale(bool ignoreTimeScale)
             {
                 _ignoreTimeScale = ignoreTimeScale;
                 return this;
@@ -317,6 +385,9 @@ namespace AxuFrameKit.Common.Utility.Timer
 
             public void Reset()
             {
+                // 版本号递增：使持有旧版本号的句柄失效（OnGet/OnRelease 均会经过此处）
+                Version++;
+
                 _totalTime = 0f;
                 RemainingTime = 0f;
                 IsPaused = false;
