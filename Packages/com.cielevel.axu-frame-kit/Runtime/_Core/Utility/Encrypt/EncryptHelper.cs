@@ -61,20 +61,58 @@ namespace AxuFrameKit._Core.Utility.Encrypt
         public static AesCrypto AES => _aesCrypto.Value;
 
         /// <summary>
-        /// AES 加密字符串
+        /// AES 加密字符串（旧口令直传格式）
         /// </summary>
+        /// <remarks>
+        /// 保留仅为兼容既有密文。口令字节直接作 AES 密钥，安全性弱；新代码请用
+        /// <see cref="AesEncryptWithPbkdf2"/>。
+        /// </remarks>
         /// <param name="plainText">明文</param>
         /// <param name="key">密钥</param>
         /// <returns>Base64 编码的密文（包含IV）</returns>
-        public static string AesEncrypt(string plainText, string key) => AES.EncryptString(plainText, key);
+        public static string AesEncrypt(string plainText, string key)
+        {
+#pragma warning disable CS0618 // 兼容既有密文的旧口令入口，不随 AesCrypto 的同名方法一起废弃
+            return AES.EncryptString(plainText, key);
+#pragma warning restore CS0618
+        }
 
         /// <summary>
-        /// AES 解密字符串
+        /// AES 解密字符串（旧口令直传格式）
         /// </summary>
+        /// <remarks>
+        /// 与 <see cref="AesEncrypt"/> 配套，仅用于解既有密文；新代码请用
+        /// <see cref="AesDecryptWithPbkdf2"/>。
+        /// </remarks>
         /// <param name="cipherText">Base64 编码的密文</param>
         /// <param name="key">密钥</param>
         /// <returns>解密后的明文</returns>
-        public static string AesDecrypt(string cipherText, string key) => AES.DecryptString(cipherText, key);
+        public static string AesDecrypt(string cipherText, string key)
+        {
+#pragma warning disable CS0618 // 兼容既有密文的旧口令入口，不随 AesCrypto 的同名方法一起废弃
+            return AES.DecryptString(cipherText, key);
+#pragma warning restore CS0618
+        }
+
+        /// <summary>
+        /// AES 加密字符串（口令经 PBKDF2 派生密钥，口令场景推荐）
+        /// </summary>
+        /// <param name="plainText">明文</param>
+        /// <param name="password">用户口令（任意长度，内部派生 32 字节密钥）</param>
+        /// <param name="iterations">PBKDF2 迭代次数，默认 10000（安全敏感场景建议 ≥ 100000）</param>
+        /// <returns>Base64 编码的密文（salt + IV + 迭代次数 + 密文，自描述）</returns>
+        public static string AesEncryptWithPbkdf2(string plainText, string password,
+            int iterations = Pbkdf2KeyDerivation.DefaultIterations)
+            => AES.EncryptStringWithPbkdf2(plainText, password, iterations);
+
+        /// <summary>
+        /// AES 解密由 <see cref="AesEncryptWithPbkdf2"/> 生成的密文
+        /// </summary>
+        /// <param name="cipherText">Base64 编码的密文</param>
+        /// <param name="password">加密时使用的口令</param>
+        /// <returns>解密后的明文（迭代次数自密文头读取）</returns>
+        public static string AesDecryptWithPbkdf2(string cipherText, string password)
+            => AES.DecryptStringWithPbkdf2(cipherText, password);
 
         /// <summary>
         /// 生成随机 AES 密钥

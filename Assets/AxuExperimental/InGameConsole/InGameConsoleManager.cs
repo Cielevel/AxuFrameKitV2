@@ -86,9 +86,10 @@ namespace AxuExperimental.InGameConsole
             Application.logMessageReceived -= OnLogReceived;
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _console?.Dispose();
+            base.OnDestroy();
         }
 
         private void OnLogReceived(string condition, string stackTrace, LogType type)

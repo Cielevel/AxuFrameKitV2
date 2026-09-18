@@ -31,8 +31,10 @@ using AxuFrameKit._Core.Utility.Encrypt;
 | 功能 | 方法 | 说明 |
 |------|------|------|
 | SHA256 哈希 | `EncryptHelper.HashSHA256(input)` | 返回十六进制字符串 |
-| AES 加密 | `EncryptHelper.AesEncrypt(plain, key)` | 返回 Base64 密文 |
-| AES 解密 | `EncryptHelper.AesDecrypt(cipher, key)` | 返回明文 |
+| AES 加密 | `EncryptHelper.AesEncrypt(plain, key)` | 旧口令直传格式，仅用于兼容既有密文 |
+| AES 解密 | `EncryptHelper.AesDecrypt(cipher, key)` | 配套旧格式解密 |
+| AES 加密（推荐） | `EncryptHelper.AesEncryptWithPbkdf2(plain, pwd)` | 口令经 PBKDF2 派生密钥，返回 Base64 密文 |
+| AES 解密（推荐） | `EncryptHelper.AesDecryptWithPbkdf2(cipher, pwd)` | 迭代次数自密文头读取 |
 | RSA 密钥对 | `EncryptHelper.GenerateRsaKeyPair()` | 生成公钥/私钥 |
 | Base64 编码 | `EncryptHelper.ToBase64(data)` | 字节数组转字符串 |
 | 十六进制编码 | `EncryptHelper.ToHex(data)` | 字节数组转字符串 |
@@ -85,18 +87,20 @@ string hash = EncryptHelper.HashMD5("Hello World");
 
 ### 基本用法
 
-AES 使用 CBC 模式 + 随机 IV，每次加密相同明文会产生不同密文。
+AES 使用 CBC 模式 + 随机 IV，每次加密相同明文会产生不同密文。口令场景用 PBKDF2 版本（口令经派生后作密钥，避免弱密钥风险）：
 
 ```csharp
 // 加密
 string plainText = "这是敏感数据";
-string key = "我的密钥";
-string encrypted = EncryptHelper.AesEncrypt(plainText, key);
+string password = "我的口令";
+string encrypted = EncryptHelper.AesEncryptWithPbkdf2(plainText, password);
 
 // 解密
-string decrypted = EncryptHelper.AesDecrypt(encrypted, key);
+string decrypted = EncryptHelper.AesDecryptWithPbkdf2(encrypted, password);
 // decrypted == "这是敏感数据"
 ```
+
+`AesEncrypt` / `AesDecrypt` 是口令直传的旧格式，**保留仅为解既有密文**，不要用于新数据。
 
 ### 高级用法
 

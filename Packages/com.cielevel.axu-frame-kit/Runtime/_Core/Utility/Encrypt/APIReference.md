@@ -73,6 +73,8 @@ public interface IHasher
 
 使用 AES-CBC 模式加密字符串。
 
+> 旧口令直传格式：口令字节直接作 AES 密钥，安全性弱。保留仅为兼容既有密文，新代码请用 `AesEncryptWithPbkdf2`。
+
 ```csharp
 public static string AesEncrypt(string plainText, string key)
 ```
@@ -93,6 +95,8 @@ public static string AesEncrypt(string plainText, string key)
 
 解密 AES 加密的字符串。
 
+> 与 `AesEncrypt` 配套的旧口令直传格式，保留仅为解既有密文，新代码请用 `AesDecryptWithPbkdf2`。
+
 ```csharp
 public static string AesDecrypt(string cipherText, string key)
 ```
@@ -100,6 +104,47 @@ public static string AesDecrypt(string cipherText, string key)
 **参数**
 - `cipherText`: Base64 编码的密文
 - `key`: 密钥字符串（必须与加密时相同）
+
+**返回**
+- 解密后的明文
+
+**异常**
+- `EncryptException`: 密文格式无效或解密失败时
+
+---
+
+### AesEncryptWithPbkdf2
+
+口令经 PBKDF2 派生密钥后加密字符串（口令场景推荐）。每次加密生成随机盐，相同口令不会派生出相同密钥。
+
+```csharp
+public static string AesEncryptWithPbkdf2(string plainText, string password, int iterations = 10000)
+```
+
+**参数**
+- `plainText`: 明文字符串
+- `password`: 用户口令（任意长度，内部派生 32 字节 AES 密钥）
+- `iterations`: PBKDF2 迭代次数，默认 10000（安全敏感场景建议 ≥ 100000）
+
+**返回**
+- Base64 编码的密文（格式：salt(16) + IV(16) + 迭代次数(4, 大端) + 密文，盐与迭代次数自包含，解密侧无需记录）
+
+**异常**
+- `EncryptException`: 明文或口令为空时
+
+---
+
+### AesDecryptWithPbkdf2
+
+解密由 `AesEncryptWithPbkdf2` 生成的密文，迭代次数从密文头自描述读取，无需调用方传入。
+
+```csharp
+public static string AesDecryptWithPbkdf2(string cipherText, string password)
+```
+
+**参数**
+- `cipherText`: Base64 编码的密文
+- `password`: 加密时使用的口令
 
 **返回**
 - 解密后的明文

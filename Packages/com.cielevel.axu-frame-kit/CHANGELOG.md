@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### 2026-09-18
+
+补齐 2026-09-17 加密批次留下的告警尾巴：`AesCrypto` 旧口令接口标记过时时，`EncryptHelper` 的便捷转发被漏掉，编译报 CS0618。
+
+- **修复（编译告警 / 加密外观）**：`EncryptHelper.AesEncrypt/AesDecrypt` 的旧口令转发补 `#pragma warning disable CS0618` 并在注释中标注"仅为兼容既有密文"——`EncryptHelper` 是旧密文的对外入口，不随 `AesCrypto` 同名方法一起废弃；新增 `AesEncryptWithPbkdf2/AesDecryptWithPbkdf2` 便捷入口（`iterations` 可配，默认 10000），补上此前只能经 `EncryptHelper.AES.EncryptStringWithPbkdf2` 才能走到的口令路径。
+- **测试**：`CoreEncryptTests` 新增 `EncryptHelper_便捷接口_旧口令与Pbkdf2均可往返`（旧路径可用性 + 新接口往返 + 与 `AesCrypto` 密文格式互通）；旧口令用例加**有意**抑制与用途说明。
+- **文档**：`EncryptUtility.md` / `QuickReference.md` / `APIReference.md` 三份同步——PBKDF2 便捷接口入表，旧口令接口统一标注"仅用于解既有密文"。
+
 ### 2026-09-17
 
 全框架体检后的集中修复批次（分层红线、域重载、UI、网络/存档/加密、任务队列、Editor 工具）。测试：`AxuFrameKit.Tests.Editor` 48 → 49、`AxuFrameKit.Tests.Runtime` 6 → 14，两侧全绿；`LiveStream`/`Noise` 模块测试与工程级冒烟同步复跑通过。

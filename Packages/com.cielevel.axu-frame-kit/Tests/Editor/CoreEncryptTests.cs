@@ -11,6 +11,7 @@ namespace AxuFrameKit.Tests.Editor
     public class CoreEncryptTests
     {
         [Test]
+#pragma warning disable CS0618 // 旧口令直传接口是既有密文的兼容路径，此用例刻意验证该路径仍可解密
         public void AesCrypto_字符串加密解密往返_还原原文()
         {
             // Arrange
@@ -27,6 +28,29 @@ namespace AxuFrameKit.Tests.Editor
             Assert.That(cipher1, Is.Not.EqualTo(cipher2), "随机 IV 下同一明文两次加密应产生不同密文");
             Assert.That(aes.DecryptString(cipher1, key), Is.EqualTo(plain));
             Assert.That(aes.DecryptString(cipher2, key), Is.EqualTo(plain));
+        }
+#pragma warning restore CS0618
+
+        [Test]
+        public void EncryptHelper_便捷接口_旧口令与Pbkdf2均可往返()
+        {
+            // Arrange
+            var aes = new AesCrypto();
+            const string plain = "阿修框架 AxuFrameKit 123!";
+            const string key = "axu-test-key";
+            const string password = "short-pwd";
+
+            // Assert：EncryptHelper 是旧密文的对外入口，兼容路径必须保持可用
+            var legacyCipher = EncryptHelper.AesEncrypt(plain, key);
+            Assert.That(EncryptHelper.AesDecrypt(legacyCipher, key), Is.EqualTo(plain));
+
+            // Assert：新增的 PBKDF2 便捷接口往返还原
+            var cipher = EncryptHelper.AesEncryptWithPbkdf2(plain, password);
+            Assert.That(cipher, Is.Not.EqualTo(plain));
+            Assert.That(EncryptHelper.AesDecryptWithPbkdf2(cipher, password), Is.EqualTo(plain));
+
+            // Assert：便捷接口与 AesCrypto 同名方法同格式，密文可互换解密
+            Assert.That(aes.DecryptStringWithPbkdf2(cipher, password), Is.EqualTo(plain));
         }
 
         [Test]

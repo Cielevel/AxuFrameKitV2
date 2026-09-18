@@ -11,9 +11,13 @@ EncryptHelper.HashMD5("text")       // → 32字符十六进制（仅校验用�
 ## AES 对称加密
 
 ```csharp
-// 加密解密
+// 加密解密（旧口令直传格式，仅用于兼容既有密文）
 EncryptHelper.AesEncrypt("明文", "密钥")    // → Base64密文
 EncryptHelper.AesDecrypt("密文", "密钥")    // → 明文
+
+// 加密解密（口令经 PBKDF2 派生密钥，推荐）
+EncryptHelper.AesEncryptWithPbkdf2("明文", "口令")  // → Base64密文（salt/IV/迭代次数自包含）
+EncryptHelper.AesDecryptWithPbkdf2("密文", "口令")  // → 明文
 
 // 生成密钥
 EncryptHelper.GenerateAesKey()              // → 32字节密钥
@@ -75,7 +79,8 @@ bool valid = EncryptHelper.VerifyHMAC("消息", "密钥", hmac)
 | 需求 | 推荐方案 | 示例 |
 |------|----------|------|
 | 密码存储 | PBKDF2 | `DeriveKey(password, salt, 32)` |
-| 敏感数据 | AES | `AesEncrypt/AesDecrypt` |
+| 敏感数据 | AES + PBKDF2 | `AesEncryptWithPbkdf2/AesDecryptWithPbkdf2` |
+| 解既有密文 | AES 旧格式 | `AesEncrypt/AesDecrypt` |
 | 密钥传输 | RSA | `RsaEncrypt/RsaDecrypt` |
 | 数据完整性 | SHA256 | `HashSHA256` |
 | 消息验证 | HMAC | `ComputeHMAC/VerifyHMAC` |
