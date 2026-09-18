@@ -3,7 +3,7 @@
 **一个可被任意 Unity 工程直接拉取的 UPM 包，交付"用命令行驱动 Unity"这件事的完整文档 + 立即可用的 Agent Skill。**
 
 包内没有运行时代码、没有第三方依赖：它带来的是 **知识**（CLI / Pipeline 的准确用法与配方）和
-**安装器**（把这套知识变成你工程里 Claude Code / Cursor / Windsurf / Cline / Copilot / Codex
+**安装器**（把这套知识变成你工程里 Claude Code / ZCode / opencode / Cursor / Windsurf / Cline / Copilot / Codex
 能自动读到的 skill 文件）。
 
 - 目标 Unity：2021.3+（Editor 工具本身）；**实时驱动已打开 Editor** 的能力需要 Unity 6+ 与
@@ -96,6 +96,7 @@ UPM 会自动识别，无需在 `manifest.json` 声明。
 |---|---|---|
 | Claude Code | `.claude/skills/unity-cli-workflows/` | 完整 skill 副本（`SKILL.md` + `references/`） |
 | ZCode | `.zcode/skills/unity-cli-workflows/` | 完整 skill 副本 |
+| opencode | `.opencode/skills/unity-cli-workflows/` | 完整 skill 副本（opencode 优先读它，其次才是 `.agents/skills/`） |
 | **跨工具通用** | `.agents/skills/unity-cli-workflows/` | 完整 skill 副本。Codex / Cursor / Copilot / Gemini CLI / Zed / OpenCode / Cline / Windsurf / Kilo 等一批客户端都读这里 |
 | Cursor 规则 | `.cursor/rules/unity-cli-workflows.mdc` | 规则文件 + 指针（与上面的 skills 目录是两种机制，可并用） |
 | Windsurf 规则 | `.windsurf/rules/unity-cli-workflows.md` | 规则文件 + 指针 |
@@ -103,9 +104,12 @@ UPM 会自动识别，无需在 `manifest.json` 声明。
 | VS Code / Copilot 指令 | `.github/instructions/unity-cli-workflows.instructions.md` | 指令文件 + 指针 |
 | 任意 Agent | `AGENTS.md` 里的托管区块 | 指针 + 硬规则，`<!-- axu-cli-kit:begin -->` 包裹，可安全重写 |
 
-首次运行时安装器会**探测工程里已存在的客户端目录**（`.claude/`、`.zcode/`、`.agents/`、`.cursor/`、
+首次运行时安装器会**探测工程里已存在的客户端目录**（`.claude/`、`.zcode/`、`.opencode/`、`.agents/`、`.cursor/`、
 `.windsurf/`、`.clinerules/`）作为建议目标；一个都没探测到时退回到 `claude-code`。
 窗口里的 **Detect clients used in this project** 可随时重跑探测。
+
+> opencode 用户可以直接用菜单 `AxuFrameKit ▸ CLI Agent Kit ▸ Install Skills into opencode` 一键安装，
+> 不必先进窗口勾选。
 
 > 注意：跨工具通用目录是 **`.agents/skills/`（复数）**。单数的 `.agent/` 不是任何工具的规范路径。
 

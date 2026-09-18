@@ -1,8 +1,8 @@
 {
   "name": "com.cielevel.axu-unity-cli-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "Axu CLI Agent Kit",
-  "description": "Package-level documentation plus agent skills for driving Unity from a terminal: the unity CLI, the com.unity.pipeline live-Editor API, CI build/test recipes and troubleshooting. Ships an Editor installer that materializes the skill into this project's AI-client folders (.claude, .zcode, .agents, .cursor, .windsurf, .clinerules, .github, AGENTS.md) and can pull the official Unity skills on demand.",
+  "description": "Package-level documentation plus agent skills for driving Unity from a terminal: the unity CLI, the com.unity.pipeline live-Editor API, CI build/test recipes and troubleshooting. Ships an Editor installer that materializes the skill into this project's AI-client folders (.claude, .zcode, .opencode, .agents, .cursor, .windsurf, .clinerules, .github, AGENTS.md) and can pull the official Unity skills on demand.",
   "unity": "2021.3",
   "keywords": [
     "unity-cli",

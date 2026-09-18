@@ -47,6 +47,14 @@ namespace AxuCliKit.Editor
             Debug.Log("[AxuCliKit] uninstall\n" + report.ToText());
         }
 
+        [MenuItem(Root + "Install Skills into opencode", false, 33)]
+        public static void InstallOpencode()
+        {
+            AxuCliKitSettings.SetTargetEnabled("opencode", true);
+            var report = AxuCliKitInstaller.Install(new[] { "opencode" }, false, false);
+            Debug.Log("[AxuCliKit] install (opencode)\n" + report.ToText());
+        }
+
         [MenuItem(Root + "Install Official Unity Skills (this project)", false, 50)]
         public static void InstallOfficialSkills()
         {

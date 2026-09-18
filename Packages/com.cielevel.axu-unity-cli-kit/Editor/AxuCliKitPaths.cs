@@ -174,6 +174,14 @@ namespace AxuCliKit.Editor
                 ".zcode"),
 
             new AxuCliKitTarget(
+                "opencode",
+                "opencode — .opencode/skills/",
+                AxuCliKitTargetKind.SkillDirectory,
+                ".opencode/skills/{skill}",
+                "Full skill copy in opencode's own project config folder (read before the shared .agents/skills).",
+                ".opencode"),
+
+            new AxuCliKitTarget(
                 "agents-dir",
                 "Shared skills dir — .agents/skills/",
                 AxuCliKitTargetKind.SkillDirectory,

@@ -3,6 +3,11 @@
 Documentation-only, like the official Unity skills: nothing automated reads this file. Each
 entry names the `unity` CLI version the content was verified against.
 
+## Kit 0.2.0 — 2026-09-18
+
+- `references/agent-integration.md` — documented opencode's native project skill folder
+  (`.opencode/skills/`, scanned before `.agents/skills/`) and added it to the kit's target table.
+
 ## CLI `1.0.0-beta.10` — 2026-09-17
 
 First release, shipped inside `com.cielevel.axu-unity-cli-kit` 0.1.0. Verified on macOS against

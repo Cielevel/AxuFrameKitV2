@@ -24,6 +24,7 @@ Project-local (these are the ones that travel with the repo):
 | **Shared / cross-tool** | **`.agents/skills/<name>/SKILL.md`** — read by Codex, Cursor, GitHub Copilot, Gemini CLI, Zed, OpenCode, Cline, Windsurf, Kilo Code, Amp, Antigravity, Droid and more |
 | Claude Code | `.claude/skills/<name>/SKILL.md` |
 | ZCode | `.zcode/skills/<name>/SKILL.md` (scanned before `.agents/skills`) |
+| opencode | `.opencode/skills/<name>/SKILL.md` (scanned before `.agents/skills`) |
 | Cursor rules | `.cursor/rules/*.mdc` (a different mechanism from skills) |
 | Windsurf rules | `.windsurf/rules/*.md` |
 | Cline rules | `.clinerules/*.md` |
@@ -69,6 +70,7 @@ Its Editor tooling (`AxuFrameKit ▸ CLI Agent Kit`) installs them where each cl
 |---|---|
 | Claude Code | Full copy: `.claude/skills/<name>/{SKILL.md,references/…}` |
 | ZCode | Full copy: `.zcode/skills/<name>/…` |
+| opencode | Full copy: `.opencode/skills/<name>/…` |
 | Shared (cross-tool) | Full copy: `.agents/skills/<name>/…` |
 | Cursor | `.cursor/rules/<name>.mdc` — rule frontmatter + a pointer to the installed copy |
 | Windsurf | `.windsurf/rules/<name>.md` |

@@ -6,6 +6,22 @@ All notable changes to this package are recorded here. The format follows
 
 Each entry names the `unity` CLI version the documentation was verified against.
 
+## [0.2.0] — 2026-09-18
+
+Verified against `unity` CLI `1.0.0-beta.10` and `com.unity.pipeline` `0.7.0-exp.1`
+(Unity `6000.0.23f1`).
+
+### Added
+
+- **opencode target** — a full skill copy into opencode's own project config folder,
+  `.opencode/skills/<skill>/` (opencode reads it before the shared `.agents/skills/`).
+  Detected by the `.opencode` marker, so it shows up as a suggested target and as a checkbox
+  in the window like the other clients.
+- **opencode one-click menu entry** —
+  `AxuFrameKit ▸ CLI Agent Kit ▸ Install Skills into opencode` enables the target and installs
+  only it; the choice is reflected in the window and the global uninstall.
+- The kit now materializes **nine** targets (the eight from 0.1.0 plus `.opencode/skills/`).
+
 ## [0.1.0] — 2026-09-17
 
 First release. Verified against `unity` CLI `1.0.0-beta.10` and `com.unity.pipeline` `0.7.0-exp.1`

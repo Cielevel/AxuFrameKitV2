@@ -5,14 +5,18 @@
 ## 写入位置
 
 在 `AxuFrameKit ▸ CLI Agent Kit` 窗口里按需勾选。**首次运行不写死默认值**：安装器探测工程里已存在的
-客户端目录（`.claude/`、`.zcode/`、`.agents/`、`.cursor/`、`.windsurf/`、`.clinerules/`），
+客户端目录（`.claude/`、`.zcode/`、`.opencode/`、`.agents/`、`.cursor/`、`.windsurf/`、`.clinerules/`），
 把探测到的作为建议目标；一个都没探测到才退回 `claude-code`。你手动勾选后以你的选择为准
 （存在 EditorPrefs，按机器+工程），窗口里的 **Detect clients used in this project** 可重跑探测。
+
+只想装 opencode 时也可以直接用菜单 `AxuFrameKit ▸ CLI Agent Kit ▸ Install Skills into opencode`：
+它会自动勾上该目标并只安装它，与窗口安装共用同一份状态记录。
 
 | 目标 | 位置 | 形式 |
 |---|---|---|
 | Claude Code | `.claude/skills/unity-cli-workflows/` | **完整副本**：`SKILL.md` + `references/` + `CHANGELOG.md` |
 | ZCode | `.zcode/skills/unity-cli-workflows/` | **完整副本**（ZCode 扫描 `.zcode/skills` 优先于 `.agents/skills`） |
+| opencode | `.opencode/skills/unity-cli-workflows/` | **完整副本**（opencode 原生项目配置目录；同名 skill 优先于 `.agents/skills` / `.claude/skills`） |
 | 跨工具通用 | `.agents/skills/unity-cli-workflows/` | **完整副本**，被 Codex / Cursor / Copilot / Gemini CLI / Zed / OpenCode / Cline / Windsurf / Kilo / Amp 等读取 |
 | Cursor 规则 | `.cursor/rules/unity-cli-workflows.mdc` | 规则文件（`description` / `alwaysApply` frontmatter）+ 摘要 + 指向正文的路径 |
 | Windsurf 规则 | `.windsurf/rules/unity-cli-workflows.md` | 同上（`trigger: model_decision`） |
@@ -34,7 +38,8 @@
 如果你只想勾一个目标，就勾它。`npx skills` 的路径表把 `.agents/skills/` 列为
 Codex、Cursor、GitHub Copilot、Gemini CLI、Zed、OpenCode、Cline、Windsurf、Kilo Code、
 Amp、Antigravity、Droid 等一大批客户端的工程内 skill 目录。ZCode 也读它
-（`<repo>/.agents/skills/`，优先级低于 `<repo>/.zcode/skills/`）。
+（`<repo>/.agents/skills/`，优先级低于 `<repo>/.zcode/skills/`）；opencode 同样读它
+（优先级低于它自己的 `<repo>/.opencode/skills/`）。
 
 > ⚠️ 是 **`.agents/`（复数）**。单数的 `.agent/` 不是任何工具的规范路径——
 > 如果你在别处看到 `.agent/skills/`，那是笔误或某个私有约定。

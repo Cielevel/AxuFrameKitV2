@@ -88,7 +88,7 @@ namespace AxuCliKit.Tests.Editor
         }
 
         [Test]
-        public void Targets_目录式技能目标_覆盖claude与zcode与跨工具通用目录()
+        public void Targets_目录式技能目标_覆盖已支持客户端的原生目录与跨工具通用目录()
         {
             var skillDirectories = new List<string>();
             foreach (var target in AxuCliKitPaths.Targets)
@@ -97,11 +97,14 @@ namespace AxuCliKit.Tests.Editor
                     skillDirectories.Add(target.Id);
             }
 
-            // These three carry the full skill copy; the rest are rule/instruction pointers.
+            // These carry the full skill copy; the rest are rule/instruction pointers.
             Assert.Contains("claude-code", skillDirectories);
             Assert.Contains("zcode", skillDirectories);
+            Assert.Contains("opencode", skillDirectories);
             Assert.Contains("agents-dir", skillDirectories);
             Assert.AreEqual("zcode", AxuCliKitPaths.FindTarget("zcode").Id);
+            Assert.AreEqual("opencode", AxuCliKitPaths.FindTarget("opencode").Id);
+            Assert.AreEqual(".opencode/skills/{skill}", AxuCliKitPaths.FindTarget("opencode").PathTemplate);
             Assert.AreEqual(".agents/skills/{skill}", AxuCliKitPaths.FindTarget("agents-dir").PathTemplate);
         }
 

@@ -173,7 +173,7 @@ Packages/com.cielevel.axu-frame-kit/Editor/Common/
 
 另有两个非"模块"性质的嵌入式包（合计 10 个可选包）：
 - `com.cielevel.axu-test-framework` — 测试基建（UTF 工具层 + 场景测试平台），详见下方「测试」章节
-- `com.cielevel.axu-unity-cli-kit` — Axu CLI Agent Kit，**无运行时代码**，交付的是文档 + 安装器：包级 `unity` CLI / Pipeline 用法文档，并经包内安装器把 skill 写进各 AI 客户端目录（`.claude` / `.zcode` / `.agents` / `.cursor` / `.windsurf` / `.clinerules` / `.github` / `AGENTS.md` 共 8 个目标），另可调 `unity skill install <client> --local` 拉取 Unity 官方 skill。零依赖，`com.unity.pipeline` 是可选的实时能力来源，不在其 package.json 中声明。
+- `com.cielevel.axu-unity-cli-kit` — Axu CLI Agent Kit，**无运行时代码**，交付的是文档 + 安装器：包级 `unity` CLI / Pipeline 用法文档，并经包内安装器把 skill 写进各 AI 客户端目录（`.claude` / `.zcode` / `.opencode` / `.agents` / `.cursor` / `.windsurf` / `.clinerules` / `.github` / `AGENTS.md` 共 9 个目标，其中 opencode 另有菜单一键入口），另可调 `unity skill install <client> --local` 拉取 Unity 官方 skill。零依赖，`com.unity.pipeline` 是可选的实时能力来源，不在其 package.json 中声明。
 
 **命名空间规范**: 模块家族 `AxuFrameKit.Modules.{模块名}`、独立模块 `AxuIndieModules.{模块名}`（均保持不变）。
 
