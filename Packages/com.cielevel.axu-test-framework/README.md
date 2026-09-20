@@ -13,9 +13,13 @@ AxuFrameKit 体系之外的**通用测试框架包**：覆盖 EditMode 与 PlayM
   预算/基线/趋势、报告模型、JSON 封装）。`noEngineReferences: true`，唯一外部依赖 Newtonsoft.Json。
   schema 见 [`DOC/ScenarioSchema.md`](DOC/ScenarioSchema.md)。
 - **Agent 程序集 `AxuTestFramework.Agent`**：Player 可编译的场景测试运行时
-  （Bootstrap / Runner / 采集器 / 八能力 / 工具集）。引用 Core 与 `Unity.InputSystem`/`UnityEngine.UI`
-  程序集（monkey 输入注入与 UGUI 降级路径用；asmdef 为硬引用——未装这两个包的工程需自行安装或裁剪引用，
-  拆分守护 asmdef 的正规化方案见工程 backlog）；公开入口以 `AXU_TEST_AGENT` define 守护（不开启则不产生激活代码）。
+  （Bootstrap / Runner / 采集器 / 八能力 / 工具集）。只引用 Core 与 Newtonsoft.Json——对
+  `Unity.InputSystem` / `com.unity.ugui` **零硬引用**（backlog #5 正规化）：monkey 输入注入与 UGUI
+  降级分别由可选守护程序集 `AxuTestFramework.Agent.Input`（`defineConstraints: [AXU_INPUTSYSTEM_PRESENT]`，
+  由 versionDefines 按 `com.unity.inputsystem ≥1.0` 注入）与 `AxuTestFramework.Agent.UGUI`
+  （`AXU_UGUI_PRESENT`，按 `com.unity.ugui ≥1.0` 注入）提供；未装对应包时该程序集整体不编译，
+  主程序集与包其余功能零影响（后端经 `AgentInputBackends` 按优先级反射发现）。公开入口以
+  `AXU_TEST_AGENT` define 守护（不开启则不产生激活代码）。
 - **Editor 程序集 `AxuTestFramework.Editor`**：报告落盘（`[TestRunCallback]` → `AxuTestReportWriter`）、
   scenario 运行编排（桥文件 + 看门狗 + 趋势入库）、导出器与看板窗口（菜单 `AxuFrameKit/AxuTestRunner`，
   Tests / Scenario / Trend 四页签）。`autoReferenced: false`，仅 Editor 参与；零 pipeline 引用。
@@ -32,6 +36,7 @@ AxuFrameKit 体系之外的**通用测试框架包**：覆盖 EditMode 与 PlayM
 | `com.unity.test-framework` 1.4.6 | UTF（Unity Test Framework），必需 |
 | `com.unity.nuget.newtonsoft-json` 3.2.2 | 报告 JSON 序列化，必需（asmdef 引用名 `Unity.Nuget.Newtonsoft-Json`） |
 | `com.unity.pipeline` ≥0.5.0-exp.1（本工程 0.7.0-exp.1） | **可选**（0.2.0 起不再声明在 dependencies；`AxuTestFramework.Editor.Pipeline.asmdef` 的 versionDefine 表达式为 `0.5.0-exp`，按最小值语义匹配更高版本，2026-09-17 升到 0.7.0-exp.1 后该程序集仍正常编译）。安装时 `AxuTestFramework.Editor.Pipeline` 程序集经 TypeCache 自动注册 `axu_test_*` 自定义命令到 pipeline 本地 HTTP API，获得"命令行跑测试 + 收报告"能力；未安装则该程序集整体不编译，包内其余功能（工具层 / 报告 / 看板）完整可用。其他工程如需命令驱动再自行拷入该包（升级版本注意 macOS 端口探测补丁，按使用工程内文档重打） |
+| `com.unity.inputsystem` ≥1.0 / `com.unity.ugui` ≥1.0 | **可选**（不声明在 dependencies）：分别驱动 `AxuTestFramework.Agent.Input` / `AxuTestFramework.Agent.UGUI` 两个守护程序集（monkey 输入注入主路径 / UGUI 命中与降级点按）。**未装任一时主 Agent 程序集照样编译**；两者都缺时 monkey 仅记录坐标并出一次性 info finding |
 
 ## 目录结构
 
@@ -47,13 +52,15 @@ com.cielevel.axu-test-framework/
 │   ├── Trend/                        #   TrendPoint / TrendStore（RFC 4180 CSV）/ TrendSummary（环比）
 │   ├── Report/                       #   ScenarioReport / Finding / ReportEnvironment（axu-scenario-report/1）
 │   └── Json/                         #   AxuJson（Newtonsoft 薄封装 + schema 校验）
-├── Agent/                            # asmdef: AxuTestFramework.Agent（Player 可编译；只依赖 Core）
+├── Agent/                            # asmdef: AxuTestFramework.Agent（Player 可编译；只依赖 Core，输入后端零硬引用）
 │   ├── Bootstrap/                    #   AgentBootstrap（RuntimeInitializeOnLoad）/ AxuTestAgent 门面 / 能力·场景注册表
 │   ├── Runner/                       #   AgentRunnerHost（嵌套迭代器驱动 + 看门狗）/ ScenarioLaunchOptions / ScenarioStatusFile
 │   ├── Capabilities/                 #   Echo / Perf / LoadTime / Smoke / Soak / Stress / Monkey / GameHook（各带 DOC.md）
 │   ├── Collectors/                   #   fps / frameTime / memory / rendering / gc 五采集器（默认 250ms 聚合）
 │   ├── Metrics/                      #   AxuMetrics 零分配 no-op 门面 / MetricSession
-│   ├── Tools/                        #   AgentEnvironment / AgentScenes / AgentCapture / AgentLogWatch / AgentInput（InputSystem 可选化）/ StressSpawner / AgentPaths / AgentWait
+│   ├── Tools/                        #   AgentEnvironment / AgentScenes / AgentCapture / AgentLogWatch / AgentInput（门面，后端反射发现）/ AgentInputBackends / StressSpawner / AgentPaths / AgentWait
+│   ├── Input/                        #   asmdef: AxuTestFramework.Agent.Input（AXU_INPUTSYSTEM_PRESENT 守护）——InputSystem 注入后端
+│   ├── UGUI/                         #   asmdef: AxuTestFramework.Agent.UGUI（AXU_UGUI_PRESENT 守护）——UGUI 命中/降级后端
 │   └── Reports/                      #   ScenarioReportWriter（axu-scenario-report/1 落盘；soak 的 partial flush 在 SoakRunner 内实现）
 ├── Runtime/                          # asmdef: AxuTestFramework（全平台，UNITY_INCLUDE_TESTS 守护）
 │   ├── Wait/AxuWait.cs               #   帧 / 条件 / 秒等待（[UnityTest] 协程 yield）
@@ -79,7 +86,7 @@ com.cielevel.axu-test-framework/
 │       ├── AxuPlayerSuiteCommands.cs        # axu_player_suite_build / axu_player_suite_run
 │       ├── AxuTrendCommand.cs               # axu_trend_summary
 │       └── AxuWindowScreenshotCommand.cs    # axu_window_screenshot（Windows 专属）
-├── Tests/Editor/                     # asmdef: AxuTestFramework.Tests.Editor（包自身契约单测，209 例）
+├── Tests/Editor/                     # asmdef: AxuTestFramework.Tests.Editor（包自身契约单测，223 例）
 └── Samples~/
     ├── Tests/{Editor,Runtime}/       # UTF 最小示例（PM → Samples 导入）
     └── Scenarios/                    # 每能力一份 example suite + README（PM → Samples 导入）

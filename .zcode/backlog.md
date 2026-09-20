@@ -1,7 +1,7 @@
 # 待办事项（Backlog）
 
 > 记录已识别但暂缓处理的问题。每项注明发现来源与建议方案，处理完成后移入下方"已完成"或直接删除。
-> （2026-08-31 由 AxuTestFramework 交付审查与出包验证产生；2026-09-20 待办核验：#2/#6 确认已解决并销账，当前未决 #4、#5）
+> （2026-08-31 由 AxuTestFramework 交付审查与出包验证产生；2026-09-20 处理：#2/#6 销账，#4 P0 与 #5 同日完成，#4 的 P1/P2 留后续迭代，#3 保留观察点）
 
 ## 1. ~~OllamaModelCall 窗口脚本阻断 Player 构建~~ 【已修复 2026-08-31，Phase 1 前置授权修复】
 
@@ -32,12 +32,14 @@
   - P2：Trend 页自绘折线图（UITK generateVisualContent）+ 任意两份报告 A/B 对比。
 - **决策约定**：不因此打乱既定 Phase 顺序；Phase 6 收口时由工程所有者决定"顺手做掉 P0"或"留作 v2 后独立迭代"。（2026-09-20 已决策：做 P0 并完成，见上；P1/P2 维持后置。）
 
-## 5. Agent asmdef 对 InputSystem/UGUI 的硬引用正规化【P2 级，Phase 6 审查发现】
+## 5. ~~Agent asmdef 对 InputSystem/UGUI 的硬引用正规化~~ 【已解决 2026-09-20：拆分可选守护程序集】
+
+- **处理（2026-09-20，采纳"拆分守护 asmdef"方案）**：主 `AxuTestFramework.Agent` 程序集移除 `Unity.InputSystem`/`UnityEngine.UI` 硬引用（versionDefines 一并移除），新增两个可选守护程序集——`AxuTestFramework.Agent.Input`（references: Agent + Unity.InputSystem；versionDefines `com.unity.inputsystem ≥1.0` → `AXU_INPUTSYSTEM_PRESENT` + defineConstraints）与 `AxuTestFramework.Agent.UGUI`（`AXU_UGUI_PRESENT`，references: Agent + UnityEngine.UI）；主程序集新增 `IAgentTapInjector`/`IAgentUguiProbe` 接口与 `AgentInputBackends` 反射发现器（InputSystem 主路径优先、UGUI 降级、两者都缺仅记录坐标 + 一次性 info 提示）。验证：主程序集引用红线 + 可选后端解析共 4 例新测试，包测试 **223/223** 全绿；README / CHANGELOG / Monkey DOC 同步。**未装这两个包的干净工程不再有 Agent 编译失败风险**（对应守护程序集整体不编译）。
 
 - **现象**：`Packages/com.cielevel.axu-test-framework/Agent/AxuTestFramework.Agent.asmdef` 硬引用 `Unity.InputSystem` 与 `UnityEngine.UI`（monkey 输入注入与 UGUI 降级路径用），但包 package.json 未声明这两个依赖；versionDefines（AXU_INPUTSYSTEM_PRESENT）只守护代码符号、不能让 asmdef 引用解析变可选。**未装这两个包的干净工程中 Agent 程序集有整体编译失败风险**（本工程两包齐全故未暴露）。
 - **来源**：2026-09-02 Phase 6 unity-reviewer 交付审查 P2（0.3.0 发版仅做 README 措辞准确化，本项为正规化遗留）。
 - **建议方案**：拆分守护 asmdef——新建 `AxuTestFramework.Agent.Input`（versionDefines: com.unity.inputsystem + defineConstraints: AXU_INPUTSYSTEM_PRESENT + references: InputSystem/Agent），monkey 的 InputSystem 注入路径移入；UGUI 降级路径同理或保留主程序集（com.unity.ugui 在多数工程默认存在）。或在 package.json 正式声明依赖（代价：强制所有接入工程安装 InputSystem）。
-- **临时缓解（已做）**：README「包定位」Agent 条目已如实注明硬引用约束。
+- **临时缓解（历史）**：README「包定位」Agent 条目曾如实注明硬引用约束（本次正规化后已改写为守护程序集说明）。
 
 ## 6. ~~_Core 层历史遗留 UnityEngine 依赖清理~~ 【已解决 2026-09-17，与 #2 同批 `730ea40`】
 

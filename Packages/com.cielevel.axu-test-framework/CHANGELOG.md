@@ -4,6 +4,16 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+- **Agent 输入后端正规化（2026-09-20，backlog #5）**：主 `AxuTestFramework.Agent` 程序集移除对
+  `Unity.InputSystem` / `UnityEngine.UI` 的硬引用（只依赖 Core + Newtonsoft.Json），monkey 输入能力拆为
+  两个可选守护程序集——`AxuTestFramework.Agent.Input`（versionDefines `com.unity.inputsystem ≥1.0` →
+  `AXU_INPUTSYSTEM_PRESENT` + defineConstraints，InputSystem 注入主路径）与 `AxuTestFramework.Agent.UGUI`
+  （`AXU_UGUI_PRESENT`，UGUI 命中检测/降级点按）；未装对应包的工程该程序集整体不编译，主程序集与包其余
+  功能零影响。后端经 `AgentInputBackends` 反射发现（优先级 InputSystem > UGUI；两者都缺时 monkey 仅记录
+  坐标并出一次性 info 提示，消息分三态）；主程序集新增 `IAgentTapInjector` / `IAgentUguiProbe` 接口。
+  新增 4 例回归测试（主程序集引用红线 + 可选后端解析/Reset），修复前先在 backlog #5 记录的现象（干净工程
+  编译失败风险）不再存在。
+
 - **看板 Scenario 页报告详情与运行进度 P0（2026-09-20，backlog #4）**：
   - 场景结果行改 **Foldout 详情**：一句话结论（findings 人话翻译 + 预算/基线/错误/警告计数）、
     指标表（按 collector 分组，`collector.stat` → 聚合值）、预算表（实际 vs 门槛 + pass/warn/fail 着色、

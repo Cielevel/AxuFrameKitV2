@@ -1,0 +1,25 @@
+{
+    "name": "AxuTestFramework.Agent.Input",
+    "rootNamespace": "AxuTestFramework.Agent.Input",
+    "references": [
+        "AxuTestFramework.Agent",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "AXU_INPUTSYSTEM_PRESENT"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "1.0",
+            "define": "AXU_INPUTSYSTEM_PRESENT"
+        }
+    ],
+    "noEngineReferences": false
+}

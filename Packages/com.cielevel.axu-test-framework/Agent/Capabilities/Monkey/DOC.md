@@ -32,14 +32,18 @@ JSONL 流水（每条含坐标）定位问题操作。注意：改 `actionsPerSe
 > **前提**：坐标注入（Input System 主路径）要求工程 Player Settings 的 `activeInputHandler` 为
 > **Both** 或 **Input System Package (New) only**——旧 Input Manager only 时队列事件不会被派发。
 
-- **主路径**（工程装有 Input System ≥1.0，asmdef versionDefines 定义 `AXU_INPUTSYSTEM_PRESENT`）：
+后端经 `Agent/Tools/AgentInputBackends.cs` 反射发现（主 Agent 程序集对输入包**零硬引用**；两个后端均为
+可选守护程序集，未装包即整体不编译，见包 README「包定位」）：
+
+- **主路径**（工程装有 Input System ≥1.0 → `AxuTestFramework.Agent.Input` 程序集编译）：
   `InputSystem.QueueStateEvent` 注入 move → down → up 三事件（`MouseState.WithPosition/WithButton`，
   鼠标设备）；无鼠标设备（触屏形态）退 `Touchscreen.current` 注入 `TouchState` 的
   Began → Moved → Ended（固定 touchId=1）。事件在下一次 Input System update 生效。命中与否由引擎
   事件系统自行分派，与 UGUI raycast 检测互不干扰。
-- **降级**（未装 Input System，或两形态设备均缺）：对 UGUI raycast 命中对象
-  `ExecuteEvents.ExecuteHierarchy<IPointerClickHandler>` 精确点按；未命中仅记录坐标。降级发生时出
-  **一次性** info finding `MONKEY_INPUT_FALLBACK`（本工程装有 Input System 1.11.1，主路径常走 #if 分支）。
+- **降级**（未装 Input System，或两形态设备均缺；工程装有 uGUI → `AxuTestFramework.Agent.UGUI` 程序集编译）：
+  对 UGUI raycast 命中对象 `ExecuteEvents.ExecuteHierarchy<IPointerClickHandler>` 精确点按；未命中仅记录坐标。
+  降级发生时出**一次性** info finding `MONKEY_INPUT_FALLBACK`。
+- **均不可用**（两个包都未装）：仅记录坐标，不产生输入事件，出一次性 info finding 说明缺失依赖。
 - UGUI 命中检测（`EventSystem.RaycastAll`）仅用于流水留痕（hit 对象名）与降级执行。
 
 ## 卡死检测语义
@@ -89,4 +93,4 @@ scenario 置 error。注意：若主线程完全死锁，本协程同样无法�
 - 场景前置条件同 perf：`scene` 须已加入 Build Settings/Build Profile 场景清单；
 - Input System 主路径要求存在 Mouse 或 Touchscreen 设备（Editor/桌面常规均满足）；
 - 截图依赖 GameView 渲染输出，未落盘仅告警不失败；
-- Player/IL2CPP：无反射扫描，`AXU_INPUTSYSTEM_PRESENT` 由 versionDefines 编译期裁剪，两条路径均可构建。
+- Player/IL2CPP：输入后端由可选守护程序集按包存在性在编译期裁剪（未装包即不编译），主 Agent 程序集零输入包硬引用，任意组合均可构建。

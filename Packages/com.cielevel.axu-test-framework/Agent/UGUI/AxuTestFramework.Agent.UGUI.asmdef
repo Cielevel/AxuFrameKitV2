@@ -1,0 +1,25 @@
+{
+    "name": "AxuTestFramework.Agent.UGUI",
+    "rootNamespace": "AxuTestFramework.Agent.UGUI",
+    "references": [
+        "AxuTestFramework.Agent",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "AXU_UGUI_PRESENT"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.ugui",
+            "expression": "1.0",
+            "define": "AXU_UGUI_PRESENT"
+        }
+    ],
+    "noEngineReferences": false
+}
