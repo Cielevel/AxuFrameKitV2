@@ -201,7 +201,7 @@ Assets/
 > 原 `Assets/AxuFrameKit/`（Modules）与 `Assets/AxuIndieModules/` 已于 2026-08-29 全部拆包移除；
 > 原 `Sample_Modules/` 的模块示例在各模块包的 `Samples~/` 内。
 
-另：`Assets/_CommonDoc/`（包迁移评估文档）、`Assets/_DevDoc/`（TaskQ 改进备忘）、根目录 `docs/`（docfx 文档站）。
+另：`Assets/_CommonDoc/`（包迁移评估文档）、`Assets/_DevDoc/`（TaskQ 改进备忘）。（原根目录 `docs/` docfx 站已删除，勿再引用）
 
 ---
 

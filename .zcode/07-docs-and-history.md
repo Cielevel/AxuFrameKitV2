@@ -73,7 +73,7 @@
 1. ~~包内无 README / CHANGELOG / 文档~~ → 已解决：包根新增 README.md（含文档索引表）与 CHANGELOG.md；25 份模块文档（19 散落 + 6 KitDoc）迁入包内随代码放置，package.json 补 documentationUrl。
 2. ~~根 AGENTS.md、README.md 未随包迁移更新~~ → 已解决：两份文档已重写同步至包化现状。
 3. ~~散落文档位置悬空~~ → 已解决：文档迁入包内并修正文中旧路径，`Assets/AxuFrameKit/{_Core,Common,KitDoc}` 旧骨架已删除（仅余 Modules）。
-4. ~~剩余待办：Modules 层尚未包化~~ → **已于 2026-08-29 完成**：8 个模块包（含各自 README/CHANGELOG/asmdef/Samples~）；Modules 子模块的独立文档仍缺（可在后续按需补写）。当前文档面剩余事项：AxuExperimental（未包化、文档散在各自 ReadMe）与根 `docs/` docfx 站内容单薄。
+4. ~~剩余待办：Modules 层尚未包化~~ → **已于 2026-08-29 完成**：8 个模块包（含各自 README/CHANGELOG/asmdef/Samples~）；Modules 子模块的独立文档仍缺（可在后续按需补写）。当前文档面剩余事项：AxuExperimental（未包化、文档散在各自 ReadMe）。（2026-09-20 勘误：根 `docs/` docfx 站已删除，不再存在。）
 
 ## 5. AI 工具配置概况
 

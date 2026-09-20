@@ -1,7 +1,7 @@
 # 待办事项（Backlog）
 
 > 记录已识别但暂缓处理的问题。每项注明发现来源与建议方案，处理完成后移入下方"已完成"或直接删除。
-> （2026-08-31 由 AxuTestFramework 交付审查与出包验证产生）
+> （2026-08-31 由 AxuTestFramework 交付审查与出包验证产生；2026-09-20 待办核验：#2/#6 确认已解决并销账，当前未决 #4、#5）
 
 ## 1. ~~OllamaModelCall 窗口脚本阻断 Player 构建~~ 【已修复 2026-08-31，Phase 1 前置授权修复】
 
@@ -9,14 +9,11 @@
 - **审计**：全 Assets 树扫描 `using UnityEditor`/`EditorWindow`/`MenuItem`/`AssetDatabase`/`EditorPrefs` 等无保护用例，除该文件外其余命中全部位于 `Editor/` 子目录（Player 不编译），无同类残留。
 - **验证**：以 Phase 1 DoD 的 macOS Player 构建实测为准（见 `.zcode/plans/axu-test-framework-game-test-platform-plan.md` Phase 1 台账）。
 
-## 2. `_Core`"纯 C# 零依赖"表述与实际不符 【P3 级，既有问题】
+## 2. ~~`_Core`"纯 C# 零依赖"表述与实际不符~~ 【已解决 2026-09-17，`_Core` 分层红线落地】
 
-- **现象**：`Runtime/_Core/Extension/FloatExtension.cs:4`、`Runtime/_Core/Utility/RandomX/RandomNickname.cs:3` 存在 `using UnityEngine`（Mathf 等）；`AxuFrameKit.Core.asmdef` 为 `noEngineReferences:false`。与 AGENTS.md、`.zcode/02` 中"_Core 纯 C# 零 Unity 依赖"的表述矛盾。
-- **来源**：2026-08-31 unity-reviewer 交付审查 P3（非 AxuTestFramework 交付引入）。
-- **建议方案（二选一）**：
-  - (a) 清理代码：将依赖 UnityEngine 的辅助移到 Common 层或以纯 BCL 实现（需全面审计 `_Core` 全部文件的 `using UnityEngine`，上述两处仅是审查抽样发现）；
-  - (b) 修订文档：表述改为"Core 基本无 Unity 依赖（个别文件使用 UnityEngine 数学工具），可在非渲染场景使用"。
-- 建议与 `_Core` 后续演进一起处理；在处理前，涉及 `_Core` 可移植性的新代码应避免引入新的 UnityEngine 依赖。
+- **修复（采纳方案 a）**：`AxuFrameKit.Core.asmdef` 置 `noEngineReferences: true`，并清除 `_Core` 内最后三处 `using UnityEngine`——`FloatExtension` 改用 `System.Math`；`RandomNickname` 的随机来源归入 `_Core` 自带 `CollectionExtension`/`RandomX`（引擎无关）。
+- **核验（2026-09-20）**：`Runtime/_Core` 全目录复扫零 `using UnityEngine`，文档表述与实现一致；随集中修复批次 `730ea40` 关闭。
+- **原记录**：`Runtime/_Core/Extension/FloatExtension.cs`、`Runtime/_Core/Utility/RandomX/RandomNickname.cs` 曾 `using UnityEngine`（Mathf 等），`AxuFrameKit.Core.asmdef` 为 `noEngineReferences:false`，与"_Core 纯 C# 零 Unity 依赖"的表述矛盾；2026-08-31 unity-reviewer 交付审查 P3 发现（非 AxuTestFramework 交付引入）。
 
 ## 3. ~~构建/导入会反复产生设置资产漂移~~ 【已按选项 1 处理 2026-09-01：一次性刻意提交为基线】
 
@@ -41,8 +38,8 @@
 - **建议方案**：拆分守护 asmdef——新建 `AxuTestFramework.Agent.Input`（versionDefines: com.unity.inputsystem + defineConstraints: AXU_INPUTSYSTEM_PRESENT + references: InputSystem/Agent），monkey 的 InputSystem 注入路径移入；UGUI 降级路径同理或保留主程序集（com.unity.ugui 在多数工程默认存在）。或在 package.json 正式声明依赖（代价：强制所有接入工程安装 InputSystem）。
 - **临时缓解（已做）**：README「包定位」Agent 条目已如实注明硬引用约束。
 
-## 6. _Core 层历史遗留 UnityEngine 依赖清理【P2 级，2026-09-02 SO 创建窗口交付审查发现】
+## 6. ~~_Core 层历史遗留 UnityEngine 依赖清理~~ 【已解决 2026-09-17，与 #2 同批 `730ea40`】
 
-- **现象**：`Runtime/_Core/Extension/FloatExtension.cs:4` 与 `Runtime/_Core/Utility/RandomX/RandomNickname.cs:4` 存在 `using UnityEngine`（分别使用 Mathf 等），违反"_Core 纯 C# 零 Unity 依赖"分层红线。属框架迁包前的历史遗留，非本次改动引入；git status 确认本次未触碰这两个文件。
-- **建议方案**：FloatExtension 的 NearZero/Near 类方法改用 `System.Math.Abs`；RandomNickname 剥离 `GetRandom` 引擎随机依赖（改用 `_Core/RandomX` 的引擎无关随机）；若剥离代价过高则将对应成员移出 _Core 至 Common 层。
-- **验收**：`AxuFrameKit.Core` 程序集编译不依赖 UnityEngine（可在 asmdef 层面用 versionDefines 或编译目标验证），包内既有测试全绿。
+- **修复**：`FloatExtension` 的 NearZero/Near 改用 `System.Math.Abs`；`RandomNickname` 剥离 `GetRandom` 引擎随机依赖（改用 `_Core` 的 CollectionExtension/RandomX 引擎无关随机）；`AxuFrameKit.Core.asmdef` 置 `noEngineReferences: true`。
+- **验收达成**：`AxuFrameKit.Core` 编译不依赖 UnityEngine（asmdef `noEngineReferences: true`），集中修复批次回归测试全绿；2026-09-20 复扫 `_Core` 零 `using UnityEngine`。
+- **原记录**：属框架迁包前历史遗留（SO 创建窗口交付审查 P2 发现，2026-09-02），非当时改动引入。
