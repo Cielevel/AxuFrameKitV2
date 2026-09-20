@@ -1,0 +1,410 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json.Linq;
+using Unity.Pipeline.Commands;
+
+namespace AxuTestFramework.Editor
+{
+    /// <summary>
+    /// 项目规范校验 pipeline 命令：<c>axu_lint</c>——把 AGENTS.md 里的"软规范"变成机器校验。
+    /// 覆盖 5 条规则（均源自 AGENTS.md 命名/文件组织/测试接入约定）：
+    /// <list type="bullet">
+    /// <item><c>namespace.convention</c>（warn）：文件首命名空间须以所属 asmdef 的 rootNamespace 为前缀；未声明命名空间同样违规（"所有代码必须使用命名空间"）。无 asmdef 覆盖（Assembly-CSharp 实验代码）或 rootNamespace 为空的文件无契约，跳过。</item>
+    /// <item><c>editor.placement</c>（fail）：未受 <c>#if UNITY_EDITOR</c> 保护的 UnityEditor 引用，出现在非 Editor-only 程序集且路径不在 /Editor/ 段下（"Editor 代码必须放在 Editor/ 子目录"）——会破坏 Player 构建，定级 fail。</item>
+    /// <item><c>file.type_name</c>（warn）：文件名与顶级类型名无一匹配（"文件名与类名一致"）；拆分文件豁免（Xxx.Part.cs 首段匹配任一声明类型即合法）、AssemblyInfo.cs 与自动生成文件豁免。</item>
+    /// <item><c>runtime.editor_ns</c>（warn）：/Runtime/ 段下的文件声明了含 .Editor 的命名空间（Editor/Runtime 严格分离的回归哨兵；当前存量为 0）。</item>
+    /// <item><c>tests.asmdef_guard</c>（warn）：*.Tests.* 程序集面向 Player（includePlatforms 非 Editor-only）却缺 UNITY_INCLUDE_TESTS 约束——测试代码漏入构建的风险。Editor-only 测试程序集无此风险，不报。</item>
+    /// </list>
+    /// <para>纯只读，不进 RunGate 互斥闸。规则全部从 asmdef/路径/文本推导，零硬编码工程名，
+    /// 任何接入本包的工程可直接复用；第三方代码经 exclude 参数排除（默认 "/FastNoiseLite/"）。</para>
+    /// </summary>
+    public static class AxuLintCommand
+    {
+        /// <summary>首命名空间声明（兼容块式与文件作用域形态）。</summary>
+        private static readonly Regex NamespaceRx = new Regex(@"^\s*namespace\s+([A-Za-z_][\w.]*)",
+            RegexOptions.Multiline | RegexOptions.Compiled);
+
+        /// <summary>类型声明（class/struct/interface/enum/record，含修饰符前缀捕获以判 partial）。</summary>
+        private static readonly Regex TypeRx = new Regex(
+            @"^\s*(?<mods>(?:(?:public|internal|private|protected|sealed|abstract|static|partial|readonly|ref|unsafe|new)\s+)*)(?:class|struct|interface|enum|record)\s+(?<name>[A-Za-z_]\w*)",
+            RegexOptions.Multiline | RegexOptions.Compiled);
+
+        /// <summary>UnityEditor 引用（using 指令或全限定使用）。</summary>
+        private static readonly Regex UnityEditorRx = new Regex(@"\busing\s+UnityEditor\b|\bUnityEditor\.",
+            RegexOptions.Compiled);
+
+        /// <summary>编辑器保护编译指令。</summary>
+        private const string EditorGuard = "#if UNITY_EDITOR";
+
+        /// <summary>单文件读取上限（跳过异常大文件，防内存尖峰）。</summary>
+        private const int MaxFileBytes = 1024 * 1024;
+
+        /// <summary>
+        /// 执行规范校验，返回结构化信封：
+        /// {status, summary:{pass,warn,fail,files,asmdefs}, checks[{id,status,message,issueCount,issues,truncated,hint?}]}。
+        /// </summary>
+        [CliCommand("axu_lint",
+            "Project convention lint (AGENTS.md rules made mechanical): namespace vs asmdef rootNamespace, Editor code placement, filename/type-name match, Editor namespace under /Runtime/, test asmdef UNITY_INCLUDE_TESTS guard. Read-only, not mutex-gated.",
+            MainThreadRequired = false, Tags = new[] { "axu", "lint", "diagnostics" })]
+        public static object Run(
+            [CliArg("include", "Comma-separated path prefixes (relative to project root, forward slashes) to scan (default: Assets,Packages/com.cielevel)")] string include = "Assets,Packages/com.cielevel",
+            [CliArg("exclude", "Comma-separated path substrings to skip (default: /FastNoiseLite/ — third-party code)")] string exclude = "/FastNoiseLite/",
+            [CliArg("max_issues", "Max issues returned per check (default 50; issueCount always reports the true total)")] int max_issues = 50)
+        {
+            try
+            {
+                if (max_issues <= 0) max_issues = 50;
+                var projectRoot = AxuTestReportPaths.ProjectRootFullPath.Replace('\\', '/');
+
+                var includeRoots = SplitList(include);
+                var excludeSubstrings = SplitList(exclude);
+
+                // ---- 扫描 asmdef（建目录→程序集契约映射）与 .cs 文件 ----
+                var asmdefs = ScanAsmdefs(projectRoot, includeRoots, excludeSubstrings);
+                var files = ScanSourceFiles(projectRoot, includeRoots, excludeSubstrings);
+
+                // ---- 逐文件分析 ----
+                var nsIssues = new List<Issue>();
+                var placementIssues = new List<Issue>();
+                var typeNameIssues = new List<Issue>();
+                var runtimeEditorNsIssues = new List<Issue>();
+
+                foreach (var file in files)
+                {
+                    var text = ReadText(file.FullPath);
+                    if (text == null)
+                        continue; // 超上限或读取失败：跳过（不参与任何规则）
+
+                    var relative = file.RelativePath;
+                    var asmdef = FindOwner(file.FullPath, asmdefs);
+                    var isEditorOnlyAsmdef = asmdef != null && asmdef.EditorOnly;
+                    var underEditorPath = HasSegment(relative, "/editor/");
+                    var underRuntimePath = HasSegment(relative, "/runtime/");
+                    var autoGenerated = IsAutoGenerated(relative, text);
+
+                    // 规则 1：namespace.convention（有契约才校验；AssemblyInfo.cs 仅含程序集特性，豁免）
+                    if (asmdef != null && !string.IsNullOrEmpty(asmdef.RootNamespace) && !autoGenerated &&
+                        !string.Equals(Path.GetFileName(relative), "AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var nsMatch = NamespaceRx.Match(text);
+                        if (!nsMatch.Success)
+                        {
+                            nsIssues.Add(new Issue(relative,
+                                $"未声明命名空间（契约：{asmdef.RootNamespace}.*，来自 {asmdef.Name}）"));
+                        }
+                        else
+                        {
+                            var ns = nsMatch.Groups[1].Value;
+                            if (!ns.Equals(asmdef.RootNamespace, StringComparison.Ordinal) &&
+                                !ns.StartsWith(asmdef.RootNamespace + ".", StringComparison.Ordinal))
+                            {
+                                nsIssues.Add(new Issue(relative,
+                                    $"命名空间 {ns} 不以 {asmdef.RootNamespace} 为前缀（来自 {asmdef.Name}）"));
+                            }
+                        }
+                    }
+
+                    // 规则 2：editor.placement（构建破坏级）
+                    if (!isEditorOnlyAsmdef && !underEditorPath &&
+                        text.IndexOf(EditorGuard, StringComparison.Ordinal) < 0 &&
+                        UnityEditorRx.IsMatch(text))
+                    {
+                        placementIssues.Add(new Issue(relative,
+                            $"未受 #if UNITY_EDITOR 保护的 UnityEditor 引用（程序集 {asmdef?.Name ?? "Assembly-CSharp"} 面向 Player，路径不在 /Editor/ 段）"));
+                    }
+
+                    // 规则 3：file.type_name（拆分文件锚点豁免：Xxx.Part.cs 的首段匹配任一声明类型即合法）
+                    if (!autoGenerated)
+                    {
+                        var fileName = Path.GetFileNameWithoutExtension(relative);
+                        var anchor = fileName.Split('.')[0];
+                        var types = TypeRx.Matches(text);
+                        if (types.Count > 0 &&
+                            !types.Cast<Match>().Any(m => m.Groups["name"].Value == fileName) &&
+                            !types.Cast<Match>().Any(m => m.Groups["name"].Value == anchor))
+                        {
+                            var declared = string.Join(", ", types.Cast<Match>().Select(m => m.Groups["name"].Value).Distinct().Take(4));
+                            typeNameIssues.Add(new Issue(relative,
+                                $"文件名 {fileName} 与声明类型（{declared}）无一匹配"));
+                        }
+                    }
+
+                    // 规则 4：runtime.editor_ns（回归哨兵）
+                    if (underRuntimePath)
+                    {
+                        var nsMatch = NamespaceRx.Match(text);
+                        if (nsMatch.Success && nsMatch.Groups[1].Value.Contains(".Editor"))
+                        {
+                            runtimeEditorNsIssues.Add(new Issue(relative,
+                                $"/Runtime/ 段下声明了 Editor 命名空间 {nsMatch.Groups[1].Value}"));
+                        }
+                    }
+                }
+
+                // 规则 5：tests.asmdef_guard（逐 asmdef）
+                var testGuardIssues = new List<Issue>();
+                foreach (var asmdef in asmdefs)
+                {
+                    if (!asmdef.Name.Contains(".Tests.") || asmdef.EditorOnly)
+                        continue;
+                    if (!asmdef.DefineConstraints.Any(c => c.Contains("UNITY_INCLUDE_TESTS")))
+                    {
+                        testGuardIssues.Add(new Issue(asmdef.RelativePath,
+                            $"测试程序集 {asmdef.Name} 面向 Player 且缺 UNITY_INCLUDE_TESTS 约束——测试代码将漏入构建"));
+                    }
+                }
+
+                // ---- 汇总 ----
+                var checks = new List<CheckResult>
+                {
+                    EmitCheck("namespace.convention", "warn", nsIssues, max_issues,
+                        "命名空间须以所属 asmdef rootNamespace 为前缀且必须声明（AGENTS.md 命名规范）。"),
+                    EmitCheck("editor.placement", "fail", placementIssues, max_issues,
+                        "Editor 代码放 /Editor/ 目录（Editor-only 程序集），或至少用 #if UNITY_EDITOR 保护——否则破坏 Player 构建。"),
+                    EmitCheck("file.type_name", "warn", typeNameIssues, max_issues,
+                        "每个类单独一个文件、文件名与类名一致；拆分文件用 Xxx.Part.cs 形态（首段=主类型名）。多类型家族文件（如 Ease 一族）属既有豁免外形态，酌情评估。"),
+                    EmitCheck("runtime.editor_ns", "warn", runtimeEditorNsIssues, max_issues,
+                        "Editor 命名空间代码应迁出 /Runtime/ 段（Editor/Runtime 严格分离）。"),
+                    EmitCheck("tests.asmdef_guard", "warn", testGuardIssues, max_issues,
+                        "测试程序集 asmdef 加 defineConstraints: [\"UNITY_INCLUDE_TESTS\"]（缺包/出包不编译是特性）。"),
+                };
+
+                return new
+                {
+                    status = checks.Any(c => c.FailIssues > 0) ? "error" : (checks.Any(c => c.WarnIssues > 0) ? "warn" : "ok"),
+                    summary = new
+                    {
+                        pass = checks.Count(c => c.IssueCount == 0),
+                        warn = checks.Count(c => c.WarnIssues > 0),
+                        fail = checks.Count(c => c.FailIssues > 0),
+                        files = files.Count,
+                        asmdefs = asmdefs.Count
+                    },
+                    checks = checks.Select(c => (object)new
+                    {
+                        id = c.Id,
+                        status = c.Status,
+                        message = c.Message,
+                        issueCount = c.IssueCount,
+                        truncated = c.Truncated,
+                        hint = c.Hint,
+                        issues = c.Issues
+                    }).ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                return new { status = "error", message = $"{ex.GetType().Name}: {ex.Message}" };
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // 汇总辅助
+        // ------------------------------------------------------------------
+
+        /// <summary>单条检查的结构化结果（EmitCheck 产出，汇总后投影为输出信封）。</summary>
+        private sealed class CheckResult
+        {
+            public string Id;
+            public string Status;
+            public string Message;
+            public int IssueCount;
+            public bool Truncated;
+            public string Hint;
+            public List<object> Issues;
+            public int FailIssues;
+            public int WarnIssues;
+        }
+
+        /// <summary>把一组问题转成统一检查结果（issues 截断到 maxIssues，issueCount 恒为真实总数）。</summary>
+        private static CheckResult EmitCheck(string id, string severity, List<Issue> issues, int maxIssues, string hint)
+        {
+            var issueCount = issues.Count;
+            return new CheckResult
+            {
+                Id = id,
+                Status = issueCount == 0 ? "pass" : severity,
+                Message = issueCount == 0
+                    ? "无违规。"
+                    : $"{issueCount} 处违规（{severity}）{(issueCount > maxIssues ? $"，仅返回前 {maxIssues} 条" : "")}。",
+                IssueCount = issueCount,
+                Truncated = issueCount > maxIssues,
+                Hint = issueCount == 0 ? null : hint,
+                Issues = issues.Take(maxIssues).Select(i => (object)new { path = i.Path, detail = i.Detail }).ToList(),
+                FailIssues = severity == "fail" ? issueCount : 0,
+                WarnIssues = severity == "warn" ? issueCount : 0
+            };
+        }
+
+        // ------------------------------------------------------------------
+        // 扫描与解析
+        // ------------------------------------------------------------------
+
+        private sealed class Issue
+        {
+            public readonly string Path;
+            public readonly string Detail;
+            public Issue(string path, string detail) { Path = path; Detail = detail; }
+        }
+
+        private sealed class AsmdefInfo
+        {
+            public string Name;
+            public string RootNamespace;
+            public string Directory;      // 完整路径，'/' 归一化，不含尾斜杠
+            public string RelativePath;   // 工程相对路径（报告用）
+            public bool EditorOnly;
+            public List<string> DefineConstraints = new List<string>();
+        }
+
+        private sealed class SourceFile
+        {
+            public string FullPath;       // 完整路径，'/' 归一化
+            public string RelativePath;   // 工程相对路径
+        }
+
+        private static List<string> SplitList(string csv)
+        {
+            return (csv ?? string.Empty)
+                .Split(',')
+                .Select(s => s.Trim().Replace('\\', '/').TrimEnd('/'))
+                .Where(s => s.Length > 0)
+                .ToList();
+        }
+
+        /// <summary>
+        /// 解析 include 根为实际目录：存在的目录直接使用；不存在的按"父目录 + 目录名前缀"展开
+        /// （如 Packages/com.cielevel → Packages/com.cielevel.* 一族嵌入式包目录）。
+        /// </summary>
+        private static IEnumerable<string> ResolveRoots(string projectRoot, List<string> includeRoots)
+        {
+            foreach (var root in includeRoots)
+            {
+                var full = projectRoot + "/" + root;
+                if (Directory.Exists(full))
+                {
+                    yield return full;
+                    continue;
+                }
+
+                var slash = root.LastIndexOf('/');
+                var parentRel = slash > 0 ? root.Substring(0, slash) : string.Empty;
+                var prefix = slash > 0 ? root.Substring(slash + 1) : root;
+                var parentFull = string.IsNullOrEmpty(parentRel) ? projectRoot : projectRoot + "/" + parentRel;
+                if (!Directory.Exists(parentFull))
+                    continue;
+
+                foreach (var dir in Directory.EnumerateDirectories(parentFull, prefix + "*", SearchOption.TopDirectoryOnly))
+                    yield return dir.Replace('\\', '/');
+            }
+        }
+
+        private static List<AsmdefInfo> ScanAsmdefs(string projectRoot, List<string> includeRoots, List<string> excludes)
+        {
+            var result = new List<AsmdefInfo>();
+            foreach (var fullRoot in ResolveRoots(projectRoot, includeRoots))
+            {
+
+                foreach (var path in Directory.EnumerateFiles(fullRoot, "*.asmdef", SearchOption.AllDirectories))
+                {
+                    var full = path.Replace('\\', '/');
+                    if (IsExcluded(full, excludes))
+                        continue;
+                    try
+                    {
+                        var json = JObject.Parse(File.ReadAllText(path));
+                        var platforms = json["includePlatforms"]?.Values<string>().ToList() ?? new List<string>();
+                        result.Add(new AsmdefInfo
+                        {
+                            Name = (string)json["name"] ?? Path.GetFileNameWithoutExtension(path),
+                            RootNamespace = (string)json["rootNamespace"] ?? string.Empty,
+                            Directory = Path.GetDirectoryName(full).Replace('\\', '/'),
+                            RelativePath = RelativeTo(projectRoot, full),
+                            EditorOnly = platforms.Count == 1 && platforms[0] == "Editor",
+                            DefineConstraints = json["defineConstraints"]?.Values<string>().ToList() ?? new List<string>()
+                        });
+                    }
+                    catch (Exception)
+                    {
+                        // 单个 asmdef 解析失败：跳过（lint 不因单个坏文件中断）
+                    }
+                }
+            }
+            // 目录长者在前：就近归属匹配
+            return result.OrderByDescending(a => a.Directory.Length).ToList();
+        }
+
+        private static List<SourceFile> ScanSourceFiles(string projectRoot, List<string> includeRoots, List<string> excludes)
+        {
+            var result = new List<SourceFile>();
+            foreach (var fullRoot in ResolveRoots(projectRoot, includeRoots))
+            {
+
+                foreach (var path in Directory.EnumerateFiles(fullRoot, "*.cs", SearchOption.AllDirectories))
+                {
+                    var full = path.Replace('\\', '/');
+                    if (IsExcluded(full, excludes))
+                        continue;
+                    result.Add(new SourceFile { FullPath = full, RelativePath = RelativeTo(projectRoot, full) });
+                }
+            }
+            return result.OrderBy(f => f.RelativePath, StringComparer.Ordinal).ToList();
+        }
+
+        /// <summary>就近归属：取目录前缀匹配中最长者（列表已按目录长度降序，首个命中即最近）。</summary>
+        private static AsmdefInfo FindOwner(string fullPath, List<AsmdefInfo> asmdefs)
+        {
+            foreach (var asmdef in asmdefs)
+            {
+                if (fullPath.StartsWith(asmdef.Directory + "/", StringComparison.OrdinalIgnoreCase))
+                    return asmdef;
+            }
+            return null;
+        }
+
+        private static bool IsExcluded(string fullPath, List<string> excludes)
+        {
+            return excludes.Any(e => fullPath.IndexOf(e, StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        private static bool HasSegment(string relativePath, string segment)
+        {
+            return relativePath.IndexOf(segment, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool IsAutoGenerated(string relativePath, string text)
+        {
+            var name = Path.GetFileName(relativePath);
+            if (name.EndsWith(".designer.cs", StringComparison.OrdinalIgnoreCase) ||
+                name.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase) ||
+                name.EndsWith(".generated.cs", StringComparison.OrdinalIgnoreCase))
+                return true;
+            return text.Length >= 16 && text.IndexOf("<auto-generated", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                   text.IndexOf("<auto-generated", StringComparison.OrdinalIgnoreCase) < 200;
+        }
+
+        private static string ReadText(string fullPath)
+        {
+            try
+            {
+                if (new FileInfo(fullPath).Length > MaxFileBytes)
+                    return null;
+                return File.ReadAllText(fullPath);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private static string RelativeTo(string projectRoot, string fullPath)
+        {
+            return fullPath.StartsWith(projectRoot + "/", StringComparison.OrdinalIgnoreCase)
+                ? fullPath.Substring(projectRoot.Length + 1)
+                : fullPath;
+        }
+    }
+}

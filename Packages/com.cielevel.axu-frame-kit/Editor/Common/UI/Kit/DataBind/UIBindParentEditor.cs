@@ -4,8 +4,9 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal; // 引入 ReorderableList 的命名空间
 using AxuFrameKit.Common.UI.Kit.DataBind.Component;
+using AxuFrameKit.Common.UI.Kit.DataBind;
 
-namespace AxuFrameKit.Common.UI.Kit.DataBind.Editor
+namespace AxuFrameKit.Common.Editor.UI.Kit.DataBind
 {
     [CustomEditor(typeof(UIBindParent))]
     public class UIBindParentEditor : UnityEditor.Editor

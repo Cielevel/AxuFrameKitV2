@@ -7,8 +7,9 @@ using UnityEditor;
 using UnityEngine.UIElements;
 using AxuFrameKit.Common.Editor.UI;
 using AxuFrameKit.Common.CustomAttribute;
+using AxuFrameKit.Common.Utility.Table.CSV;
 
-namespace AxuFrameKit.Common.Utility.Table.CSV.Editor
+namespace AxuFrameKit.Common.Editor.Utility.Table.CSV
 {
     public class CsvContainerCreatorWindow : EditorWindow
     {

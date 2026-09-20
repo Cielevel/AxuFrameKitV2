@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using AxuFrameKit.Common.CustomAttribute;
 
-namespace AxuFrameKit.Common.CustomAttribute.Editor
+namespace AxuFrameKit.Common.Editor.CustomAttribute
 {
     // This editor draws buttons for any method marked with [ButtonAttribute]
     [CustomEditor(typeof(MonoBehaviour), true)]

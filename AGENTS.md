@@ -245,7 +245,7 @@ Assets/
   "com.cielevel.axu-indie-selection-to-csv": "嵌入式包 - 选中导出 CSV（零依赖）",
   "com.cielevel.axu-indie-sprite-to-animation": "嵌入式包 - 序列帧转动画（零依赖）",
   "com.cielevel.axu-indie-stat-pipeline": "嵌入式包 - 数值管线（零依赖）",
-  "com.cielevel.axu-test-framework": "嵌入式包 - 通用测试框架 AxuTestFramework 0.3.0（UTF 工具层 + 场景测试平台：八能力 Agent 运行时、axu_test_* / axu_scenario_* / axu_player_* / axu_trend_* pipeline 命令、AxuTestRunner 看板（总览/Tests/Scenario/Trend 四页签，总览为默认页））",
+  "com.cielevel.axu-test-framework": "嵌入式包 - 通用测试框架 AxuTestFramework 0.3.0（UTF 工具层 + 场景测试平台：八能力 Agent 运行时、axu_test_* / axu_scenario_* / axu_player_* / axu_trend_* / axu_doctor / axu_lint pipeline 命令、AxuTestRunner 看板（总览/Tests/Scenario/Trend 四页签，总览为默认页））",
   "com.cielevel.axu-unity-cli-kit": "嵌入式包 - Axu CLI Agent Kit 0.1.0（unity CLI / Pipeline 用法文档 + Agent Skill 安装器，无运行时代码，零依赖）",
   "com.termway.ide.antigravity": "Git 包 - IDE 增强",
   "com.unity.ai.navigation": "2.0.4",
@@ -415,7 +415,7 @@ UIBindTextStr.Bind(myTextComponent, () => model.PlayerName);
   - 框架包 `Packages/com.cielevel.axu-frame-kit/Tests/Editor/`（`AxuFrameKit.Tests.Editor`）与 `Tests/Runtime/`（`AxuFrameKit.Tests.Runtime`，PlayMode）
   - `Assets/Tests/Editor/`（`AxuFrameKitV2.Tests.Editor`）**保留**为工程级冒烟入口
   - 模块/indie 包在各自 `Tests/{Editor,Runtime}/` 建测试：asmdef 命名 `{被测程序集}.Tests.{Editor|Runtime}`，引用 AxuTestFramework；包 `package.json` 无需声明测试依赖（缺包时测试程序集因 `UNITY_INCLUDE_TESTS` 不编译，是特性非错误）
-- **运行方式（agent 优先）**：Unity Pipeline 自定义命令 `axu_test_run` / `axu_test_status` / `axu_test_report`（用法见 `.zcode/08`）；报告 JSON 落盘 `Library/AxuTestReports/{时间戳}-{mode}.json`，截图在 `artifacts/`。人用看板：菜单 `AxuFrameKit/AxuTestRunner`
+- **运行方式（agent 优先）**：Unity Pipeline 自定义命令 `axu_test_run` / `axu_test_status` / `axu_test_report`（用法见 `.zcode/08`）；报告 JSON 落盘 `Library/AxuTestReports/{时间戳}-{mode}.json`，截图在 `artifacts/`。人用看板：菜单 `AxuFrameKit/AxuTestRunner`。环境自检：`axu_doctor`；规范校验：`axu_lint`（命名空间/Editor 位置/文件名等 5 条机器校验；均纯诊断、不进互斥闸，排障第一步）
 - **场景测试平台（v2，2026-09 起，与 UTF 并行、词汇隔离）**：`axu_test_*` 永远指 UTF 测试；`axu_scenario_*` / `axu_player_*` / `axu_trend_*` 指 scenario 套件运行（Editor PlayMode / Player 真机 / 趋势）。入口 = suite JSON（工程内 demo 在 `Assets/Tests/Scenarios/*.suite.json`，schema `axu-suite/1`）+ `AXU_TEST_AGENT` define（菜单 `AxuTestFramework/Enable Test Agent`，本工程已开）。八能力：echo/perf/loadtime/smoke/soak/stress/monkey/gamehook（各带 DOC.md 与 Samples 示例）。报告落 `Library/AxuTestReports/scenario/`（schema `axu-scenario-report/1`；退出码 0=全过/1=有 fail/2=仅 warn），趋势 CSV 在 `Library/AxuTestReports/trend/`；看板 Scenario / Trend 页签；接入步骤见包 README「场景测试接入一页纸」。⚠️ 六命令与 `axu_test_run` 共享互斥闸禁止并发；**Play 长跑（soak 等）期间严禁在同一 Editor 并行派发其他 pipeline 命令**（2026-09-02 事故实证）
 - ⚠️ **禁止无程序集范围的裸 `run_tests`**：会实跑 pipeline 包自带测试，其 SecurityTokenTests 毒化会话 token 导致后续请求 401 死锁（2026-08-31 事故实证）；`axu_test_run` 已内置排除，直用 pipeline `run_tests` 时必须带 assembly 过滤
 - **编写规范**：类别即套件（`[Category("Axu/Smoke")]`、`[Category("Axu/Play")]`、`[Category("Axu/Core/Util")]`、`[Category("Axu/Module/{名}")]`，fixture 级标注）；命名 `方法名_条件_期望结果`；预期错误用 `LogAssert.Expect`，意外 Error 判失败（`AxuLogWatch`/`AxuNoErrorsScope`）；PlayMode 测试 `[UnitySetUp]` 先 `AxuTestState.ResetStatics()`（域重载开/关都要做，见下方勘误）

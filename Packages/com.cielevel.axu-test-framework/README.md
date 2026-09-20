@@ -24,7 +24,7 @@ AxuFrameKit 体系之外的**通用测试框架包**：覆盖 EditMode 与 PlayM
   scenario 运行编排（桥文件 + 看门狗 + 趋势入库）、导出器与看板窗口（菜单 `AxuFrameKit/AxuTestRunner`，
   Tests / Scenario / Trend 四页签）。`autoReferenced: false`，仅 Editor 参与；零 pipeline 引用。
 - **Editor 程序集 `AxuTestFramework.Editor.Pipeline`**：全部引用 pipeline 的 `[CliCommand]` 命令
-  （`axu_test_*` / `axu_scenario_*` / `axu_player_*` / `axu_trend_*` / `axu_window_screenshot`）经 TypeCache 自动注册。
+  （`axu_test_*` / `axu_scenario_*` / `axu_player_*` / `axu_trend_*` / `axu_window_screenshot` / `axu_doctor` / `axu_lint`）经 TypeCache 自动注册。
   `defineConstraints: [AXU_PIPELINE_PRESENT]`（由本程序集 versionDefines 按 `com.unity.pipeline ≥0.5.0-exp` 注入）——
   **未装 pipeline 包的工程该程序集整体不编译，包内其余功能不受影响**。
 - **Samples~**：EditMode / PlayMode 各一组最小示例，经 Package Manager → Samples 导入。
@@ -85,7 +85,9 @@ com.cielevel.axu-test-framework/
 │       ├── AxuScenarioPipelineCommands.cs   # axu_scenario_list / axu_scenario_run / axu_scenario_status
 │       ├── AxuPlayerSuiteCommands.cs        # axu_player_suite_build / axu_player_suite_run
 │       ├── AxuTrendCommand.cs               # axu_trend_summary
-│       └── AxuWindowScreenshotCommand.cs    # axu_window_screenshot（Windows 专属）
+│       ├── AxuWindowScreenshotCommand.cs    # axu_window_screenshot（Windows 专属）
+│       ├── AxuDoctorCommand.cs              # axu_doctor（环境自检）
+│       └── AxuLintCommand.cs                # axu_lint（项目规范校验）
 ├── Tests/Editor/                     # asmdef: AxuTestFramework.Tests.Editor（包自身契约单测，223 例）
 └── Samples~/
     ├── Tests/{Editor,Runtime}/       # UTF 最小示例（PM → Samples 导入）
@@ -174,6 +176,57 @@ curl -s ... -d '{"command":"axu_test_status","parameters":{}}' ...
   返回报告 JSON **原文**。超过 256KB 返回 `{status:"too_large", path, sizeBytes, limitBytes}`，请直接读文件。
 - `axu_test_status`：读 `Temp/axu_test_run_status.json` 原文；`status` 为 `running` / `completed` / `error`，
   含 `summary`、`reportPath`、`startedAtUtc`（判断陈旧状态）；无文件返回 `{status:"idle"}`。
+
+### axu_doctor（环境自检）
+
+```
+POST /api/exec  {"command":"axu_doctor","parameters":{}}
+```
+
+面向 Agent/CI 的一键体检，**无参数**。返回 `{status, summary:{pass,warn,fail}, environment, checks[]}`：
+顶层 `status` = `ok`（全过）/ `warn`（仅警告）/ `error`（有失败项）；每项检查为
+`{id, status(pass/warn/fail), message, hint?}`（`hint` 为修复指引，仅 warn/fail 时给出）。
+
+| 检查 id | pass / warn / fail 判据 |
+|---|---|
+| `pipeline.descriptor` | 描述符存在且 port/evalToken 完整（token 值永不回显，只报存在性） |
+| `packages.required` | `com.unity.test-framework` 与 `com.unity.nuget.newtonsoft-json` 在位；缺失=fail |
+| `packages.optional` | pipeline 版本回报；InputSystem 与 uGUI 均缺失=warn（monkey 降级为仅记录坐标） |
+| `defines.axu_test_agent` | 未开=warn（scenario 路径不可用，UTF 不受影响；hint 给开启方法） |
+| `editor.state` | playing/compiling/updating 任一=warn（命令响应可能延迟） |
+| `runs.in_flight` | 新鲜（<15 分钟）的 running 状态=warn（互斥闸占用，新运行会被拒） |
+| `reports.storage` | `Library/AxuTestReports` 写探针自清理；不可写=fail；附带报告/趋势存量盘点 |
+| `suites.inventory` | Assets 下 suite/scenario JSON 计数（恒 pass；为 0 时 hint 给创建菜单） |
+
+纪律：**纯诊断**（除自清理写探针外只读），**不进 RunGate 互斥闸**——运行类命令在途时正是需要体检的时刻；
+单项检查异常只降级该项为 fail，不影响其余检查。建议排障第一步、派发运行类命令前各调一次。
+
+### axu_lint（项目规范校验）
+
+```
+POST /api/exec  {"command":"axu_lint","parameters":{}}
+```
+
+把 AGENTS.md 里的"软规范"变成机器校验（规则全部从 asmdef/路径/文本推导，**零硬编码工程名**，任何接入本包的
+工程可直接复用）。返回 `{status, summary:{pass,warn,fail,files,asmdefs}, checks[{id,status,message,issueCount,issues,truncated,hint?}]}`，
+顶层语义与 `axu_doctor` 一致。**纯只读，不进互斥闸**。
+
+| 参数 | 默认 | 说明 |
+|---|---|---|
+| `include` | `Assets,Packages/com.cielevel` | 逗号分隔的扫描根（工程相对，正斜杠）；不存在的根按"父目录+目录名前缀"展开（`Packages/com.cielevel` → 一族 `com.cielevel.*` 嵌入式包） |
+| `exclude` | `/FastNoiseLite/` | 逗号分隔的路径子串排除（第三方代码） |
+| `max_issues` | `50` | 单条规则返回的 issues 上限；`issueCount` 恒为真实总数 |
+
+| 检查 id | 定级 | 判据 |
+|---|---|---|
+| `namespace.convention` | warn | 文件首命名空间须以所属 asmdef `rootNamespace` 为前缀且必须声明；无 asmdef 覆盖（Assembly-CSharp）或 rootNamespace 为空=无契约跳过；`AssemblyInfo.cs` 豁免 |
+| `editor.placement` | **fail** | 未受 `#if UNITY_EDITOR` 保护的 UnityEditor 引用出现在非 Editor-only 程序集且路径不在 `/Editor/` 段——破坏 Player 构建 |
+| `file.type_name` | warn | 文件名与顶级类型名无一匹配；拆分文件豁免（`Xxx.Part.cs` 首段=主类型名）；多类型家族文件（如 Ease 一族）会如实报出，属既有形态酌情评估 |
+| `runtime.editor_ns` | warn | `/Runtime/` 段下声明含 `.Editor` 的命名空间（Editor/Runtime 分离的回归哨兵） |
+| `tests.asmdef_guard` | warn | `*.Tests.*` 程序集面向 Player（非 Editor-only）却缺 `UNITY_INCLUDE_TESTS` 约束——测试代码漏入构建风险 |
+
+regex 为启发式文本扫描（非 Roslyn），嵌套类型/条件编译块内的声明也计入——误报面已在规则内尽量豁免，
+剩余输出定位为"规范漂移清单"，供人/agent 逐条裁决修代码还是修约定。
 
 ### axu_window_screenshot（Windows 专属回退：后台无感窗口截图）
 

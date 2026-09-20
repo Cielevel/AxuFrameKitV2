@@ -1,7 +1,8 @@
 using UnityEditor;
 using UnityEngine;
+using AxuFrameKit.Common.UI.Kit.ListView;
 
-namespace AxuFrameKit.Common.UI.Kit.ListView.Editor
+namespace AxuFrameKit.Common.Editor.UI.Kit.ListView
 {
     /// <summary>
     /// UIListView自定义Editor

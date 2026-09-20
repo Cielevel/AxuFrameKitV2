@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using AxuFrameKit.Common.CustomAttribute;
 
-namespace AxuFrameKit.Common.CustomAttribute.Editor
+namespace AxuFrameKit.Common.Editor.CustomAttribute
 {
     [CustomEditor(typeof(CustomMonoBehaviour), true)]
     public class CustomMonoBehaviourAttributeEditor : UnityEditor.Editor

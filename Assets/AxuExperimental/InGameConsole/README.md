@@ -109,7 +109,7 @@ InGameConsole/
 ├── InGameConsole.cs         # 核心逻辑类
 ├── InGameConsoleUI.cs       # UI Toolkit界面
 ├── LogEntry.cs              # 日志数据结构
-├── LogEntryPool.cs          # UI元素对象池
+├── LogEntryElementPool.cs   # UI元素对象池
 ├── Resources/
 │   └── InGameConsole.uss    # 样式表 (可选)
 └── README.md                # 本文档

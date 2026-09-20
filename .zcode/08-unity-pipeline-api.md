@@ -135,7 +135,7 @@ CLI `1.0.0-beta.10` 要求 pipeline `≥0.6.0-exp.1`（否则**带参数**的命
 主线程只见空闲事件循环（非模态卡死），`osascript quit` 无效，但 `kill -TERM` 可 2 秒内优雅退出，
 重启后完整包解析/编译/服务启动即恢复正常。
 
-## 9. 工程侧自定义命令：`axu_test_*` / `axu_window_screenshot`（AxuTestFramework，2026-08-31 新增）
+## 9. 工程侧自定义命令：`axu_test_*` / `axu_window_screenshot` / `axu_doctor` / `axu_lint`（AxuTestFramework，2026-08-31 新增）
 
 来源：嵌入式包 `Packages/com.cielevel.axu-test-framework/Editor/`（AxuTestFramework.Editor 程序集）经
 `[CliCommand]` 由 TypeCache 自动发现注册，**pipeline 包源码零改动**。测试框架完整说明见包内 README。
@@ -147,6 +147,8 @@ CLI `1.0.0-beta.10` 要求 pipeline `≥0.6.0-exp.1`（否则**带参数**的命
 | `axu_test_run` | `mode`(editor/playmode/all，默认 editor)、`assembly`、`category`(逗号分隔，**区分大小写**)、`filter`+`filter_type`(testName/assembly/category)、`clear_console`(默认 true)、`report`(默认 true)、`out_path`(可选留档；不以 .json 结尾视为目录)、`timeout_ms`(默认 120000) | 发起测试运行。**安全内置**：未显式指定 assembly 时自动限定"工程测试程序集"并**排除 `Unity.Pipeline.Tests*`**（返回值含 `ExcludedAssemblies`） |
 | `axu_test_status` | 无 | 轮询运行状态（读 `Temp/axu_test_run_status.json`）；PlayMode 必用。running 超过 15 分钟视为陈旧不阻塞新运行 |
 | `axu_test_report` | `latest`(bool) 或 `path` | 返回报告 JSON 原文；超过 256KB 返回 `{status:"too_large"}` 信封 |
+| `axu_doctor`（2026-09-20 新增） | 无 | 环境自检一键体检：返回 `{status(ok/warn/error), summary, environment, checks[{id,status,message,hint?}]}`。8 项检查：pipeline 描述符（port/evalToken 存在性，token 值不回显）、必需/可选包（InputSystem+uGUI 双缺=warn）、`AXU_TEST_AGENT` define、Editor 忙闲、在途运行（新鲜 running 预判互斥闸占用，>15 分钟陈旧不判）、报告存储可写探针+suite 盘点。**纯诊断，不进互斥闸**，随时可调；建议排障第一步与派发运行类命令前各调一次 |
+| `axu_lint`（2026-09-20 新增） | `include`（默认 `Assets,Packages/com.cielevel`，支持目录名前缀展开）、`exclude`（默认 `/FastNoiseLite/`）、`max_issues`（默认 50） | 项目规范校验（AGENTS.md 软规范机器化，规则零硬编码工程名）：`namespace.convention`（文件命名空间 vs asmdef rootNamespace 前缀，warn）、`editor.placement`（**fail**：未受 #if 保护的 UnityEditor 引用出现在 Player 面向程序集/非 Editor 路径）、`file.type_name`（文件名 vs 类型名，拆分文件首段锚点豁免）、`runtime.editor_ns`（/Runtime/ 下 Editor 命名空间哨兵）、`tests.asmdef_guard`（Player 面向测试程序集缺 UNITY_INCLUDE_TESTS）。纯只读、不进互斥闸。本工程基线（2026-09-20 收尾后）：656 文件/34 程序集，namespace 0、file.type_name 24（均为多类型家族文件形态，如 Ease 一族；当日已修 7 处命名空间漂移 + 13 处真错名）、其余零违规 |
 | `axu_window_screenshot` | `window`(必填，EditorWindow 标题精确匹配)、`menu`(可选，窗口不存在时经此菜单自动打开)、`output`(可选 PNG 路径) | **Windows 专属、仅适用于没有 CaptureToRenderTexture 能力的 Unity 版本（< 6000.7，6000.7+ 不编译，请用 `capture_editor_element`）**。后台无感截取任意浮动 EditorWindow（PrintWindow 离屏渲染）：窗口可被遮挡/失焦，不抢焦点不置顶；限制：最小化/关闭(可经 menu 重开)/停靠状态无法截取。成功返回 `=> OK bytes=... path=...`。**macOS 无需实现**（2026-08-31 决策）：运行时平台守卫在任何 Win32 调用前返回说明文本，不崩溃无副作用；Mac 截图走跨平台路径（`AxuCapture` + `capture_game_view`/`capture_scene_view`/`screenshot`），不规划 CGWindowListCreateImage 变体。⚠️ **实测限制（2026-09-02）**：PrintWindow 对 Unity 这类 D3D 呈现内容可能返回 OK 但客户区**全白**（对照截 Hierarchy 同样白图，机制性限制）；需要窗口真实内容时回退 = eval 反射调用窗口方法（如 AxuTestRunner 的 `SetPage`）+ Show/Focus/Repaint 后按窗口矩形 `CopyFromScreen` 抓屏 |
 
 ### 调用示例

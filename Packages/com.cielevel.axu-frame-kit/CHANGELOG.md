@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### 2026-09-20
+
+`axu_lint` 规范校验首跑漂移清单收尾（仅命名空间归位 / 文件重命名，类型名、公共 API 与序列化引用零变更）。
+
+- **Editor 命名空间归位（7 文件）**：`Editor/Common/` 下 7 个 Editor 类从 `AxuFrameKit.Common.{区域}.Editor` 形态迁到规范前缀 `AxuFrameKit.Common.Editor.{区域}`（CustomAttribute×3、UI.Kit.ListView、UI.Kit.DataBind、Utility.Auto.AutoSequence、Utility.Table.CSV）；均为属性注册型 CustomEditor / 编辑器窗口，仓库内无外部 `using` 引用，随迁补显式 using。
+- **文件名与类名对齐（6 文件，GUID 不变）**：`GameObjectExtension.cs`→`GameObjectExtensions.cs`、`RectTransformExtension.cs`→`RectTransformExtensions.cs`、`_Core/Extension/EnumExtension.cs`→`EnumExtensions.cs`、`Timer/CountDownManager.cs`→`CountdownManager.cs`（大小写对齐）、`Tweener/AxuTweenerFade.cs`→`AxuTweenerCanvasGroupAlpha.cs` 与 `Tweener/AxuTweenerCanvasGroupAlpha.cs`→`AxuTweenerCustomFloat.cs`（两文件内容与旧名交叉错位，按"文件随类名"归位）。
+- **验证**：无头编译零 error；`axu_lint` 复跑 `namespace.convention` 7→0、`file.type_name` 37→24（余下均为既有家族文件形态：Ease 一族、Singletons、FSM、DesignPattern 等）。
+
 ### 2026-09-18
 
 补齐 2026-09-17 加密批次留下的告警尾巴：`AesCrypto` 旧口令接口标记过时时，`EncryptHelper` 的便捷转发被漏掉，编译报 CS0618。

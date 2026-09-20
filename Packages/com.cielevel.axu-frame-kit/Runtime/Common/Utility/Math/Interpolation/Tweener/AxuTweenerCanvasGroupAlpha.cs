@@ -1,31 +1,33 @@
-using System;
 using AxuFrameKit._Core.Utility.Math.Interpolation;
+using UnityEngine;
 
 namespace AxuFrameKit.Common.Utility.Math.Interpolation.Tweener
 {
-    /// <summary>
-    /// 自定义Float曲线
-    /// </summary>
-    public class AxuTweenerCustomFloat : AxuTweener<object>
+    public class AxuTweenerCanvasGroupAlpha : AxuTweener<CanvasGroup>
     {
         private float _start, _end;
         
-        private Action<float> _setter;
-        
-        public AxuTweenerCustomFloat(float duration, float start, float end, Action<float> setter) : base(duration)
+        public AxuTweenerCanvasGroupAlpha(float duration, CanvasGroup target, float endValue) : base(duration)
         {
-            Duration = duration;
-
-            _start = start;
-            _end   = end;
-
-            _setter = setter;
+            _target = target;
+            _end    = endValue;
         }
 
-        protected override void OnStartup() { }
-        
-        public void SetEnd(float end) => _end = end;
-        
-        protected override void Action() => _setter?.Invoke(_start + (_end - _start) * _t);
+        public void SetEnd(float endValue) => _end = endValue;
+    
+        protected override void OnStartup()
+        {
+            if (_target != null)
+                _start = _target.alpha;
+        }
+
+        protected override void Action()
+        {
+            if (_target == null) return;
+
+            float currentAlpha = _start + (_end - _start) * _t;
+
+            _target.alpha = currentAlpha;
+        }
     }
 }

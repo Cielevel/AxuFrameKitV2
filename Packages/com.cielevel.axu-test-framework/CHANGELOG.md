@@ -4,6 +4,25 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+- **新增 pipeline 命令 `axu_lint`（2026-09-20，项目规范校验）**：把 AGENTS.md 软规范机器化——5 条规则：
+  `namespace.convention`（文件命名空间 vs asmdef rootNamespace 前缀）、`editor.placement`（fail 级：
+  未受 #if 保护的 UnityEditor 引用出现在 Player 面向程序集/非 Editor 路径）、`file.type_name`
+  （文件名 vs 类型名，拆分文件首段锚点豁免）、`runtime.editor_ns`（/Runtime/ 下的 Editor 命名空间回归哨兵）、
+  `tests.asmdef_guard`（Player 面向测试程序集缺 UNITY_INCLUDE_TESTS=构建泄漏）。参数 `include`（支持
+  目录名前缀展开，默认 Assets + com.cielevel 一族）/ `exclude`（默认 /FastNoiseLite/）/ `max_issues`。
+  纯只读、不进互斥闸；regex 启发式扫描（非 Roslyn），输出定位"规范漂移清单"。
+  本工程首跑基线：656 文件 / 34 程序集，namespace 7 处（框架包 Editor 历史漂移）、file.type_name 37 处、
+  其余 3 条零违规；同日收尾清理（框架包 Editor 命名空间归位 ×7 + 真错名文件重命名 ×13，详见各包 CHANGELOG），
+  复跑降为 namespace 0 / file.type_name 24（余下均为多类型家族文件形态，如 Ease 一族）。实现于 `Editor.Pipeline/Commands/AxuLintCommand.cs`。
+
+- **新增 pipeline 命令 `axu_doctor`（2026-09-20，环境自检）**：一键体检信封
+  `{status(ok/warn/error), summary, environment, checks[{id,status,message,hint?}]}`，覆盖 8 项——
+  pipeline 描述符（port/evalToken 存在性，token 值永不回显）、必需包（test-framework/newtonsoft-json）、
+  可选包（pipeline/InputSystem/uGUI，双缺=monkey 降级 warn）、`AXU_TEST_AGENT` define、Editor 忙闲、
+  在途运行（新鲜 running 预判互斥闸占用，>15 分钟陈旧不判）、报告存储可写探针（自清理）+ 存量盘点、
+  suite 盘点。纯诊断、**不进 RunGate 互斥闸**；单项异常只降级该项。实现于
+  `Editor.Pipeline/Commands/AxuDoctorCommand.cs`（`AXU_PIPELINE_PRESENT` 守护，TypeCache 自动注册）。
+
 - **Agent 输入后端正规化（2026-09-20，backlog #5）**：主 `AxuTestFramework.Agent` 程序集移除对
   `Unity.InputSystem` / `UnityEngine.UI` 的硬引用（只依赖 Core + Newtonsoft.Json），monkey 输入能力拆为
   两个可选守护程序集——`AxuTestFramework.Agent.Input`（versionDefines `com.unity.inputsystem ≥1.0` →
