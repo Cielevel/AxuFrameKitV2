@@ -28,7 +28,7 @@
 | [08-unity-pipeline-api.md](08-unity-pipeline-api.md) | **Unity Pipeline 本地 API**（HTTP 直连运行中 Editor：142 个命令、鉴权、示例） | **需要编译/测试/读 Console/操作资产时优先用这个** |
 | [09-unity-subagents.md](09-unity-subagents.md) | **Unity 全流程子代理体系**（11 个代理的分工、派发矩阵、全局/工程双层覆盖机制） | **派发子代理前、调整代理定义时先读这个** |
 | [plans/](plans/) | **进行中/已完成工作的方案与交接文档**。AxuTestFramework v1 测试框架：已于 2026-08-31 全部完成交付（M0-M5；交接归档见 [plans/axu-test-framework-resume.md](plans/axu-test-framework-resume.md)）。**v2 游戏级测试平台（Phase 0-6 已完成，Phase 5 真机/Overlay 按需未启动，2026-09-02）**：[plans/axu-test-framework-game-test-platform-plan.md](plans/axu-test-framework-game-test-platform-plan.md)——方案全文 + 逐 Phase 进度台账（含开工问答/实施记录/DoD 证据），相关子代理 charter 已按其对齐（2026-08-31） | 实施/评审 v2 扩展、了解场景测试平台设计时阅读；查各 Phase 做到哪、遗留了什么先看其第 7 节台账 |
-| [backlog.md](backlog.md) | **待办事项**：已识别暂缓处理的问题（含发现来源与建议方案）；2026-09-20 核验：#2/#6 已解决销账，未决 #4（看板 Scenario 可视化）、#5（Agent asmdef 依赖正规化） | 动工前先看有无相关待办；发现新问题记入此处 |
+| [backlog.md](backlog.md) | **待办事项**：已识别暂缓处理的问题（含发现来源与建议方案）；2026-09-20 核验：#2/#6 已解决销账，#4 P0 已完成（P1/P2 留后续），未决 #5（Agent asmdef 依赖正规化） | 动工前先看有无相关待办；发现新问题记入此处 |
 
 ## 重要提醒（信息时效性）
 

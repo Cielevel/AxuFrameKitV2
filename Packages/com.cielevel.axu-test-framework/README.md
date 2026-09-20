@@ -242,7 +242,7 @@ scenario / player / UTF 三类运行禁止在同一 Editor 并发驱动。
 
 ### Editor 侧配套
 
-- **看板 Scenario 页**：扫描并列出 suite/scenario JSON（列表显示中文标题与能力清单、点击选中高亮、底部三步引导）→ Run Suite（含 define 预检）→ 运行后回读报告摘要 + Export JUnit/HTML；趋势自动入库。
+- **看板 Scenario 页**：扫描并列出 suite/scenario JSON（列表显示中文标题与能力清单、点击选中高亮、底部三步引导）→ Run Suite（含 define 预检）→ 运行后回读报告摘要 + Export JUnit/HTML；趋势自动入库。报告详情为逐场景 Foldout：一句话结论、指标表、预算表、基线对比、findings（人话翻译）、截图缩略图与工件链接；运行期轮询状态文件显示"第 x/N 个场景"进度条；三个打开按钮（报告 JSON / 工件目录 / HTML 摘要）。
 - **看板 Trend 页**：按 scenario 分组查看各指标最近 10 次序列与环比（正=变差红 / 负=改善绿；run 级行按 pass/warn/fail 着色）。
 - **导出器**：`JUnitExporter`（JUnit XML）与 `HtmlSummaryExporter`（单文件自包含 HTML 摘要）。
 - **define 预检**（Phase 1 遗留收口）：运行入口检查 `AXU_TEST_AGENT` 未开时弹可跳过警告。

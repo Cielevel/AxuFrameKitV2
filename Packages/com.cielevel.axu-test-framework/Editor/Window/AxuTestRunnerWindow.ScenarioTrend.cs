@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using AxuTestFramework.Core;
+using AxuTestFramework.Core.Baseline;
 using AxuTestFramework.Core.Report;
 using AxuTestFramework.Core.Scenarios;
 using AxuTestFramework.Core.Trend;
@@ -51,6 +53,15 @@ namespace AxuTestFramework.Editor
         private ScrollView _scenarioResultsScroll;
         private ScenarioReport _scenarioReport;
         private string _scenarioReportPath;
+        private VisualElement _scenarioProgressRow;
+        private ProgressBar _scenarioProgressBar;
+        private Label _scenarioProgressLabel;
+        private Button _openJsonButton;
+        private Button _openArtifactsButton;
+        private Button _openHtmlButton;
+
+        /// <summary>截图缩略图纹理缓存（键=完整路径；重渲染/关窗时 DestroyImmediate 释放）。</summary>
+        private readonly Dictionary<string, Texture2D> _artifactTextures = new Dictionary<string, Texture2D>();
 
         /// <summary>Scenario 页发起的运行是否在等 Play Mode 结束（结束后回读报告 + 趋势入库）。
         /// 静态：进 Play 的域重载会重建窗口实例，实例字段不跨域存活。</summary>
@@ -157,6 +168,37 @@ namespace AxuTestFramework.Editor
             actionRow.Add(_exportJunitButton);
             actionRow.Add(_exportHtmlButton);
 
+            // 报告/工件打开入口（backlog #4 P0：打开 JSON / 目录 / HTML 三按钮，报告加载后启用）
+            var openRow = new VisualElement { name = "ax-suite-open-actions" };
+            openRow.style.flexDirection = FlexDirection.Row;
+            openRow.style.marginBottom = 8f;
+            _openJsonButton = new Button(OpenReportJson) { text = "打开报告 JSON" };
+            _openJsonButton.AddToClassList("ax-secondary-button");
+            _openJsonButton.tooltip = "用系统默认程序打开最近一次报告 JSON（原始数据）";
+            _openJsonButton.SetEnabled(false);
+            _openArtifactsButton = new Button(OpenArtifactsFolder) { text = "打开工件目录" };
+            _openArtifactsButton.AddToClassList("ax-secondary-button");
+            _openArtifactsButton.tooltip = "在文件管理器中显示截图等工件目录（报告同目录的 artifacts/）";
+            _openArtifactsButton.SetEnabled(false);
+            _openHtmlButton = new Button(OpenReportHtml) { text = "打开 HTML 摘要" };
+            _openHtmlButton.AddToClassList("ax-secondary-button");
+            _openHtmlButton.tooltip = "生成（若尚无）并用浏览器打开自包含 HTML 摘要，可直接分享";
+            _openHtmlButton.SetEnabled(false);
+            openRow.Add(_openJsonButton);
+            openRow.Add(_openArtifactsButton);
+            openRow.Add(_openHtmlButton);
+
+            // 运行进度行：轮询 Temp/axu_scenario_status.json 渲染"第 x/N 个场景"（无状态文件时隐藏）
+            _scenarioProgressRow = new VisualElement { name = "ax-scenario-progress" };
+            _scenarioProgressRow.AddToClassList("ax-scenario-progress");
+            _scenarioProgressLabel = new Label();
+            _scenarioProgressLabel.AddToClassList("ax-progress-label");
+            _scenarioProgressBar = new ProgressBar { lowValue = 0f, highValue = 1f, value = 0f };
+            _scenarioProgressBar.AddToClassList("ax-progress-bar");
+            _scenarioProgressRow.Add(_scenarioProgressLabel);
+            _scenarioProgressRow.Add(_scenarioProgressBar);
+            _scenarioProgressRow.style.display = DisplayStyle.None;
+
             _scenarioSummaryLabel = new Label("（尚无报告——点击左侧套件选中后运行，结果自动加载）");
             _scenarioSummaryLabel.AddToClassList("ax-summary");
             _scenarioResultsScroll = new ScrollView { viewDataKey = "ax-scenario-results-scroll" };
@@ -164,12 +206,17 @@ namespace AxuTestFramework.Editor
 
             reportPane.Add(reportHeader);
             reportPane.Add(actionRow);
+            reportPane.Add(openRow);
+            reportPane.Add(_scenarioProgressRow);
             reportPane.Add(_scenarioSummaryLabel);
             reportPane.Add(_scenarioResultsScroll);
 
             _scenarioPage.Add(listPane);
             _scenarioPage.Add(reportPane);
             rootVisualElement.Add(_scenarioPage);
+
+            // 进度轮询：800ms 一次（Agent 运行期每完成一个 scenario 刷新状态文件；Play 期域重载后窗口重建、自动续订）。
+            _scenarioPage.schedule.Execute(PollScenarioRunStatus).Every(800);
         }
 
         /// <summary>扫描 Assets 下 *.suite.json / *.scenario.json 并渲染为可选列表（复用运行入口的路径约定）。</summary>
@@ -435,9 +482,13 @@ namespace AxuTestFramework.Editor
         private void RenderScenarioReport()
         {
             _scenarioResultsScroll.Clear();
+            ClearArtifactTextures();
             var report = _scenarioReport;
             if (report == null)
+            {
+                UpdateOpenButtons(false);
                 return;
+            }
 
             _scenarioSummaryLabel.text =
                 $"suite: {report.SuiteId} · exitCode {(int)report.ExitCode} · " +
@@ -457,19 +508,13 @@ namespace AxuTestFramework.Editor
                 foreach (var result in report.Results)
                 {
                     if (result == null) continue;
-                    var status = (result.Status ?? "-").Trim().ToLowerInvariant();
-                    var row = new Label(
-                        $"{StatusBadge(status)} {result.ScenarioId} · {result.Capability} · " +
-                        $"{result.DurationMs:0.#} ms · findings {result.Findings?.Count ?? 0}");
-                    row.AddToClassList("ax-result-detail");
-                    row.EnableInClassList("ax-row-fail", status == "fail" || status == "error");
-                    row.EnableInClassList("ax-row-pass", status == "pass");
-                    _scenarioResultsScroll.Add(row);
+                    _scenarioResultsScroll.Add(CreateScenarioResultRow(result));
                 }
             }
 
             _exportJunitButton.SetEnabled(true);
             _exportHtmlButton.SetEnabled(true);
+            UpdateOpenButtons(true);
         }
 
         private static string StatusBadge(string status)
@@ -508,6 +553,452 @@ namespace AxuTestFramework.Editor
             HtmlSummaryExporter.ExportToFile(_scenarioReport, _scenarioReport.SuiteId, path);
             UpdateStatus("HTML 摘要已导出: " + path);
             EditorUtility.RevealInFinder(path);
+        }
+
+        // ---------------------------------------------------------------- 场景报告详情（backlog #4 P0）
+
+        /// <summary>单条 scenario 结果：Foldout 头部 + 一句话结论 + 指标/预算/基线/findings/工件五段详情。</summary>
+        private VisualElement CreateScenarioResultRow(ScenarioReportResult result)
+        {
+            var status = (result.Status ?? "-").Trim().ToLowerInvariant();
+            var failed = status == "fail" || status == "error";
+            var warned = status == "warn";
+            var header = $"{StatusBadge(status)} {result.ScenarioId} · {result.Capability} · " +
+                         $"{result.DurationMs:0.#} ms · findings {result.Findings?.Count ?? 0}" +
+                         (result.Unbudgeted ? " · 未设预算" : string.Empty);
+
+            var row = new Foldout { text = header, value = failed || warned, name = "ax-scenario-result" };
+            row.AddToClassList("ax-scenario-result");
+            row.AddToClassList(failed ? "ax-row-fail" : warned ? "ax-row-warn" : "ax-row-pass");
+
+            var conclusion = new Label(ScenarioReportPresenter.BuildConclusion(result));
+            conclusion.AddToClassList("ax-scenario-conclusion");
+            conclusion.AddToClassList(ScenarioReportPresenter.ToneClass(status));
+            row.Add(conclusion);
+
+            AddMetricsSection(row, result);
+            AddBudgetSection(row, result);
+            AddBaselineSection(row, result);
+            AddFindingsSection(row, result);
+            AddArtifactsSection(row, result);
+            return row;
+        }
+
+        /// <summary>指标表：按 collector 分组，列出每个 stat 的聚合值（BaselineDiff.Flatten 同键口径）。</summary>
+        private static void AddMetricsSection(VisualElement parent, ScenarioReportResult result)
+        {
+            var metrics = result.Metrics;
+            if (metrics == null || metrics.Count == 0)
+            {
+                AddDetailNote(parent, "指标", "（无度量产出）");
+                return;
+            }
+
+            var total = metrics.Where(pair => pair.Value != null).Sum(pair => pair.Value.Count);
+            AddDetailHeader(parent, $"指标（{total}）");
+
+            foreach (var collector in metrics.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+            {
+                if (collector.Value == null || collector.Value.Count == 0)
+                    continue;
+                var sub = new Label(collector.Key);
+                sub.AddToClassList("ax-detail-subheader");
+                parent.Add(sub);
+                foreach (var stat in collector.Value.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+                    parent.Add(CreateKeyValueRow(stat.Key, ScenarioReportPresenter.FormatMetricValue(stat.Value)));
+            }
+        }
+
+        /// <summary>预算表：实际值 vs 门槛，按 verdict 着色（missing 指标缺失单独标注）。</summary>
+        private static void AddBudgetSection(VisualElement parent, ScenarioReportResult result)
+        {
+            var budgets = result.Budgets;
+            if (budgets == null || budgets.Count == 0)
+            {
+                AddDetailNote(parent, "预算", result.Unbudgeted
+                    ? "（未设预算——unbudgeted，不会被预算拦截）"
+                    : "（无预算判定）");
+                return;
+            }
+
+            AddDetailHeader(parent, $"预算（{budgets.Count}）");
+            foreach (var budget in budgets)
+            {
+                if (budget == null)
+                    continue;
+
+                string expression;
+                if (budget.Missing)
+                    expression = "指标缺失";
+                else if (string.Equals(budget.Op, "range", StringComparison.OrdinalIgnoreCase))
+                    expression = $"需落在规定区间{budget.Unit}";
+                else
+                    expression = $"门槛 {budget.Op} {ScenarioReportPresenter.FormatMetricValue(budget.Threshold ?? 0)}{budget.Unit}";
+
+                var actual = budget.Actual.HasValue
+                    ? ScenarioReportPresenter.FormatMetricValue(budget.Actual.Value) + (budget.Unit ?? string.Empty)
+                    : "-";
+                parent.Add(CreateKeyValueRow(budget.Metric,
+                    $"实际 {actual} · {expression}{(budget.Missing ? "（判定恒 fail）" : string.Empty)}",
+                    budget.Verdict));
+            }
+        }
+
+        /// <summary>基线对比表：base → current + 变化率，按 verdict 着色（verdict 已含方向语义）。</summary>
+        private static void AddBaselineSection(VisualElement parent, ScenarioReportResult result)
+        {
+            var entries = result.BaselineDiff;
+            if (entries == null || entries.Count == 0)
+            {
+                AddDetailNote(parent, "基线对比", "（无基线对比数据——未配置 baseline 或首次运行）");
+                return;
+            }
+
+            AddDetailHeader(parent, $"基线对比（{entries.Count}）");
+            foreach (var entry in entries)
+            {
+                if (entry == null)
+                    continue;
+                var delta = entry.DeltaRatio.ToString("+0.#%;-0.#%;0%", CultureInfo.InvariantCulture);
+                var value =
+                    $"{ScenarioReportPresenter.FormatMetricValue(entry.Base)} → " +
+                    $"{ScenarioReportPresenter.FormatMetricValue(entry.Current)}（{delta}）";
+                parent.Add(CreateKeyValueRow(entry.Metric, value, entry.Verdict));
+            }
+        }
+
+        /// <summary>findings 列表：严重级 + 人话翻译（原始 message 与 code 进 tooltip）。</summary>
+        private static void AddFindingsSection(VisualElement parent, ScenarioReportResult result)
+        {
+            var findings = result.Findings;
+            if (findings == null || findings.Count == 0)
+            {
+                AddDetailNote(parent, "结论 / findings", "（无 findings）");
+                return;
+            }
+
+            AddDetailHeader(parent, $"结论 / findings（{findings.Count}）");
+            foreach (var finding in findings)
+            {
+                if (finding == null)
+                    continue;
+
+                var severity = string.IsNullOrEmpty(finding.SeverityText) ? "info" : finding.SeverityText;
+                var row = new VisualElement();
+                row.AddToClassList("ax-kv-row");
+                var badge = new Label(severity);
+                badge.AddToClassList("ax-finding-badge");
+                badge.AddToClassList(ScenarioReportPresenter.ToneClass(severity));
+                var text = new Label(ScenarioReportPresenter.TranslateFinding(finding));
+                text.AddToClassList("ax-finding-text");
+                text.AddToClassList(ScenarioReportPresenter.ToneClass(severity));
+                text.tooltip = $"[{finding.Code}] {finding.Message}";
+                row.Add(badge);
+                row.Add(text);
+                parent.Add(row);
+            }
+        }
+
+        /// <summary>工件：图片（png/jpg/jpeg）渲染缩略图画廊，其余以可点击链接列出（点击用默认程序打开）。</summary>
+        private void AddArtifactsSection(VisualElement parent, ScenarioReportResult result)
+        {
+            var artifacts = result.Artifacts;
+            if (artifacts == null || artifacts.Count == 0)
+            {
+                AddDetailNote(parent, "工件（截图等）", "（本次运行未产出工件）");
+                return;
+            }
+
+            AddDetailHeader(parent, $"工件（{artifacts.Count}）");
+
+            var gallery = new VisualElement();
+            gallery.AddToClassList("ax-artifact-gallery");
+            var galleryUsed = false;
+            foreach (var artifact in artifacts)
+            {
+                if (!ScenarioReportPresenter.IsImageArtifact(artifact))
+                    continue;
+                gallery.Add(CreateArtifactThumbnail(
+                    ScenarioReportPresenter.ResolveArtifactPath(_scenarioReportPath, artifact), artifact));
+                galleryUsed = true;
+            }
+            if (galleryUsed)
+                parent.Add(gallery);
+
+            foreach (var artifact in artifacts)
+            {
+                if (ScenarioReportPresenter.IsImageArtifact(artifact))
+                    continue;
+                var fullPath = ScenarioReportPresenter.ResolveArtifactPath(_scenarioReportPath, artifact);
+                var row = new VisualElement();
+                row.AddToClassList("ax-kv-row");
+                var link = new Label(artifact);
+                link.AddToClassList("ax-artifact-link");
+                link.tooltip = fullPath + "\n（点击用默认程序打开）";
+                link.RegisterCallback<ClickEvent>(_ => OpenPath(fullPath));
+                row.Add(link);
+                parent.Add(row);
+            }
+        }
+
+        /// <summary>单张截图缩略图（160×90 预览 + 文件名；点击用默认程序打开；加载失败显示占位）。</summary>
+        private VisualElement CreateArtifactThumbnail(string fullPath, string relativePath)
+        {
+            var box = new VisualElement();
+            box.AddToClassList("ax-artifact-box");
+
+            var texture = LoadArtifactTexture(fullPath);
+            if (texture != null)
+            {
+                var image = new Image { image = texture, scaleMode = ScaleMode.ScaleToFit };
+                image.AddToClassList("ax-artifact-thumb");
+                image.tooltip = relativePath + "\n（点击用默认程序打开）";
+                image.RegisterCallback<ClickEvent>(_ => OpenPath(fullPath));
+                box.Add(image);
+            }
+            else
+            {
+                var missing = new Label(File.Exists(fullPath) ? "（无法解码）" : "（图片缺失）");
+                missing.AddToClassList("ax-artifact-thumb-missing");
+                missing.tooltip = fullPath;
+                box.Add(missing);
+            }
+
+            var label = new Label(Path.GetFileName(relativePath));
+            label.AddToClassList("ax-artifact-label");
+            label.tooltip = relativePath;
+            box.Add(label);
+            return box;
+        }
+
+        /// <summary>读取图片纹理进缓存（同路径只解码一次；非图片/损坏返回 null）。</summary>
+        private Texture2D LoadArtifactTexture(string fullPath)
+        {
+            if (string.IsNullOrEmpty(fullPath) || !File.Exists(fullPath))
+                return null;
+            if (_artifactTextures.TryGetValue(fullPath, out var cached) && cached != null)
+                return cached;
+
+            try
+            {
+                var bytes = File.ReadAllBytes(fullPath);
+                var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (!texture.LoadImage(bytes))
+                {
+                    DestroyImmediate(texture);
+                    return null;
+                }
+                _artifactTextures[fullPath] = texture;
+                return texture;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[AxuTestFramework] 缩略图加载失败（{Path.GetFileName(fullPath)}）: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>释放缩略图纹理缓存（重渲染报告前与关窗时调用，避免纹理泄漏）。</summary>
+        private void ClearArtifactTextures()
+        {
+            foreach (var texture in _artifactTextures.Values)
+            {
+                if (texture != null)
+                    DestroyImmediate(texture);
+            }
+            _artifactTextures.Clear();
+        }
+
+        private void OnDestroy()
+        {
+            ClearArtifactTextures();
+        }
+
+        /// <summary>报告加载态同步三个打开按钮可用性。</summary>
+        private void UpdateOpenButtons(bool hasReport)
+        {
+            var hasPath = hasReport && !string.IsNullOrEmpty(_scenarioReportPath);
+            _openJsonButton?.SetEnabled(hasPath);
+            _openArtifactsButton?.SetEnabled(hasPath);
+            _openHtmlButton?.SetEnabled(hasPath);
+        }
+
+        private void OpenReportJson()
+        {
+            OpenPath(_scenarioReportPath);
+        }
+
+        private void OpenArtifactsFolder()
+        {
+            var directory = AxuTestReportPaths.GetArtifactsDirectoryFor(_scenarioReportPath);
+            if (Directory.Exists(directory))
+            {
+                EditorUtility.RevealInFinder(directory);
+                UpdateStatus("已打开工件目录: " + Relativize(AxuTestReportPaths.ProjectRootFullPath, directory));
+            }
+            else
+            {
+                UpdateStatus("本次运行未产出工件目录（无截图或自定义工件）: " + directory);
+            }
+        }
+
+        /// <summary>打开 HTML 摘要：报告旁生成（若尚无）`{报告名}.summary.html` 后用默认浏览器打开。</summary>
+        private void OpenReportHtml()
+        {
+            if (_scenarioReport == null || string.IsNullOrEmpty(_scenarioReportPath) || !File.Exists(_scenarioReportPath))
+                return;
+
+            try
+            {
+                var htmlPath = Path.Combine(
+                    Path.GetDirectoryName(_scenarioReportPath) ?? string.Empty,
+                    Path.GetFileNameWithoutExtension(_scenarioReportPath) + ".summary.html");
+                if (!File.Exists(htmlPath))
+                    HtmlSummaryExporter.ExportToFile(_scenarioReport, _scenarioReport.SuiteId, htmlPath);
+                OpenPath(htmlPath);
+                UpdateStatus("HTML 摘要: " + htmlPath);
+            }
+            catch (Exception ex)
+            {
+                UpdateStatus("HTML 摘要生成失败: " + ex.Message);
+                Debug.LogWarning("[AxuTestFramework] HTML 摘要生成失败: " + ex.Message);
+            }
+        }
+
+        /// <summary>用系统默认程序打开文件；抛异常时退回 Finder/资源管理器定位（均失败仅记状态栏）。</summary>
+        private void OpenPath(string fullPath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(fullPath) || !File.Exists(fullPath))
+                {
+                    UpdateStatus("文件不存在: " + fullPath);
+                    return;
+                }
+                EditorUtility.OpenWithDefaultApp(fullPath);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[AxuTestFramework] 默认程序打开失败，改为定位文件: " + ex.Message);
+                try
+                {
+                    EditorUtility.RevealInFinder(fullPath);
+                }
+                catch (Exception revealEx)
+                {
+                    UpdateStatus("打开文件失败: " + revealEx.Message);
+                }
+            }
+        }
+
+        // ---------------------------------------------------------------- 运行进度（状态文件轮询）
+
+        /// <summary>
+        /// 轮询 Agent 状态文件渲染进度：running=第 x/N 个场景（超 15 分钟标陈旧）；completed/error=终态文案；
+        /// 文件缺失时仅在本窗口刚发起运行时显示等待提示（Agent 覆盖写新状态前的空窗）。
+        /// </summary>
+        private void PollScenarioRunStatus()
+        {
+            if (_scenarioProgressRow == null || _scenarioProgressBar == null)
+                return;
+
+            var status = AxuScenarioRunStatus.TryRead();
+            if (status == null || string.IsNullOrEmpty(status.Status))
+            {
+                if (_scenarioRunPending)
+                    ShowScenarioProgress("已进入 Play Mode，等待 Agent 写入运行状态…", 0f, 1f, "ax-tone-neutral");
+                else
+                    _scenarioProgressRow.style.display = DisplayStyle.None;
+                return;
+            }
+
+            // 本窗口刚发起运行：忽略上一轮的残留终态（状态文件开始时间早于本次启动 5 秒以上即视为旧状态）
+            if (_scenarioRunPending && status.IsTerminal &&
+                status.TryGetStartedUtc(out var started) && started < _scenarioRunStartedUtc.AddSeconds(-5))
+            {
+                ShowScenarioProgress("已进入 Play Mode，等待 Agent 写入运行状态…", 0f, 1f, "ax-tone-neutral");
+                return;
+            }
+
+            var total = Mathf.Max(1, status.TotalCount);
+            switch (status.Status.Trim().ToLowerInvariant())
+            {
+                case AxuScenarioRunStatus.Running:
+                {
+                    var stale = status.IsStale(DateTime.UtcNow);
+                    var text = $"运行中：第 {status.CompletedCount}/{status.TotalCount} 个场景 · suite {status.SuiteId}";
+                    if (stale)
+                        text += "（状态超过 15 分钟未更新，可能已中断）";
+                    ShowScenarioProgress(text, status.CompletedCount, total, stale ? "ax-tone-warn" : "ax-tone-neutral");
+                    break;
+                }
+                case AxuScenarioRunStatus.Completed:
+                    ShowScenarioProgress(
+                        $"运行完成：{status.CompletedCount}/{status.TotalCount} 个场景 · exitCode {status.ExitCode?.ToString() ?? "-"}" +
+                        (_scenarioRunPending ? "（正在回读报告…）" : string.Empty),
+                        status.CompletedCount, total, "ax-tone-ok");
+                    break;
+                case AxuScenarioRunStatus.Error:
+                    ShowScenarioProgress(
+                        $"运行出错（exitCode {status.ExitCode?.ToString() ?? "3"}）——详见 Console 与报告",
+                        0f, 1f, "ax-tone-bad");
+                    break;
+                default:
+                    _scenarioProgressRow.style.display = DisplayStyle.None;
+                    break;
+            }
+        }
+
+        private void ShowScenarioProgress(string text, float value, float highValue, string toneClass)
+        {
+            _scenarioProgressRow.style.display = DisplayStyle.Flex;
+            _scenarioProgressLabel.text = text;
+            foreach (var tone in new[] { "ax-tone-ok", "ax-tone-warn", "ax-tone-bad", "ax-tone-neutral" })
+                _scenarioProgressLabel.EnableInClassList(tone, tone == toneClass);
+            _scenarioProgressBar.highValue = Mathf.Max(1f, highValue);
+            _scenarioProgressBar.value = Mathf.Clamp(value, 0f, _scenarioProgressBar.highValue);
+        }
+
+        private static void AddDetailHeader(VisualElement parent, string text)
+        {
+            var header = new Label(text);
+            header.AddToClassList("ax-detail-header");
+            parent.Add(header);
+        }
+
+        private static void AddDetailNote(VisualElement parent, string section, string note)
+        {
+            AddDetailHeader(parent, section);
+            var label = new Label(note);
+            label.AddToClassList("ax-detail-note");
+            parent.Add(label);
+        }
+
+        /// <summary>名称 + 值（+ 可选判定）行；判定按 verdict 着色调（pass 绿 / warn 黄 / fail 红）。</summary>
+        private static VisualElement CreateKeyValueRow(string name, string value, string verdict = null)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("ax-kv-row");
+
+            var nameLabel = new Label(name);
+            nameLabel.AddToClassList("ax-kv-name");
+            nameLabel.tooltip = name;
+
+            var valueLabel = new Label(value);
+            valueLabel.AddToClassList("ax-kv-value");
+            valueLabel.tooltip = value;
+
+            row.Add(nameLabel);
+            row.Add(valueLabel);
+
+            if (!string.IsNullOrEmpty(verdict))
+            {
+                var verdictLabel = new Label(verdict);
+                verdictLabel.AddToClassList("ax-kv-verdict");
+                verdictLabel.AddToClassList(ScenarioReportPresenter.ToneClass(verdict));
+                row.Add(verdictLabel);
+            }
+            return row;
         }
 
         // ------------------------------------------------------------------ Trend 页

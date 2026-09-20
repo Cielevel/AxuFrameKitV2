@@ -4,6 +4,20 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+- **看板 Scenario 页报告详情与运行进度 P0（2026-09-20，backlog #4）**：
+  - 场景结果行改 **Foldout 详情**：一句话结论（findings 人话翻译 + 预算/基线/错误/警告计数）、
+    指标表（按 collector 分组，`collector.stat` → 聚合值）、预算表（实际 vs 门槛 + pass/warn/fail 着色、
+    指标缺失标注）、基线对比表（base → current + 变化率，劣化按判定着色）、findings 列表
+    （严重级 + 翻译，原始 code/message 进 tooltip）、截图缩略图（PNG/JPG 解码为 160×90 预览）
+    与其它工件链接（均可点击用默认程序打开）；
+  - **运行进度**：轮询 `Temp/axu_scenario_status.json` 渲染"第 x/N 个场景"进度条
+    （running/completed/error 三态；>15 分钟未更新标陈旧；pipeline 驱动的运行同样可见；
+    本窗口发起运行时忽略上一轮残留状态）；
+  - **打开按钮**：打开报告 JSON / 打开工件目录 / 打开 HTML 摘要（无则即时生成到报告旁）；
+  - 新增 `ScenarioReportPresenter`（工件路径解析 / 结论生成 / finding 翻译 / 色调映射，纯函数）与
+    `AxuScenarioRunStatus`（状态文件模型）；新增单测 10 例（`ScenarioReportPresenterTests`）；
+  - `AxuTestTokens.uss` 新增详情/色调/缩略图/进度样式（全部沿用既有 token，无新色值）。
+
 - **看板面板可读化改造（2026-09-02，面向非技术使用者）**：
   - 新增 **「总览」页并设为默认页**（`AxuTestRunnerWindow.Overview.cs`，partial）：
     最近一次 suite 运行的大结果徽章（✓全部通过 / ⚠通过但有警告 / ✗有失败 / —尚无记录，颜色绿/黄/红/灰）、

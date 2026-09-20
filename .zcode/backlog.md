@@ -21,15 +21,16 @@
 - **判读**：`PC_RPAsset`/`GlobalSettings` 的新增字段（`m_AllowPostProcessAlphaOutput`/`m_PrefilterAlphaOutput` 等）与枚举值位移是 URP 17.0.3 把资产翻新到当前 schema，语义不变；`GraphicsSettings` 为纯 YAML 换行格式。
 - **遗留观察点**：① 若此后构建仍反复出现同类漂移，说明 Unity 每次都会重写（届时改用方案 2：构建后检查还原）；② `ProjectSettings.asset` 的 `preloadedAssets` 自动重挂（guid `052faaac586de48259a63d0c4782560b`，疑为 InputSystem 默认 Actions）未随本次基线入库（当前工作区该文件干净），复发时单独决策。
 
-## 4. 看板 Scenario 页可视化深度不足（报告详情 + 运行进度）【验收反馈，Phase 6 决策点】
+## 4. 看板 Scenario 页可视化深度不足（报告详情 + 运行进度）【验收反馈；P0 已完成 2026-09-20，P1/P2 留后续】
 
+- **处理进展（2026-09-20，工程所有者决策"顺手做掉 P0"）**：P0 已完成——场景行改 Foldout 详情（一句话结论 + 指标表 + 预算表 + 基线对比表 + findings 人话翻译 + 截图缩略图/工件链接）、状态文件轮询"第 x/N 个场景"进度条、打开报告 JSON/工件目录/HTML 摘要三按钮；新增 `ScenarioReportPresenter`/`AxuScenarioRunStatus` 与 10 例单测；验证 219/219 包测试 + Axu/Smoke 7/7 + 窗口运行期 eval 冒烟。**P1**（Agent Overlay HUD）维持原计划留 Phase 5 按需；**P2**（Trend 折线图 + 报告 A/B）留后续独立迭代。
 - **来源**：2026-09-02 工程所有者首次实机试用（echo-demo 两次运行）反馈，属 Phase 3 验收产出。
 - **现象**：① 运行中看板仅一句"Suite 运行中"状态字，Play 期间无进度/当前场景/实时指标（黑盒期）；② 运行后看板仅 1 行摘要 + 每场景 1 行文字（`AxuTestRunnerWindow.ScenarioTrend.cs` `RenderScenarioReport`），报告 JSON 里的指标表/预算判定/基线对比/findings/截图 artifact 全部无处展示，用户须自行打开 JSON 才知道发生了什么。
 - **建议方案**（按投入产出排序，前两项即可根治）：
   - P0（Editor 层纯 UI，0.5–1d）：场景行 Foldout 展开——指标表 / 预算表（门槛 vs 实际着色）/ 基线对比表（base→current，劣化标红）/ findings 列表 / 截图缩略图；一句话结论（findings 人话翻译）；窗口轮询 `Temp/axu_scenario_status.json`（协议已有，pipeline 命令在用）渲染"第 x/N 个场景"进度条；打开 JSON/目录/HTML 三按钮。
   - P1（Agent 层，1d）：游戏内 Overlay HUD——即方案 §3.4/Phase 5 的 `AgentOverlay.cs`（`#if AXU_TEST_AGENT` 守护），Play 时 Game 视图显示当前 suite/scenario、进度、实时 fps/内存。**原计划已排 Phase 5（按需），维持不动，不因本条提前。**
   - P2：Trend 页自绘折线图（UITK generateVisualContent）+ 任意两份报告 A/B 对比。
-- **决策约定**：不因此打乱既定 Phase 顺序；Phase 6 收口时由工程所有者决定"顺手做掉 P0"或"留作 v2 后独立迭代"。
+- **决策约定**：不因此打乱既定 Phase 顺序；Phase 6 收口时由工程所有者决定"顺手做掉 P0"或"留作 v2 后独立迭代"。（2026-09-20 已决策：做 P0 并完成，见上；P1/P2 维持后置。）
 
 ## 5. Agent asmdef 对 InputSystem/UGUI 的硬引用正规化【P2 级，Phase 6 审查发现】
 

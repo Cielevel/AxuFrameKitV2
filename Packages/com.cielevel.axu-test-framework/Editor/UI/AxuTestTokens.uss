@@ -521,3 +521,195 @@
     color: var(--ax-bad-light);
     -unity-font-style: bold;
 }
+
+/* ===== Scenario 报告详情（backlog #4 P0：指标/预算/基线/findings/截图 + 进度）=====
+   注意：Label 都带 .unity-label，主题规则 `.axu-theme-ue5 .unity-label` 为 (0,2,0)，
+   凡设置文字颜色的类一律带 .axu-theme-ue5 前缀并在文件末尾定义（同权重靠后生效）。 */
+
+.axu-theme-ue5 .ax-row-warn .unity-foldout__text {
+    color: var(--ax-warn);
+}
+
+.ax-scenario-result {
+    margin-left: 8px;
+}
+
+.ax-scenario-conclusion {
+    font-size: 11px;
+    white-space: normal;
+    padding: 2px 4px 6px 16px;
+}
+
+.axu-theme-ue5 .ax-tone-ok {
+    color: var(--ax-ok-light);
+}
+
+.axu-theme-ue5 .ax-tone-warn {
+    color: var(--ax-warn);
+}
+
+.axu-theme-ue5 .ax-tone-bad {
+    color: var(--ax-bad-light);
+    -unity-font-style: bold;
+}
+
+.axu-theme-ue5 .ax-tone-neutral {
+    color: var(--ax-text-3);
+}
+
+.ax-detail-header {
+    font-size: 10px;
+    -unity-font-style: bold;
+    margin: 6px 0 2px 16px;
+}
+
+.axu-theme-ue5 .ax-detail-header {
+    color: var(--ax-text-2);
+}
+
+.ax-detail-note {
+    font-size: 10px;
+    white-space: normal;
+    padding: 0 4px 2px 24px;
+}
+
+.axu-theme-ue5 .ax-detail-note {
+    color: var(--ax-text-3);
+}
+
+.ax-detail-subheader {
+    font-size: 10px;
+    -unity-font-style: bold;
+    margin: 4px 0 0 20px;
+}
+
+.axu-theme-ue5 .ax-detail-subheader {
+    color: var(--ax-accent);
+}
+
+.ax-kv-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 1px 4px 1px 24px;
+}
+
+.ax-kv-name {
+    width: 240px;
+    flex-shrink: 0;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.axu-theme-ue5 .ax-kv-name {
+    color: var(--ax-text-2);
+}
+
+.ax-kv-value {
+    flex-grow: 1;
+    font-size: 11px;
+    white-space: normal;
+}
+
+.axu-theme-ue5 .ax-kv-value {
+    color: var(--ax-text);
+}
+
+.ax-kv-verdict {
+    min-width: 44px;
+    margin-left: 6px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+}
+
+.ax-finding-badge {
+    min-width: 44px;
+    margin-right: 6px;
+    font-size: 10px;
+    -unity-font-style: bold;
+}
+
+.ax-finding-text {
+    flex-grow: 1;
+    font-size: 11px;
+    white-space: normal;
+}
+
+.ax-artifact-gallery {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-left: 24px;
+}
+
+.ax-artifact-box {
+    flex-direction: column;
+    margin: 2px 10px 4px 0;
+}
+
+.ax-artifact-thumb {
+    width: 160px;
+    height: 90px;
+    border-width: 1px;
+    border-color: var(--ax-line-2);
+    border-radius: var(--ax-r-s);
+    background-color: var(--ax-surface-2);
+}
+
+.ax-artifact-thumb:hover {
+    border-color: var(--ax-accent);
+}
+
+.ax-artifact-thumb-missing {
+    width: 160px;
+    height: 90px;
+    font-size: 10px;
+    -unity-text-align: middle-center;
+    background-color: var(--ax-surface-2);
+    border-width: 1px;
+    border-color: var(--ax-line-2);
+    border-radius: var(--ax-r-s);
+}
+
+.axu-theme-ue5 .ax-artifact-thumb-missing {
+    color: var(--ax-text-3);
+}
+
+.ax-artifact-label {
+    max-width: 160px;
+    margin-top: 2px;
+    font-size: 10px;
+    white-space: normal;
+}
+
+.axu-theme-ue5 .ax-artifact-label {
+    color: var(--ax-text-3);
+}
+
+.ax-artifact-link {
+    font-size: 11px;
+    white-space: normal;
+}
+
+.axu-theme-ue5 .ax-artifact-link {
+    color: var(--ax-skip-light);
+}
+
+.axu-theme-ue5 .ax-artifact-link:hover {
+    color: var(--ax-accent);
+}
+
+.ax-scenario-progress {
+    margin-bottom: 6px;
+}
+
+.ax-progress-label {
+    font-size: 11px;
+    white-space: normal;
+    margin-bottom: 2px;
+}
+
+.ax-progress-bar {
+    height: 8px;
+}
