@@ -11,14 +11,37 @@ namespace AxuTestFramework.Core.Scenarios
     /// </summary>
     public static class SuiteLoader
     {
-        /// <summary>加载 suite JSON（schema=axu-suite/1）；schema 不符抛 AxuSchemaException，校验失败抛 InvalidOperationException。</summary>
-        public static SuiteDef LoadSuite(string path)
+        /// <summary>
+        /// 加载 suite JSON（schema=axu-suite/1）；schema 不符抛 AxuSchemaException，校验失败抛 InvalidOperationException。
+        /// <paramref name="externallyProvidedIds"/>：进程内注册的代码态 scenario id（gamehook）——纯 ref 条目由它们供定义；
+        /// <paramref name="ignoreUnresolvedRefs"/>：仅拦结构错误、放行未解析 ref（静态发现路径用，如 axu_scenario_list——
+        /// 注册只发生在游戏进程内，Editor 侧无法预知，故不能据此判定文件坏）。
+        /// </summary>
+        public static SuiteDef LoadSuite(string path, IEnumerable<string> externallyProvidedIds = null,
+            bool ignoreUnresolvedRefs = false)
         {
             var suite = AxuJson.FromFile<SuiteDef>(path, SchemaNames.Suite);
-            var errors = suite.Validate();
+            var errors = new List<string>();
+            var unresolvedRefs = new List<string>();
+            suite.Validate(externallyProvidedIds, errors, unresolvedRefs);
+            if (!ignoreUnresolvedRefs)
+                errors.AddRange(unresolvedRefs);
             if (errors.Count > 0)
                 throw new InvalidOperationException($"suite 校验失败：{path}；{string.Join("；", errors.ToArray())}");
             return suite;
+        }
+
+        /// <summary>
+        /// 列出 suite 中无法由内联定义或 <paramref name="externallyProvidedIds"/> 解析的 ref 清单
+        /// （宽松加载路径配套：这些条目能否运行取决于运行时是否注册了同名代码态 scenario）。
+        /// </summary>
+        public static List<string> FindUnresolvedRefs(SuiteDef suite, IEnumerable<string> externallyProvidedIds = null)
+        {
+            var unresolvedRefs = new List<string>();
+            if (suite == null)
+                return unresolvedRefs;
+            suite.Validate(externallyProvidedIds, new List<string>(), unresolvedRefs);
+            return unresolvedRefs;
         }
 
         /// <summary>加载独立 scenario JSON（schema=axu-scenario/1）；异常语义同 LoadSuite。</summary>

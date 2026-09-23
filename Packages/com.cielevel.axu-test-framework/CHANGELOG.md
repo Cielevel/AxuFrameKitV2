@@ -4,6 +4,44 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-23
+
+- **可用性改造 阶段 1：运行闭环与可信状态（2026-09-23）**。让用户发起一次运行后必定得到明确终态，
+  界面不会停在"似乎一直在运行"，也不会把上一次的报告当成本次结果。五项修复：
+
+  1. **统一启动-收尾契约（看板 / 菜单 / pipeline 共用 `ScenarioRunService`）**：一次运行 = 预检 →
+     写运行记录 `Temp/axu_scenario_run.json`（新文件，含 `runId`/suite 路径/发起方）+ 桥文件 →
+     进 Play → Agent 执行 → 看门狗在**终态**（completed/error）时趋势入库、删记录、**自动退出 Play**。
+     看板发起的运行不再需要用户手动退 Play；此前"跑完自动回显结果"文案与实际行为不符（菜单路径停在 Play、
+     窗口按"退出 Play + 时间戳挑最新报告"回读，域重载还会清掉静态挂起标志）。
+  2. **运行标识与可信终态**：桥文件与状态文件新增 `runId`（发起方生成，Agent 原样回写），消费端按它确认归属；
+     用户手动停止 → 看门狗补写 `status=aborted`（`reason=interrupted`，**`reportPath` 清空**），
+     界面显示"已中断"而不回显旧报告；suite 加载失败 / 报告写盘失败分别带 `reason=suite_load_failed` /
+     `report_write_failed` + `message`（终态可辨识）。状态文件新增 `heartbeatUtc`。
+  3. **长跑互斥（心跳判活）**：在途判定不再看 `startedAtUtc`，改看**最后活动时间**（心跳 > 状态文件写入时间 >
+     启动时间，阈值 15 分钟）。Agent 宿主在 scenario 执行期间每 5 秒心跳续写状态文件（`HeartbeatIntervalSec`），
+     新增 `AxuTestHeartbeat` 在 UTF 运行期同样每 5 秒刷新心跳——**20 分钟的 soak 期间发起 UTF 测试会被正确拒绝**
+     （旧实现 15 分钟后误判陈旧放行）。`axu_doctor` 的 `runs.in_flight` 改用同一谓词与类型化模型
+     （顺带修复：此前用 camelCase 键读 PascalCase 的 UTF 状态文件，UTF 在途永远检测不到）。
+  4. **纯 `ref` 代码态 scenario 的文件加载链路**：`SuiteDef.Validate` 支持传入"运行时已注册 id"集合
+     （`SuiteLoader.LoadSuite(path, externalIds, ignoreUnresolvedRefs)` + `FindUnresolvedRefs`），
+     Agent 侧加载/扇出共用同一注册快照——只含纯 `ref` 的 suite 文件（无内联定义）不再被校验拦下；
+     未解析的 `ref` 仍报明确错误。`axu_scenario_list` 走宽松加载：照常列出并给出 `unresolvedRefs` + `note`。
+     新增工程内示例 `Assets/Tests/Scenarios/gamehook-ref-demo.suite.json`（实测跑通）。
+  5. **`mode=all` 双阶段语义**：新增 `AxuTestRunPhase` 阶段模型与返回值 `phases[]` / `phasesComplete` /
+     `overallConclusion` / `editorSummary`；**仅当 EditMode 段正常 `completed` 才异步启动 PlayMode 段**
+     （超时/出错则跳过并在结论里写明，`status` 保留 `timeout`/`error`，不再被 `playmode_running` 掩盖）；
+     PlayMode 段异步运行期间，`axu_test_status` 的状态文件带 `precedingPhase`（EditMode 段结论，
+     跨域经运行上下文文件传递）。
+  
+  另修一处静默 bug：`AxuScenarioRunStatus.Summary` 此前绑定到命名空间链上同名的 UTF 汇总类型
+  （无 `warned` 字段），导致 scenario 状态文件的 `warned` 计数一直丢；已显式绑定
+  `AxuTestFramework.Core.Report.ReportSummary`。
+  看板 Scenario 页改为文件驱动状态（运行记录 + 状态文件，跨域重载成立），运行记录存在时禁用再次发起。
+  Pipeline 命令参数与报告 schema（`axu-test-report/1` / `axu-scenario-report/1`）**不变**；
+  状态文件新增字段为增量（`axu_scenario_status` 新增终态值 `aborted` 与 `reason`/`message`/`runId`/`heartbeatUtc`，
+  `axu_test_status` 新增 `HeartbeatUtc`/`PrecedingPhase`）。
+
 - **新增 pipeline 命令 `axu_lint`（2026-09-20，项目规范校验）**：把 AGENTS.md 软规范机器化——5 条规则：
   `namespace.convention`（文件命名空间 vs asmdef rootNamespace 前缀）、`editor.placement`（fail 级：
   未受 #if 保护的 UnityEditor 引用出现在 Player 面向程序集/非 Editor 路径）、`file.type_name`

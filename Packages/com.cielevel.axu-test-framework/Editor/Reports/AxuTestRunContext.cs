@@ -43,6 +43,12 @@ namespace AxuTestFramework.Editor
         /// <summary>被安全过滤排除的程序集清单（当前仅 Unity.Pipeline.Tests*）。</summary>
         public List<string> ExcludedAssemblies { get; set; }
 
+        /// <summary>
+        /// <c>mode=all</c> 的前置阶段（EditMode 段）结果：报告器在 PlayMode 段收尾写状态文件时
+        /// 原样带进 <c>PrecedingPhase</c>，使轮询方能看到第一段结论（非 all 模式为 null）。
+        /// </summary>
+        public AxuTestRunPhase PrecedingPhase { get; set; }
+
         /// <summary>写上下文文件（覆盖写）。IO 异常向上抛出，由调用方决定是否中止运行。</summary>
         public static void Write(AxuTestRunContext context)
         {

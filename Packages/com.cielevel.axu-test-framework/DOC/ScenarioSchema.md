@@ -79,6 +79,19 @@ scenario 总判定 = 最严 budget 结果（fail > warn > pass）。
 
 扇出规则：`ref + profile` 生成派生 scenario，`id` 追加档名后缀（`perf.combat.fhd@low-end`），报告独立成条。
 
+`ref` 的解析来源（按优先级）：
+
+1. **本文件内联定义**——`scenarios[]` 里带完整对象的条目（同 id 首条生效）；
+2. **进程内注册的代码态 scenario**——游戏侧经 `AxuTestAgent.RegisterScenario(ScenarioDef.FromCode(...))` 注册
+   （见 `Agent/Capabilities/GameHook/DOC.md`），同 id 时覆盖内联定义。注册只发生在运行时，因此
+   **Editor 侧的静态发现/预检不解析纯 `ref`**：`axu_scenario_list` 照常列出这类 suite 并给出 `unresolvedRefs`
+   与 `note`，看板/菜单/`axu_scenario_run` 的启动前预检也放行（进 Play 后由 Agent 解析）；
+3. 两处都找不到 → **明确报错**（`… 既未在 suite 内联定义中、也不在已注册的代码态 scenario 清单中`），
+   由宿主写成 `status=error`（`reason=suite_load_failed`），而不是静默跳过。
+
+> 纯 `ref` 的 suite 文件（无任何内联定义）是受支持的形态，工程内示例：
+> `Assets/Tests/Scenarios/gamehook-ref-demo.suite.json`（引用 `GameHookE2eRegistration.cs` 注册的 `hook.fromcode`）。
+
 ---
 
 ## 3. axu-scenario-report/1 —— 运行报告

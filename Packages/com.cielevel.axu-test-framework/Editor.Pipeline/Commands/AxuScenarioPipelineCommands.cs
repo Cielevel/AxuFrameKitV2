@@ -79,14 +79,29 @@ namespace AxuTestFramework.Editor
                         }
                         else
                         {
-                            // 默认按 suite 解析（LoadSuite 对 schema 不符会抛错进 catch）
-                            var suite = AxuTestFramework.Core.Scenarios.SuiteLoader.LoadSuite(fullPath);
-                            var resolved = AxuTestFramework.Core.Scenarios.SuiteLoader.Resolve(
-                                suite, null, Path.GetDirectoryName(fullPath));
+                            // 宽松加载：纯 ref 条目由运行时注册（gamehook）供定义，静态发现不能据此判文件坏
+                            var suite = AxuTestFramework.Core.Scenarios.SuiteLoader.LoadSuite(
+                                fullPath, null, ignoreUnresolvedRefs: true);
+                            var unresolvedRefs = AxuTestFramework.Core.Scenarios.SuiteLoader.FindUnresolvedRefs(suite);
                             entry["kind"] = "suite";
                             entry["id"] = suite.Id;
-                            entry["scenarioCount"] = resolved.Count;
-                            entry["scenarioIds"] = resolved.Select(r => r.Id).ToArray();
+                            if (unresolvedRefs.Count == 0)
+                            {
+                                var resolved = AxuTestFramework.Core.Scenarios.SuiteLoader.Resolve(
+                                    suite, null, Path.GetDirectoryName(fullPath));
+                                entry["scenarioCount"] = resolved.Count;
+                                entry["scenarioIds"] = resolved.Select(r => r.Id).ToArray();
+                            }
+                            else
+                            {
+                                // 有未解析 ref：只能报"声明了什么"，运行时能否解析取决于游戏侧注册
+                                var declared = DeclaredScenarioIds(suite);
+                                entry["scenarioCount"] = declared.Count;
+                                entry["scenarioIds"] = declared.ToArray();
+                                entry["unresolvedRefs"] = unresolvedRefs.ToArray();
+                                entry["note"] = "含纯 ref 条目——由游戏运行时注册的代码态 scenario（gamehook）供定义，" +
+                                                "Editor 侧无法静态解析；axu_scenario_run 进入 Play 后由 Agent 解析。";
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -123,6 +138,32 @@ namespace AxuTestFramework.Editor
                 .OrderBy(p => p, StringComparer.Ordinal);
         }
 
+        /// <summary>
+        /// suite 声明的 scenario id 清单（内联定义 id + ref 目标，跳过 enabled=false 的内联定义）：
+        /// 未解析 ref 场景下的静态"声明清单"，不等价于可执行实例数（profile 扇出会更多）。
+        /// </summary>
+        static List<string> DeclaredScenarioIds(AxuTestFramework.Core.Scenarios.SuiteDef suite)
+        {
+            var ids = new List<string>();
+            if (suite?.Scenarios == null)
+                return ids;
+
+            foreach (var entry in suite.Scenarios)
+            {
+                if (entry == null) continue;
+                if (entry.Inline != null)
+                {
+                    if (entry.Inline.Enabled && !string.IsNullOrEmpty(entry.Inline.Id))
+                        ids.Add(entry.Inline.Id);
+                }
+                else if (!string.IsNullOrWhiteSpace(entry.Ref))
+                {
+                    ids.Add(entry.Profile == null ? entry.Ref : $"{entry.Ref}@{entry.Profile}");
+                }
+            }
+            return ids;
+        }
+
         // ------------------------------------------------------------------ axu_scenario_run
 
         /// <summary>
@@ -155,7 +196,8 @@ namespace AxuTestFramework.Editor
                     ? null
                     : scenario.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0).ToList();
 
-                if (!ScenarioRunService.StartEditorPlayRun(suite, scenarioIds, out var error))
+                if (!ScenarioRunService.StartEditorPlayRun(suite, scenarioIds, out var error,
+                        ScenarioRunRecord.SourcePipeline))
                     return ErrorEnvelope(startedUtc, error);
 
                 return new
@@ -211,15 +253,20 @@ namespace AxuTestFramework.Editor
         /// <summary>
         /// 互斥闸检查（RunGate 内调用）：任一在途即返回拒绝原因，否则 null。
         /// 覆盖：axu_test_run（IsAxuRunInFlight + pipeline run_tests 请求文件）与本族 scenario/player 运行。
+        /// "在途"按状态文件的最后活动时间（心跳）判定，长跑 soak 不会被当作陈旧放行。
         /// </summary>
         static string CheckMutualExclusion()
         {
             if (_scenarioRunBusy)
                 return "已有 axu_scenario_run 在途。";
             if (ScenarioRunService.IsScenarioRunInFlight())
-                return "已有 scenario 运行在途（Temp/axu_scenario_status.json 标记 running）。请先经 axu_scenario_status 观察或等其完成；running 超 15 分钟视为陈旧自动放行，确认无运行可删该文件手动解锁。";
+                return "已有 scenario 运行在途（Temp/axu_scenario_status.json 标记 running 且心跳新鲜）。" +
+                       "请先经 axu_scenario_status 观察或等其完成；最后活动超过 15 分钟的 running 视为中断残留会自动放行，" +
+                       "确认无运行可删该文件手动解锁（Temp/axu_scenario_run.json 是配套的运行记录，遗留时一并删除）。";
             if (AxuTestRunService.IsAxuRunInFlight())
-                return "已有 axu 测试运行在途（Temp/axu_test_run_status.json 标记 running）。请先经 axu_test_status 观察或等其完成；running 超 15 分钟视为陈旧自动放行，确认无运行可删该文件手动解锁。";
+                return "已有 axu 测试运行在途（Temp/axu_test_run_status.json 标记 running 且心跳新鲜）。" +
+                       "请先经 axu_test_status 观察或等其完成；最后活动超过 15 分钟的 running 视为中断残留会自动放行，" +
+                       "确认无运行可删该文件手动解锁。";
             if (File.Exists(AxuTestReportPaths.ToFullPath("Temp/pipeline_test_request.json")))
                 return "pipeline 自带 run_tests 的异步运行在途（Temp/pipeline_test_request.json 存在），拒绝并发驱动。";
             return null;

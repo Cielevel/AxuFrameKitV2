@@ -1,0 +1,13 @@
+{
+  "schema": "axu-suite/1",
+  "id": "gamehook-ref-demo",
+  "title": "纯 ref 代码态 scenario 加载演示：本文件不含内联定义，条目全部指向运行时注册的代码态 scenario",
+  "scenarios": [
+    { "ref": "hook.fromcode" }
+  ],
+  "settings": {
+    "stopOnFailure": false,
+    "warnAsFail": false,
+    "scenarioTimeoutSec": 60
+  }
+}

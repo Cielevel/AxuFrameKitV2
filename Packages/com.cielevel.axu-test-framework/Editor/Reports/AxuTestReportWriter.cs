@@ -34,7 +34,8 @@ namespace AxuTestFramework.Editor
         /// <summary>最近一次成功落盘的报告完整路径；本域内尚未写过报告时为 null。</summary>
         public static string LastReportPath { get; private set; }
 
-        /// <summary>UTF 回调：运行开始。恢复跨域会丢失的运行期静态配置（artifacts 目录重定向、console 环形缓冲运行标记）。</summary>
+        /// <summary>UTF 回调：运行开始。恢复跨域会丢失的运行期静态配置（artifacts 目录重定向、console 环形缓冲运行标记），
+        /// 并启动运行心跳（长跑用例期间持续刷新状态文件，使互斥闸不把仍在运行的测试判为陈旧）。</summary>
         public void RunStarted(ITest testsToRun)
         {
             try
@@ -43,6 +44,7 @@ namespace AxuTestFramework.Editor
                 if (context != null && !string.IsNullOrEmpty(context.ArtifactsDirectory))
                     AxuCapture.ArtifactsDirectory = context.ArtifactsDirectory;
                 AxuConsoleRing.BeginRun();
+                AxuTestHeartbeat.Arm();
             }
             catch (Exception ex)
             {
@@ -82,10 +84,11 @@ namespace AxuTestFramework.Editor
             catch (Exception ex)
             {
                 Debug.LogError($"[AxuTestReportWriter] 报告落盘失败: {ex}");
-                WriteErrorStatus(ex.Message);
+                WriteErrorStatus(ex.Message, context);
             }
             finally
             {
+                AxuTestHeartbeat.Disarm();
                 AxuTestRunContext.Delete();
             }
         }
@@ -265,7 +268,8 @@ namespace AxuTestFramework.Editor
             return fullPath;
         }
 
-        /// <summary>运行完成状态写入状态文件（供 axu_test_status / 看板窗口 / EditMode 同步等待读取）。</summary>
+        /// <summary>运行完成状态写入状态文件（供 axu_test_status / 看板窗口 / EditMode 同步等待读取）。
+        /// mode=all 的 PlayMode 段把上下文里的 EditMode 段结论一并带上（跨域只有文件能传）。</summary>
         private static void WriteCompletedStatus(AxuTestReport report, string reportFullPath, AxuTestRunContext context)
         {
             AxuTestRunStatus.Write(new AxuTestRunStatus
@@ -273,21 +277,27 @@ namespace AxuTestFramework.Editor
                 Status = AxuTestRunStatus.Completed,
                 Mode = report.Mode,
                 StartedAtUtc = report.StartedAt,
+                HeartbeatUtc = DateTime.UtcNow.ToString("o"),
                 EndedAtUtc = report.EndedAt,
                 ReportPath = reportFullPath,
                 Summary = report.Summary,
-                Assemblies = context?.Assemblies
+                Assemblies = context?.Assemblies,
+                PrecedingPhase = context?.PrecedingPhase,
             });
         }
 
-        /// <summary>报告流程异常时的兜底状态（status=error，避免等待方轮询到超时）。</summary>
-        private static void WriteErrorStatus(string message)
+        /// <summary>报告流程异常时的兜底状态（status=error，避免等待方轮询到超时）；
+        /// 上下文可用时一并带上 mode 与前置阶段结论（mode=all 的第二段出错时，第一段结果不能丢）。</summary>
+        private static void WriteErrorStatus(string message, AxuTestRunContext context = null)
         {
             AxuTestRunStatus.Write(new AxuTestRunStatus
             {
                 Status = AxuTestRunStatus.Error,
+                Mode = context?.Mode,
+                StartedAtUtc = context?.StartedAtUtc,
                 EndedAtUtc = DateTime.UtcNow.ToString("o"),
-                Message = message
+                Message = message,
+                PrecedingPhase = context?.PrecedingPhase,
             });
         }
 

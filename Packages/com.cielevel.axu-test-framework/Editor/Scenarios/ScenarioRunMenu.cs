@@ -5,13 +5,14 @@ using UnityEngine;
 namespace AxuTestFramework.Editor
 {
     /// <summary>
-    /// "Run Suite JSON..." 菜单（方案 §3.4：Editor 侧 scenario 运行入口的最简形态）：
-    /// 选一个 suite/scenario JSON → 把选中绝对路径写入桥文件 <see cref="PendingSuiteBridgePath"/>
+    /// "Run Suite JSON..." 菜单（Editor 侧 scenario 运行入口的最简形态）：选一个 suite/scenario JSON →
+    /// 交给 <see cref="ScenarioRunService.StartEditorPlayRun"/>（与看板按钮、pipeline 命令同一条启动-收尾契约）
     /// → 进入 Play Mode，由 Agent（<c>#if AXU_TEST_AGENT</c> 守护的 AgentBootstrap）在运行时读取并执行。
     /// <para>桥文件格式为与运行时侧的契约，勿改：
-    /// <code>{"suitePath": "&lt;所选 JSON 绝对路径&gt;", "quitOnDone": false}</code>
-    /// 前置检查：Play 中拦截；define 未开启时经 <see cref="ScenarioPrecheck.WarnIfAgentDisabled"/>
-    /// 弹可跳过警告（未开 define 时 Agent 入口不参与编译，进 Play 也不会有 Agent 读取桥文件）。</para>
+    /// <code>{"suitePath": "&lt;所选 JSON 绝对路径&gt;", "runId": "&lt;本轮标识&gt;", "quitOnDone": false}</code>
+    /// 运行前提（Play 中 / define 未开启）经 <see cref="ScenarioPrecheck"/> 拦截并给出修复入口；
+    /// 文件结构问题（schema/空 scenarios/ref 缺字段）也在进 Play 前拦下，不把用户丢进必然失败的 Play。
+    /// 终态收尾与看板一致：Agent 写出终态或用户手动停止后自动退出 Play。</para>
     /// </summary>
     public static class ScenarioRunMenu
     {
@@ -37,36 +38,41 @@ namespace AxuTestFramework.Editor
             if (string.IsNullOrEmpty(selected))
                 return;
 
-            TryRunSuite(selected);
+            TryRunSuite(selected, out _);
         }
 
         /// <summary>
-        /// 运行指定 suite/scenario JSON（菜单与看板 Scenario 页共用的运行路径）：
-        /// Play 中拦截（提示退出重进）→ <see cref="ScenarioPrecheck.WarnIfAgentDisabled"/> 可跳过预检
-        /// → 写桥文件 → 进入 Play Mode。返回是否已成功启动（false = 被拦截或用户取消）。
+        /// 运行指定 suite/scenario JSON（菜单与看板 Scenario 页共用的运行路径）。
+        /// 返回是否已成功启动（false = 缺运行前提/文件有结构问题/启动失败，原因见 <paramref name="error"/>）。
         /// </summary>
-        public static bool TryRunSuite(string suiteAbsolutePath)
+        public static bool TryRunSuite(string suiteAbsolutePath, out string error)
         {
-            if (EditorApplication.isPlaying)
+            return TryRunSuite(suiteAbsolutePath, ScenarioRunRecord.SourceMenu, out error);
+        }
+
+        /// <summary>
+        /// 运行指定 suite/scenario JSON 并标注发起方（<paramref name="source"/>，见
+        /// <see cref="ScenarioRunRecord"/> 的 Source* 常量）。失败时弹对话框说明原因（交互入口），
+        /// 并把同一段文案经 <paramref name="error"/> 回传给调用方（看板据此写状态栏）。
+        /// </summary>
+        public static bool TryRunSuite(string suiteAbsolutePath, string source, out string error)
+        {
+            if (!ScenarioPrecheck.EnsureRunnable())
             {
-                // 防御分支（菜单 validate 已禁用；看板按钮/脚本直呼时兜底）：不强行重启，提示退出重进。
-                EditorUtility.DisplayDialog(
-                    "Run Suite JSON",
-                    "当前已处于 Play Mode。桥文件需在进入 Play 前写入才会被 Agent 读取——" +
-                    "请退出 Play 后重新运行，下一次进 Play 时生效。",
+                error = ScenarioPrecheck.DescribeBlocker();
+                return false;
+            }
+
+            if (!ScenarioRunService.StartEditorPlayRun(suiteAbsolutePath, null, out error, source))
+            {
+                EditorUtility.DisplayDialog("AxuTestFramework — 无法启动场景套件运行",
+                    error ?? "未知原因（详见 Editor Console）。",
                     "好");
                 return false;
             }
 
-            if (!ScenarioPrecheck.WarnIfAgentDisabled())
-                return false;
-
-            WriteBridge(suiteAbsolutePath);
-            EditorApplication.isPlaying = true;
-
-            Debug.Log(
-                $"[AxuTestFramework] 桥文件已写入: {PendingSuiteBridgePath}；suite: {suiteAbsolutePath}" +
-                "——已进入 Play Mode，Agent 将读取并执行。");
+            Debug.Log($"[AxuTestFramework] 已进入 Play Mode，Agent 将读取并执行 suite: {suiteAbsolutePath}" +
+                      "（写出终态后自动退出 Play 并回显本次报告）");
             return true;
         }
 
@@ -77,15 +83,6 @@ namespace AxuTestFramework.Editor
                 ? Path.Combine(Directory.GetParent(Application.dataPath).FullName,
                     ScenarioJsonMenu.ScenariosFolder.Replace('/', Path.DirectorySeparatorChar))
                 : Application.dataPath;
-        }
-
-        /// <summary>写桥文件 <see cref="PendingSuiteBridgePath"/>（Temp 目录不存在则创建；
-        /// 工程根由 Application.dataPath 推导，不依赖进程 cwd）。</summary>
-        private static void WriteBridge(string suiteAbsolutePath)
-        {
-
-            // Phase 4：桥文件写入统一走 ScenarioRunService（与 pipeline 命令共用同一契约实现）
-            ScenarioRunService.WriteBridgeFile(suiteAbsolutePath, null);
         }
     }
 }

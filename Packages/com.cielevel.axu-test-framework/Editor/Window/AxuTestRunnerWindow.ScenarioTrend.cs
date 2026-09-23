@@ -18,10 +18,12 @@ namespace AxuTestFramework.Editor
     /// <summary>
     /// <see cref="AxuTestRunnerWindow"/> 的 Scenario / Trend 页签（Phase 4，方案 §6.3）。
     /// <para>Scenario 页：扫描 Assets 下 *.suite.json / *.scenario.json 列表 → 选中后 Run Suite
-    /// （复用 <see cref="ScenarioRunMenu.TryRunSuite"/>，含 define 预检）→ 退出 Play 后自动加载
-    /// <c>Library/AxuTestReports/scenario/</c> 最新报告（scenario/status/durationMs/退出码）、
-    /// 趋势入库（TrendStore.Append）并提供 JUnit / HTML 导出。Trend 页：读
-    /// <see cref="AxuTrendPaths.TrendCsvPath"/>，按 scenario 分组选看各 metric 最近 10 次序列与
+    /// （<see cref="ScenarioRunService.StartEditorPlayRun"/>，与菜单/pipeline 共享启动-收尾契约）→
+    /// Agent 写出终态后看门狗自动退出 Play → 本页按状态文件的 <c>runId</c>/<c>reportPath</c> 回显
+    /// **本次**结果（completed 加载状态文件指名的报告；aborted/error 清空面板说明原因，绝不回显陈旧报告）。
+    /// 状态来源只有两个文件：运行记录（Temp/axu_scenario_run.json，在途）与状态文件
+    /// （Temp/axu_scenario_status.json，进度与终态）——两者都是磁盘事实，跨 Play 的域重载依然成立。
+    /// Trend 页：读 <see cref="AxuTrendPaths.TrendCsvPath"/>，按 scenario 分组选看各 metric 最近 10 次序列与
     /// 最近两次环比（TrendSummary.ChangePercent，正值=变差用警示色）。</para>
     /// </summary>
     public partial class AxuTestRunnerWindow
@@ -63,10 +65,12 @@ namespace AxuTestFramework.Editor
         /// <summary>截图缩略图纹理缓存（键=完整路径；重渲染/关窗时 DestroyImmediate 释放）。</summary>
         private readonly Dictionary<string, Texture2D> _artifactTextures = new Dictionary<string, Texture2D>();
 
-        /// <summary>Scenario 页发起的运行是否在等 Play Mode 结束（结束后回读报告 + 趋势入库）。
-        /// 静态：进 Play 的域重载会重建窗口实例，实例字段不跨域存活。</summary>
-        private static bool _scenarioRunPending;
-        private static DateTime _scenarioRunStartedUtc;
+        /// <summary>已回显的运行标识（runId）：终态只回显一次，避免 800ms 轮询反复重载报告与纹理。
+        /// 实例字段——进/退 Play 的域重载会重建窗口，新实例的首轮询按当前状态文件重新回显最近一次终态。</summary>
+        private string _deliveredRunId;
+
+        /// <summary>上次同步给总览页的在途进度（完成数）：仅在推进时刷新总览，避免高频重读趋势 CSV。</summary>
+        private int _lastRunningCompletedCount = -1;
 
         // ---------------------------------------------------------------- Trend 页状态
 
@@ -135,7 +139,7 @@ namespace AxuTestFramework.Editor
             refreshButton.AddToClassList("ax-secondary-button");
             _suiteListScroll = new ScrollView { viewDataKey = "ax-suite-list-scroll" };
             _suiteListScroll.AddToClassList("ax-scroll");
-            var listHint = new Label("① 点击左侧套件选中  →  ② 点右侧「▶ 运行选中的套件」  →  ③ 跑完自动回显结果");
+            var listHint = new Label("① 点击左侧套件选中  →  ② 点右侧「▶ 运行选中的套件」  →  ③ 跑完自动退出 Play 并回显本次结果");
             listHint.AddToClassList("ax-help-note");
             listPane.Add(listHeader);
             listPane.Add(refreshButton);
@@ -199,7 +203,7 @@ namespace AxuTestFramework.Editor
             _scenarioProgressRow.Add(_scenarioProgressBar);
             _scenarioProgressRow.style.display = DisplayStyle.None;
 
-            _scenarioSummaryLabel = new Label("（尚无报告——点击左侧套件选中后运行，结果自动加载）");
+            _scenarioSummaryLabel = new Label("（尚无运行记录——点击左侧套件选中后运行，结果自动回显）");
             _scenarioSummaryLabel.AddToClassList("ax-summary");
             _scenarioResultsScroll = new ScrollView { viewDataKey = "ax-scenario-results-scroll" };
             _scenarioResultsScroll.AddToClassList("ax-scroll");
@@ -215,8 +219,10 @@ namespace AxuTestFramework.Editor
             _scenarioPage.Add(reportPane);
             rootVisualElement.Add(_scenarioPage);
 
-            // 进度轮询：800ms 一次（Agent 运行期每完成一个 scenario 刷新状态文件；Play 期域重载后窗口重建、自动续订）。
-            _scenarioPage.schedule.Execute(PollScenarioRunStatus).Every(800);
+            // 运行状态统一由 Temp 下的运行记录 + 状态文件推导（域重载安全）：800ms 一次；
+            // 不在运行时只看终态、不回显旧报告。
+            _scenarioPage.schedule.Execute(RefreshScenarioRunState).Every(800);
+            RefreshScenarioRunState();
         }
 
         /// <summary>扫描 Assets 下 *.suite.json / *.scenario.json 并渲染为可选列表（复用运行入口的路径约定）。</summary>
@@ -336,97 +342,179 @@ namespace AxuTestFramework.Editor
         {
             if (_runSuiteButton == null)
                 return;
-            _runSuiteButton.SetEnabled(!string.IsNullOrEmpty(_selectedSuitePath) && !EditorApplication.isPlaying);
+            // 运行中（Play 或运行记录未收尾）禁止再发起：桥文件必须在进 Play 前写入，重复点击无意义
+            var busy = EditorApplication.isPlaying || ScenarioRunRecord.TryRead() != null;
+            _runSuiteButton.SetEnabled(!string.IsNullOrEmpty(_selectedSuitePath) && !busy);
         }
 
-        /// <summary>运行选中 suite：复用 <see cref="ScenarioRunMenu.TryRunSuite"/>（define 预检 + 桥文件 + 进 Play）。</summary>
+        /// <summary>
+        /// 运行选中 suite：与菜单/pipeline 共用 <see cref="ScenarioRunService.StartEditorPlayRun"/> 的启动-收尾契约
+        /// （预检 → 桥文件 + 运行记录 → 进 Play；Agent 写出终态后自动退 Play 并回显本次报告）。
+        /// </summary>
         private void RunSelectedSuite()
         {
             if (string.IsNullOrEmpty(_selectedSuitePath))
                 return;
 
-            if (!ScenarioRunMenu.TryRunSuite(_selectedSuitePath))
+            if (!ScenarioRunMenu.TryRunSuite(_selectedSuitePath, ScenarioRunRecord.SourceDashboard, out var error))
+            {
+                UpdateStatus("未能启动运行：" + error);
+                return;
+            }
+
+            UpdateStatus($"Suite 运行中（{Relativize(AxuTestReportPaths.ProjectRootFullPath, _selectedSuitePath)}）" +
+                         "——跑完自动退出 Play 并回显本次结果。");
+            UpdateSelectedSuiteUi();
+            RefreshScenarioRunState();
+        }
+
+        // ---------------------------------------------------------------- 运行状态 → 界面（文件驱动，域重载安全）
+
+        /// <summary>
+        /// 运行状态刷新（800ms 轮询）：状态只在两个来源里——运行记录（在途）与状态文件（终态）。
+        /// 在途：渲染进度（第 x/N 个场景，陈旧判定按心跳）；终态：按 runId 回显一次本次结果。
+        /// 这里刻意不读"报告目录里最新的文件"——本次运行没有结果时界面就不该有任何结果。
+        /// </summary>
+        private void RefreshScenarioRunState()
+        {
+            if (_scenarioProgressRow == null || _scenarioProgressBar == null)
                 return;
 
-            _scenarioRunPending = true;
-            _scenarioRunStartedUtc = DateTime.UtcNow;
-            UpdateStatus($"Suite 运行中（{Relativize(AxuTestReportPaths.ProjectRootFullPath, _selectedSuitePath)}）——退出 Play 后自动加载报告。");
+            var record = ScenarioRunRecord.TryRead();
+            var status = AxuScenarioRunStatus.TryRead();
+
+            if (record != null)
+            {
+                RenderRunningState(record, status);
+                return;
+            }
+
+            UpdateSelectedSuiteUi();
+            if (status == null)
+            {
+                _scenarioProgressRow.style.display = DisplayStyle.None;
+                return;
+            }
+
+            RenderTerminalState(status);
+        }
+
+        /// <summary>在途渲染：状态文件尚未属于本轮时给"等待 Agent"提示（进 Play 到 Agent 写状态之间的空窗）。</summary>
+        private void RenderRunningState(ScenarioRunRecord record, AxuScenarioRunStatus status)
+        {
+            _runSuiteButton?.SetEnabled(false);
+
+            // 总览页的进度文案同步（仅在进度真的推进时刷新，避免 800ms 一次重读趋势 CSV）
+            if (status != null && record.MatchesStatus(status) && status.CompletedCount != _lastRunningCompletedCount)
+            {
+                _lastRunningCompletedCount = status.CompletedCount;
+                RefreshOverview();
+            }
+
+            var suiteLabel = Path.GetFileName(record.SuitePath ?? string.Empty);
+            if (status == null || !record.MatchesStatus(status))
+            {
+                ShowScenarioProgress($"已进入 Play Mode，等待 Agent 写入运行状态…（suite {suiteLabel}）",
+                    0f, 1f, "ax-tone-neutral");
+                return;
+            }
+
+            if (status.IsRunning)
+            {
+                var stale = status.IsStale(DateTime.UtcNow);
+                var text = $"运行中：第 {status.CompletedCount}/{status.TotalCount} 个场景 · suite {status.SuiteId}";
+                if (stale)
+                    text += $"（心跳已停止超过 {AxuScenarioRunStatus.StaleMinutes} 分钟，运行可能已中断）";
+                ShowScenarioProgress(text, status.CompletedCount, Mathf.Max(1, status.TotalCount),
+                    stale ? "ax-tone-warn" : "ax-tone-neutral");
+                return;
+            }
+
+            // 终态已写出、记录尚未被看门狗清理（同一轮询窗口内）：按终态渲染
+            RenderTerminalState(status);
+        }
+
+        /// <summary>
+        /// 终态渲染：completed → 加载状态文件指名的报告（路径来自状态文件，不是目录里最新的文件）；
+        /// error（suite 加载失败 / 报告写盘失败）与 aborted（用户手动停止）→ 清空结果面板并说明原因，
+        /// 绝不留着上一次的报告当本次结果。每个 runId 只回显一次（轮询频率 800ms）。
+        /// </summary>
+        private void RenderTerminalState(AxuScenarioRunStatus status)
+        {
+            var runId = status.RunId ?? string.Empty;
+            var alreadyDelivered = runId.Length > 0 && _deliveredRunId == runId;
+            _lastRunningCompletedCount = -1; // 下一轮运行重新按进度刷新总览
+
+            ShowScenarioProgress(
+                $"运行结束（{ScenarioRunStatusPresenter.Label(status)}）· suite {status.SuiteId}" +
+                (string.IsNullOrEmpty(status.ReportPath) ? "" : $"（报告 {Path.GetFileName(status.ReportPath)}）"),
+                status.CompletedCount, Mathf.Max(1, status.TotalCount),
+                ScenarioRunStatusPresenter.ToneClass(status));
+
+            if (alreadyDelivered)
+                return;
+
+            _deliveredRunId = runId;
+
+            if (status.IsCompleted)
+            {
+                if (TryLoadScenarioReport(status.ReportPath, out var report, out var path))
+                {
+                    _scenarioReport = report;
+                    _scenarioReportPath = path;
+                    RenderScenarioReport();
+                    UpdateStatus($"Suite 运行完成：{Path.GetFileName(path)}（趋势已入库）");
+                }
+                else
+                {
+                    _scenarioReport = null;
+                    _scenarioReportPath = null;
+                    RenderScenarioReport();
+                    WarnIfPartialRemnants(AxuTestReportPaths.ToFullPath(AxuTrendPaths.ScenarioReportRoot));
+                    UpdateStatus("运行已结束，但报告文件读不到（可能已删除或写盘失败）——详见 Console 与状态文件。");
+                }
+            }
+            else
+            {
+                // 未完成（中断/基础设施错误）：清空面板，明确"本次没有结果"
+                _scenarioReport = null;
+                _scenarioReportPath = null;
+                RenderScenarioReport();
+                _scenarioResultsScroll.Clear();
+                var note = new Label(BuildUnfinishedNote(status));
+                note.AddToClassList("ax-empty-note");
+                _scenarioResultsScroll.Add(note);
+                _scenarioSummaryLabel.text = $"suite: {status.SuiteId} · {ScenarioRunStatusPresenter.Label(status)}";
+                UpdateStatus($"本次运行未完成：{ScenarioRunStatusPresenter.Label(status)}");
+            }
+
+            RefreshOverview();
             UpdateSelectedSuiteUi();
         }
 
-        /// <summary>Play Mode 状态钩子：静态订阅（进 Play 的域重载会重建窗口实例，实例订阅会丢）。
-        /// 退出 Play 且有挂起的 scenario 运行时，延迟到编辑器空闲回调回读报告（退出瞬间可能尚未落盘）。</summary>
-        [InitializeOnLoadMethod]
-        private static void HookPlayModeEvents()
+        /// <summary>未完成（error/aborted）的面板说明：原因 + 报告目录位置（历史报告仍在，但不是本次结果）。</summary>
+        private static string BuildUnfinishedNote(AxuScenarioRunStatus status)
         {
-            EditorApplication.playModeStateChanged += state =>
-            {
-                if (state != PlayModeStateChange.ExitingPlayMode && state != PlayModeStateChange.EnteredEditMode)
-                    return;
-                if (!_scenarioRunPending)
-                    return;
-
-                _scenarioRunPending = false;
-                EditorApplication.delayCall += DeliverScenarioRunResults;
-            };
+            var directory = AxuTestReportPaths.ToFullPath(AxuTrendPaths.ScenarioReportRoot);
+            var reason = ScenarioRunStatusPresenter.ReasonText(status);
+            return $"本次运行没有产出结果：{reason}\n" +
+                   $"（历史报告仍在 {directory} 下，但那是更早的运行——如需查看请用「打开报告 JSON」。）";
         }
 
-        /// <summary>回读最新报告 → 趋势入库 → 转发给所有打开的看板实例渲染。</summary>
-        private static void DeliverScenarioRunResults()
-        {
-            if (!TryLoadScenarioReport(_scenarioRunStartedUtc, out var report, out var path))
-                return;
-
-            AppendScenarioTrend(report);
-
-            foreach (var window in Resources.FindObjectsOfTypeAll<AxuTestRunnerWindow>())
-            {
-                window._scenarioReport = report;
-                window._scenarioReportPath = path;
-                window.RenderScenarioReport();
-                window.RefreshOverview(); // 若停留在总览页，徽章与趋势速览同步刷新（重新读最近报告与趋势 CSV）
-                window.UpdateStatus($"Suite 运行完成：{Path.GetFileName(path)}（趋势已入库）");
-                window.UpdateSelectedSuiteUi();
-            }
-        }
-
-        /// <summary>找 scenario 报告目录里、指定时刻之后落盘的最新报告并反序列化。
-        /// soak 中断残留的 *.partial.json（truncated 报告）不参与最新报告选择，仅告警提示残留。</summary>
-        private static bool TryLoadScenarioReport(DateTime sinceUtc, out ScenarioReport report, out string path)
+        /// <summary>按显式路径加载 scenario 报告（终态回显用：路径来自状态文件，杜绝"目录里最新"的猜测）。</summary>
+        private static bool TryLoadScenarioReport(string reportPath, out ScenarioReport report, out string path)
         {
             report = null;
             path = null;
-
-            var directory = AxuTestReportPaths.ToFullPath(AxuTrendPaths.ScenarioReportRoot);
-            if (!Directory.Exists(directory))
-            {
-                Debug.LogWarning("[AxuTestFramework] 未发现 scenario 报告目录（Library/AxuTestReports/scenario）——Agent 可能未运行（检查 AXU_TEST_AGENT define）。");
+            if (string.IsNullOrEmpty(reportPath) || !File.Exists(reportPath))
                 return false;
-            }
-
-            // 排除 *.partial.json：soak 中断残留的 truncated 报告同样以 .json 结尾，若恰为最新会被误当作本次运行报告
-            var newest = new DirectoryInfo(directory)
-                .EnumerateFiles("*.json")
-                .Where(f => !f.Name.EndsWith(".partial.json", StringComparison.OrdinalIgnoreCase))
-                .Where(f => f.LastWriteTimeUtc >= sinceUtc.AddSeconds(-5))
-                .OrderByDescending(f => f.LastWriteTimeUtc)
-                .FirstOrDefault();
-
-            // 先于 newest 判空告警：soak 中断后目录可能只有 partial 残留，此时残留提示比"未发现报告"更有价值
-            WarnIfPartialRemnants(directory);
-
-            if (newest == null)
-            {
-                Debug.LogWarning("[AxuTestFramework] 未发现本次运行产出的 scenario 报告——Agent 可能未运行或报告写盘失败。");
-                return false;
-            }
 
             try
             {
                 report = AxuTestFramework.Core.Json.AxuJson.FromFile<ScenarioReport>(
-                    newest.FullName, SchemaNames.ScenarioReport);
-                path = newest.FullName;
-                return true;
+                    reportPath, SchemaNames.ScenarioReport);
+                path = reportPath;
+                return report != null;
             }
             catch (Exception ex)
             {
@@ -461,24 +549,10 @@ namespace AxuTestFramework.Editor
             }
         }
 
-        /// <summary>Editor 内运行路径的趋势入库（pipeline 命令侧由 axu_player_suite_run 负责，此处不重复）。</summary>
-        private static void AppendScenarioTrend(ScenarioReport report)
-        {
-            if (report == null)
-                return;
-            try
-            {
-                TrendStore.Append(
-                    AxuTestReportPaths.ToFullPath(AxuTrendPaths.TrendCsvPath),
-                    TrendStore.FromReport(report, report.SuiteId));
-            }
-            catch (Exception ex)
-            {
-                // 入库失败不拦报告展示
-                Debug.LogWarning($"[AxuTestFramework] 趋势入库失败: {ex.Message}");
-            }
-        }
-
+        /// <summary>
+        /// Editor 内运行路径的趋势入库统一由 <see cref="ScenarioRunService"/> 的看门狗在做完收尾时执行
+        /// （看板/菜单/pipeline 三条入口同一处），窗口侧不再入库——否则同一次运行会被记两遍。
+        /// </summary>
         private void RenderScenarioReport()
         {
             _scenarioResultsScroll.Clear();
@@ -486,7 +560,10 @@ namespace AxuTestFramework.Editor
             var report = _scenarioReport;
             if (report == null)
             {
+                // 无本次报告：导出与打开入口一并禁用（中断/失败后不得留下可点的"导出上一次结果"）
                 UpdateOpenButtons(false);
+                _exportJunitButton?.SetEnabled(false);
+                _exportHtmlButton?.SetEnabled(false);
                 return;
             }
 
@@ -892,62 +969,6 @@ namespace AxuTestFramework.Editor
         }
 
         // ---------------------------------------------------------------- 运行进度（状态文件轮询）
-
-        /// <summary>
-        /// 轮询 Agent 状态文件渲染进度：running=第 x/N 个场景（超 15 分钟标陈旧）；completed/error=终态文案；
-        /// 文件缺失时仅在本窗口刚发起运行时显示等待提示（Agent 覆盖写新状态前的空窗）。
-        /// </summary>
-        private void PollScenarioRunStatus()
-        {
-            if (_scenarioProgressRow == null || _scenarioProgressBar == null)
-                return;
-
-            var status = AxuScenarioRunStatus.TryRead();
-            if (status == null || string.IsNullOrEmpty(status.Status))
-            {
-                if (_scenarioRunPending)
-                    ShowScenarioProgress("已进入 Play Mode，等待 Agent 写入运行状态…", 0f, 1f, "ax-tone-neutral");
-                else
-                    _scenarioProgressRow.style.display = DisplayStyle.None;
-                return;
-            }
-
-            // 本窗口刚发起运行：忽略上一轮的残留终态（状态文件开始时间早于本次启动 5 秒以上即视为旧状态）
-            if (_scenarioRunPending && status.IsTerminal &&
-                status.TryGetStartedUtc(out var started) && started < _scenarioRunStartedUtc.AddSeconds(-5))
-            {
-                ShowScenarioProgress("已进入 Play Mode，等待 Agent 写入运行状态…", 0f, 1f, "ax-tone-neutral");
-                return;
-            }
-
-            var total = Mathf.Max(1, status.TotalCount);
-            switch (status.Status.Trim().ToLowerInvariant())
-            {
-                case AxuScenarioRunStatus.Running:
-                {
-                    var stale = status.IsStale(DateTime.UtcNow);
-                    var text = $"运行中：第 {status.CompletedCount}/{status.TotalCount} 个场景 · suite {status.SuiteId}";
-                    if (stale)
-                        text += "（状态超过 15 分钟未更新，可能已中断）";
-                    ShowScenarioProgress(text, status.CompletedCount, total, stale ? "ax-tone-warn" : "ax-tone-neutral");
-                    break;
-                }
-                case AxuScenarioRunStatus.Completed:
-                    ShowScenarioProgress(
-                        $"运行完成：{status.CompletedCount}/{status.TotalCount} 个场景 · exitCode {status.ExitCode?.ToString() ?? "-"}" +
-                        (_scenarioRunPending ? "（正在回读报告…）" : string.Empty),
-                        status.CompletedCount, total, "ax-tone-ok");
-                    break;
-                case AxuScenarioRunStatus.Error:
-                    ShowScenarioProgress(
-                        $"运行出错（exitCode {status.ExitCode?.ToString() ?? "3"}）——详见 Console 与报告",
-                        0f, 1f, "ax-tone-bad");
-                    break;
-                default:
-                    _scenarioProgressRow.style.display = DisplayStyle.None;
-                    break;
-            }
-        }
 
         private void ShowScenarioProgress(string text, float value, float highValue, string toneClass)
         {

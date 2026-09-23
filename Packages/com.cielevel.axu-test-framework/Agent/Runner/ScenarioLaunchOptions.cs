@@ -32,6 +32,12 @@ namespace AxuTestFramework.Agent.Runner
         /// <summary>启动来源："cli" / "editor-bridge"。</summary>
         public string Source = "cli";
 
+        /// <summary>
+        /// 本次运行的标识（Editor 桥文件经 runId 传入；CLI/API 路径可为空）。
+        /// 状态文件回写同一值，供发起方校验"这份状态属于我发起的那次运行"——避免陈旧状态文件被当作本次结果。
+        /// </summary>
+        public string RunId;
+
         /// <summary>游戏内 Overlay 显隐（Phase 1 仅解析存储，未接 Overlay）。</summary>
         public bool? OverlayHint;
 

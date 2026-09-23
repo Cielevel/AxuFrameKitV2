@@ -31,8 +31,22 @@ namespace AxuTestFramework.Agent.Runner
         /// <summary>scenarioTimeoutSec 未配置时的默认看门狗超时（秒）。</summary>
         public const double DefaultScenarioTimeoutSec = 600.0;
 
+        /// <summary>运行中心跳写状态文件的间隔（秒）：单个 scenario 可能跑 20 分钟以上，互斥闸/看板
+        /// 需要"仍在运行"的活信号（启动时间不足以判活）。</summary>
+        public const double HeartbeatIntervalSec = 5.0;
+
 #if AXU_TEST_AGENT
         bool _isRunning;
+
+        // 心跳上下文（RunAll 开始时填；Supervise 每帧复查，按 HeartbeatIntervalSec 节流写盘）
+        string _runSuiteId;
+        string _runId;
+        string _runReportPath;
+        DateTime _runStartedUtc;
+        int _runCompletedCount;
+        int _runTotalCount;
+        DateTime _nextHeartbeatUtc = DateTime.MinValue;
+
         // Unity 6 已移除 Application.exitCode 属性：退出码经 Application.Quit(int) 在退出时携带（见 MaybeQuit）
         int _exitCode;
 #endif
@@ -141,6 +155,10 @@ namespace AxuTestFramework.Agent.Runner
 
                 var launch = new ScenarioLaunchOptions { SuitePath = suitePath, Source = "editor-bridge" };
 
+                // 本轮标识：发起方（Editor 侧 ScenarioRunService）生成，原样回写状态文件供其校验归属
+                if (root["runId"] != null && !string.IsNullOrWhiteSpace(root["runId"].ToString()))
+                    launch.RunId = root["runId"].ToString().Trim();
+
                 if (root["scenarioIds"] is JArray ids)
                 {
                     foreach (var id in ids)
@@ -188,12 +206,16 @@ namespace AxuTestFramework.Agent.Runner
             };
         }
 
-        /// <summary>加载 suite；schema 为单 scenario 时包装成单条 suite。</summary>
-        static SuiteDef LoadSuiteFromPath(string path)
+        /// <summary>
+        /// 加载 suite；schema 为单 scenario 时包装成单条 suite。
+        /// <paramref name="externallyProvidedIds"/>：进程内已注册的代码态 scenario id——
+        /// 纯 ref 条目由它们供定义，缺了这层认可，只含 ref 的 suite 文件会在校验阶段被误判为坏文件。
+        /// </summary>
+        static SuiteDef LoadSuiteFromPath(string path, IEnumerable<string> externallyProvidedIds)
         {
             try
             {
-                return SuiteLoader.LoadSuite(path);
+                return SuiteLoader.LoadSuite(path, externallyProvidedIds);
             }
             catch (AxuSchemaException ex) when (ex.ActualSchema == SchemaNames.Scenario)
             {
@@ -228,13 +250,16 @@ namespace AxuTestFramework.Agent.Runner
                 List<ResolvedScenario> resolved;
                 try
                 {
-                    suite = LoadSuiteFromPath(launch.SuitePath);
+                    // 进程内注册的代码态 scenario 快照：纯 ref 条目由它供定义（同一快照同时喂给校验与扇出解析）
+                    var registered = AxuScenarioRegistry.Snapshot();
+                    suite = LoadSuiteFromPath(launch.SuitePath, registered.Keys);
                     resolved = SuiteLoader.Resolve(suite, launch.ScenarioIds,
-                        ResolveSuiteDirectory(launch.SuitePath), AxuScenarioRegistry.Snapshot());
+                        ResolveSuiteDirectory(launch.SuitePath), registered);
                 }
                 catch (Exception ex)
                 {
-                    FailInfrastructure(suiteIdFallback, startedUtc, reportPath, "suite 加载/解析失败：" + ex.Message);
+                    FailInfrastructure(suiteIdFallback, startedUtc, reportPath, "suite 加载/解析失败：" + ex.Message,
+                        launch.RunId, ScenarioStatusFile.ReasonSuiteLoadFailed);
                     yield break;
                 }
 
@@ -243,7 +268,16 @@ namespace AxuTestFramework.Agent.Runner
                 var stopOnFailure = settings.StopOnFailure;
                 var timeoutSec = settings.ScenarioTimeoutSec ?? DefaultScenarioTimeoutSec;
 
-                ScenarioStatusFile.WriteRunning(suite.Id, startedUtc, 0, resolved.Count, reportPath);
+                // 心跳/进度上下文（Supervise 每帧按节流刷心跳；每完成一个 scenario 刷新进度）
+                _runSuiteId = suite.Id;
+                _runId = launch.RunId;
+                _runReportPath = reportPath;
+                _runStartedUtc = startedUtc;
+                _runCompletedCount = 0;
+                _runTotalCount = resolved.Count;
+                _nextHeartbeatUtc = DateTime.UtcNow;
+
+                ScenarioStatusFile.WriteRunning(suite.Id, startedUtc, 0, resolved.Count, reportPath, launch.RunId);
 
                 // artifacts 目录（Phase 3）：launch 未指定时落到报告同目录 artifacts/，供 runner 截图等产出
                 var artifactsDir = string.IsNullOrEmpty(launch.ArtifactsDir)
@@ -299,7 +333,8 @@ namespace AxuTestFramework.Agent.Runner
 
                     AgentLog.Instance.Info(
                         $"scenario \"{scenario.Id}\" 完成：{result.Status}（{result.DurationMs}ms，findings={result.Findings.Count}）");
-                    ScenarioStatusFile.WriteRunning(suite.Id, startedUtc, results.Count, resolved.Count, reportPath);
+                    _runCompletedCount = results.Count;
+                    ScenarioStatusFile.WriteRunning(suite.Id, startedUtc, results.Count, resolved.Count, reportPath, launch.RunId);
                 }
 
                 // ---- 阶段 C：汇总、报告、退出码（无协程让步，可安全 try/catch）----
@@ -335,7 +370,8 @@ namespace AxuTestFramework.Agent.Runner
                 }
                 catch (Exception ex)
                 {
-                    FailInfrastructure(suite.Id, startedUtc, reportPath, "报告写盘失败：" + ex.Message);
+                    FailInfrastructure(suite.Id, startedUtc, reportPath, "报告写盘失败：" + ex.Message,
+                        launch.RunId, ScenarioStatusFile.ReasonReportWriteFailed);
                     yield break;
                 }
 
@@ -352,7 +388,7 @@ namespace AxuTestFramework.Agent.Runner
                 }
 
                 _exitCode = (int)exitCode; // Player 退出码经 Quit(int) 携带；Editor 无进程退出码语义
-                ScenarioStatusFile.WriteCompleted(suite.Id, startedUtc, results.Count, resolved.Count, finalPath, summary, (int)exitCode);
+                ScenarioStatusFile.WriteCompleted(suite.Id, startedUtc, results.Count, resolved.Count, finalPath, summary, (int)exitCode, launch.RunId);
                 AgentLog.Instance.Info(
                     $"suite \"{suite.Id}\" 结束：{summary.Passed} pass / {summary.Warned} warn / {summary.Failed} fail；退出码 {(int)exitCode}；报告 {finalPath}");
             }
@@ -486,6 +522,7 @@ namespace AxuTestFramework.Agent.Runner
             while (stack.Count > 0)
             {
                 AdvanceMetrics();
+                MaybeWriteHeartbeat();
 
                 if (handle.CancelRequested || IsTimedOut(handle, timeoutSec))
                 {
@@ -546,6 +583,19 @@ namespace AxuTestFramework.Agent.Runner
             // 自然完成且 Runner 未定稿状态：无错即 Passed
             if (!handle.CancelRequested && handle.Status == RunStatus.Running)
                 handle.Status = RunStatus.Passed;
+        }
+
+        /// <summary>
+        /// 按 <see cref="HeartbeatIntervalSec"/> 节流刷新状态文件的心跳：单个 scenario 可跑 20 分钟以上，
+        /// 此间不写状态会让基于"启动时间"的在途判定误判为陈旧，从而放行并发运行。
+        /// </summary>
+        void MaybeWriteHeartbeat()
+        {
+            if (string.IsNullOrEmpty(_runSuiteId)) return; // 尚未进入运行阶段（加载/解析期）
+            if (DateTime.UtcNow < _nextHeartbeatUtc) return;
+            _nextHeartbeatUtc = DateTime.UtcNow.AddSeconds(HeartbeatIntervalSec);
+            ScenarioStatusFile.Heartbeat(_runSuiteId, _runStartedUtc, _runCompletedCount, _runTotalCount,
+                _runReportPath, _runId);
         }
 
         /// <summary>看门狗超时：标记取消并置 Error + RUNTIME_TIMEOUT 结论。</summary>
@@ -866,8 +916,9 @@ namespace AxuTestFramework.Agent.Runner
             return outcome.Op == "range" ? "[valueMin..valueMax]" : "(missing)";
         }
 
-        /// <summary>基础设施错误：写 error 报告 + 状态文件 + 退出码 3。</summary>
-        void FailInfrastructure(string suiteId, DateTime startedUtc, string reportPath, string message)
+        /// <summary>基础设施错误：写 error 报告 + 状态文件（带 reason/message）+ 退出码 3。</summary>
+        void FailInfrastructure(string suiteId, DateTime startedUtc, string reportPath, string message,
+            string runId = null, string reason = null)
         {
             AgentLog.Instance.Error(message);
 
@@ -893,7 +944,7 @@ namespace AxuTestFramework.Agent.Runner
             }
 
             _exitCode = (int)ScenarioExitCode.InfrastructureError; // QuitOnDone 退出时携带；报告/状态文件为消费端事实来源
-            ScenarioStatusFile.WriteError(suiteId, startedUtc, finalPath);
+            ScenarioStatusFile.WriteError(suiteId, startedUtc, finalPath, reason, message, runId);
         }
 
         /// <summary>RunStatus → 报告 status 串（pass/warn/fail/error；Running/Cancelled 归 error）。</summary>

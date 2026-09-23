@@ -15,9 +15,12 @@ namespace AxuTestFramework.Editor
     /// <summary>
     /// <see cref="AxuTestRunnerWindow"/> 的总览页（默认页，2026-09-02 面板可读化改造新增）。
     /// <para>面向"不看技术细节的使用者"：一屏给出 ①最近一次场景套件运行的大结果徽章
-    /// （通过/警告/失败/尚无记录 + 中文摘要）②最近 8 次运行的趋势速览（彩色圆点序列）
-    /// ③三个大按钮（运行场景套件 / 查看趋势 / 刷新）。数据同源：最新 scenario 报告
-    /// （排除 *.partial.json）+ 趋势 CSV（<see cref="TrendStore.Read"/>）。</para>
+    /// （通过/警告/失败/已中断/运行失败/正在运行/尚无记录 + 中文摘要）②最近 8 次运行的趋势速览（彩色圆点序列）
+    /// ③三个大按钮（运行场景套件 / 查看趋势 / 刷新）。</para>
+    /// <para>状态来源：运行状态文件（Temp/axu_scenario_status.json）——它由每次运行的发起方清空重建、
+    /// 由 Agent 写出终态，因此"最近一次运行"始终可辨（被中断的运行显示"已中断"而不是沿用更早报告的结果）；
+    /// 没有状态文件时才回退到报告目录里最新的一份报告（历史数据，会在文案里标明）。
+    /// 趋势速览读趋势 CSV（<see cref="TrendStore.Read"/>）。</para>
     /// </summary>
     public partial class AxuTestRunnerWindow
     {
@@ -28,9 +31,13 @@ namespace AxuTestFramework.Editor
         private Button _overviewOpenReportButton;
         private ScrollView _overviewTrendScroll;
 
-        /// <summary>最近一次 scenario 报告（总览页数据快照；"查看详情"转发给 Scenario 页渲染）。</summary>
+        /// <summary>最近一次 scenario 报告（总览页数据快照；"查看详情"转发给 Scenario 页渲染）。
+        /// 仅在"本次运行正常完成且有报告"或"无运行状态文件的历史报告"时非空。</summary>
         private ScenarioReport _overviewReport;
         private string _overviewReportPath;
+
+        /// <summary>最近一次运行的状态文件快照（空=尚无运行记录）：总览徽章与详情的事实来源。</summary>
+        private AxuScenarioRunStatus _overviewRunStatus;
 
         // ------------------------------------------------------------------ 构建
 
@@ -126,18 +133,24 @@ namespace AxuTestFramework.Editor
 
         // ------------------------------------------------------------------ 数据与渲染
 
-        /// <summary>刷新总览（读最新 scenario 报告 + 趋势 CSV 并重渲染；两处读盘失败均静默降级为空态）。</summary>
+        /// <summary>刷新总览（读运行状态文件与趋势 CSV 并重渲染；两处读盘失败均静默降级为空态）。</summary>
         private void RefreshOverview()
         {
             if (_overviewPage == null)
                 return;
 
-            TryDiscoverLatestScenarioReport(out _overviewReport, out _overviewReportPath);
+            _overviewRunStatus = AxuScenarioRunStatus.TryRead();
+            if (_overviewRunStatus == null || _overviewRunStatus.IsRunning)
+                TryDiscoverLatestScenarioReport(out _overviewReport, out _overviewReportPath);
+            else
+                _overviewReport = null; // 有终态运行记录时不猜报告：徽章与详情以状态文件为准
+
             RenderOverviewBadge();
             RenderOverviewTrend();
         }
 
-        /// <summary>找 scenario 报告目录里最新一份完整报告（排除 *.partial.json——soak 中断残留不是"最近一次"）。</summary>
+        /// <summary>找 scenario 报告目录里最新一份完整报告（仅在没有运行状态文件时作为历史数据兜底；
+        /// 排除 *.partial.json——soak 中断残留不是"最近一次"）。</summary>
         private static bool TryDiscoverLatestScenarioReport(out ScenarioReport report, out string path)
         {
             report = null;
@@ -172,10 +185,26 @@ namespace AxuTestFramework.Editor
             }
         }
 
-        /// <summary>大徽章：无记录=灰、全部通过=绿、仅警告=黄、有失败=红。详情行给出一句话摘要。</summary>
+        /// <summary>
+        /// 大徽章：有运行状态文件时以它为准（全部通过=绿、仅警告=黄、有失败/中断/运行失败=红、
+        /// 运行中=灰），否则回退到报告目录里最新报告（历史数据）。详情行给出一句话摘要。
+        /// </summary>
         private void RenderOverviewBadge()
         {
-            _overviewOpenReportButton.SetEnabled(_overviewReport != null);
+            var status = _overviewRunStatus;
+            if (status != null)
+            {
+                SetBadge(ScenarioRunStatusPresenter.BadgeClass(status), ScenarioRunStatusPresenter.Label(status));
+                _overviewLastRunLabel.text = DescribeRunScope(status);
+                _overviewDetailLabel.text = ScenarioRunStatusPresenter.DetailText(status, status.SuiteId);
+
+                // 详情按钮只在本次运行有报告时可用（中断/失败没有本次报告——不给"查看上一次报告"的错觉）
+                _overviewReportPath = !string.IsNullOrEmpty(status.ReportPath) && File.Exists(status.ReportPath)
+                    ? status.ReportPath
+                    : null;
+                _overviewOpenReportButton.SetEnabled(status.IsCompleted && _overviewReportPath != null);
+                return;
+            }
 
             var report = _overviewReport;
             if (report == null)
@@ -183,6 +212,7 @@ namespace AxuTestFramework.Editor
                 SetBadge("ax-badge-neutral", "—  尚无运行记录");
                 _overviewLastRunLabel.text = "还没有场景套件的运行结果";
                 _overviewDetailLabel.text = "在「场景套件」页选择一套件并运行，结果会汇总到这里（进度与报告也会在状态栏提示）。";
+                _overviewOpenReportButton.SetEnabled(false);
                 return;
             }
 
@@ -214,10 +244,23 @@ namespace AxuTestFramework.Editor
                     break;
             }
 
-            _overviewLastRunLabel.text = $"套件 {report.SuiteId} · 运行于 {FormatLocalTime(report.StartedAt)}";
+            _overviewLastRunLabel.text = $"套件 {report.SuiteId} · 运行于 {FormatLocalTime(report.StartedAt)}（历史报告）";
             _overviewDetailLabel.text = $"{total} 项 · {passed} 通过 · {warned} 警告 · {failed} 失败" +
                                         (elapsed != null ? $" · 用时 {elapsed}" : "") +
                                         (report.ExitCode != ScenarioExitCode.Success ? $" · 退出码 {(int)report.ExitCode}" : "");
+            _overviewOpenReportButton.SetEnabled(true);
+        }
+
+        /// <summary>最近一次运行的标题行：套件 + 时间 + 运行中标注。</summary>
+        private static string DescribeRunScope(AxuScenarioRunStatus status)
+        {
+            var when = status.EndedAtUtc ?? status.StartedAtUtc;
+            var time = string.IsNullOrEmpty(when)
+                ? "-"
+                : FormatLocalTime(when);
+            return status.IsRunning
+                ? $"套件 {status.SuiteId} · 正在运行（第 {status.CompletedCount}/{status.TotalCount} 个场景）"
+                : $"套件 {status.SuiteId} · 运行于 {time}";
         }
 
         private void SetBadge(string colorClass, string text)
@@ -327,13 +370,26 @@ namespace AxuTestFramework.Editor
             SetPage("trend");
         }
 
-        /// <summary>把总览页最近报告转发给 Scenario 页渲染（复用同一份反序列化结果，避免双读）。</summary>
+        /// <summary>把总览页的本次报告转发给 Scenario 页渲染（有快照直接复用，否则按状态文件的报告路径现读）。</summary>
         private void OpenLatestReportInScenarioPage()
         {
-            if (_overviewReport == null)
+            if (_overviewReport != null)
+            {
+                _scenarioReport = _overviewReport;
+                _scenarioReportPath = _overviewReportPath;
+            }
+            else if (!string.IsNullOrEmpty(_overviewReportPath) &&
+                     TryLoadScenarioReport(_overviewReportPath, out var report, out var path))
+            {
+                _scenarioReport = report;
+                _scenarioReportPath = path;
+            }
+            else
+            {
+                UpdateStatus("本次运行没有可打开的报告（未产生结果或报告已不在磁盘上）。");
                 return;
-            _scenarioReport = _overviewReport;
-            _scenarioReportPath = _overviewReportPath;
+            }
+
             RenderScenarioReport();
             SetPage("scenario");
         }

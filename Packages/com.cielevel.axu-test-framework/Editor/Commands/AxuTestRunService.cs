@@ -11,19 +11,23 @@ using UnityEngine;
 
 namespace AxuTestFramework.Editor
 {
-    /// <summary>
-    /// axu_test_run 的编排核心（pipeline 命令与看板窗口共用的内部服务，不经 HTTP）。
-    /// <para>安全规则（硬性，源自 M0"token 中毒"事故）：构建 UTF Filter 时 <c>assemblyNames</c> 恒为
-    /// <see cref="AxuTestAssemblyScanner.GetSafeTestAssemblies"/> 的清单（已剔除 Unity.Pipeline.Tests*），
-    /// 绝不发出无程序集范围的裸跑；用户给定的 assembly / category / testName 过滤与安全清单取交集，
-    /// "选定测试"通道（testNames 精确全名）经 UTF 的 AND 语义同样被安全清单收敛。</para>
-    /// <para>编排规则：PlayMode 一律异步（启动后立即返回 running，供轮询状态文件）；EditMode 同步等待
-    /// （轮询状态文件至 completed/error，步长 250ms）后返回完整结果；mode=all 先同步跑 EditMode 再异步启动
-    /// PlayMode。运行参数经 Temp 上下文文件跨域重载传递给报告器（见 <see cref="AxuTestRunContext"/>）。</para>
-    /// <para>线程约定：调用方必须在主线程调用 <see cref="StartRunAsync"/>；本方法首帧同步段完成所有 Unity 主线程
-    /// API 调用（枚举/预检/Execute），其后的 await 沿调用方捕获的 UnitySynchronizationContext 回主线程，
-    /// "all"模式的第二次 Execute 亦在主线程恢复段执行。</para>
-    /// </summary>
+        /// <summary>
+        /// axu_test_run 的编排核心（pipeline 命令与看板窗口共用的内部服务，不经 HTTP）。
+        /// <para>安全规则（硬性，源自 M0"token 中毒"事故）：构建 UTF Filter 时 <c>assemblyNames</c> 恒为
+        /// <see cref="AxuTestAssemblyScanner.GetSafeTestAssemblies"/> 的清单（已剔除 Unity.Pipeline.Tests*），
+        /// 绝不发出无程序集范围的裸跑；用户给定的 assembly / category / testName 过滤与安全清单取交集，
+        /// "选定测试"通道（testNames 精确全名）经 UTF 的 AND 语义同样被安全清单收敛。</para>
+        /// <para>编排规则：PlayMode 一律异步（启动后立即返回 running，供轮询状态文件）；EditMode 同步等待
+        /// （轮询状态文件至 completed/error，步长 250ms）后返回完整结果。<b>mode=all 的双阶段语义</b>：
+        /// 先同步跑 EditMode 段并留存其结论（<see cref="AxuTestRunOutcome.Phases"/> 第一段 +
+        /// <see cref="AxuTestRunOutcome.EditorSummary"/>），仅当该段正常 completed 时才异步启动 PlayMode 段；
+        /// 该段超时/出错则跳过第二段并如实返回第一段的状态与原因（<see cref="AxuTestRunPhase.ShouldStartPlayModePhase"/>）。
+        /// 两段结果各自留存，任一阶段失败/超时都不被另一阶段的状态掩盖。
+        /// 运行参数经 Temp 上下文文件跨域重载传递给报告器（见 <see cref="AxuTestRunContext"/>）。</para>
+        /// <para>线程约定：调用方必须在主线程调用 <see cref="StartRunAsync"/>；本方法首帧同步段完成所有 Unity 主线程
+        /// API 调用（枚举/预检/Execute），其后的 await 沿调用方捕获的 UnitySynchronizationContext 回主线程，
+        /// "all"模式的第二次 Execute 亦在主线程恢复段执行。</para>
+        /// </summary>
     public static class AxuTestRunService
     {
         /// <summary>EditMode 完成等待轮询步长（毫秒）。</summary>
@@ -32,8 +36,10 @@ namespace AxuTestFramework.Editor
         /// <summary>测试树预检超时（毫秒，RetrieveTestList 桥接等待）。</summary>
         public const int TestListTimeoutMs = 15000;
 
-        /// <summary>running 状态文件的陈旧阈值（分钟）：上次运行异常中断留下的 running 状态超过该时长后不再视为在途。</summary>
-        public const int RunningStatusStaleMinutes = 15;
+        /// <summary>running 状态的中断残留阈值（分钟）：与 <see cref="AxuTestRunStatus.StaleMinutes"/> 同值。
+        /// 判定依据是"最后活动时间"（心跳/文件写入/启动时间取最新），不是启动时间——
+        /// 长跑用例持续心跳即恒判在途（见 <see cref="IsAxuRunInFlight"/>）。</summary>
+        public const int RunningStatusStaleMinutes = AxuTestRunStatus.StaleMinutes;
 
         /// <summary>互斥闸：axu_test_run 命令与看板窗口之间的同进程互斥（pipeline 自带 run_tests 无法纳入本闸，
         /// 其并发由 UTF 自身单运行约束兜底，见包 README 的并发说明）。</summary>
@@ -57,14 +63,15 @@ namespace AxuTestFramework.Editor
             {
                 if (_runInFlight || IsAxuRunInFlight())
                 {
-                    return ErrorOutcome(request, "已有 axu 测试运行在途（状态文件标记 running）。" +
-                        "请先经 axu_test_status 观察或等其完成；running 超过 15 分钟视为陈旧会自动放行，" +
+                    return ErrorOutcome(request, "已有 axu 测试运行在途（状态文件标记 running 且心跳新鲜）。" +
+                        "请先经 axu_test_status 观察或等其完成；最后活动超过 15 分钟的 running 视为中断残留会自动放行，" +
                         "确认无实际运行时可删除 Temp/axu_test_run_status.json 手动解锁。");
                 }
                 if (ScenarioRunService.IsScenarioRunInFlight())
                 {
                     return ErrorOutcome(request, "scenario 套件运行在途（经 axu_scenario_status 观察），" +
-                        "同一 Editor 禁止并发驱动 UTF 运行；确认无实际运行时可删除 Temp/axu_scenario_status.json 手动解锁。");
+                        "同一 Editor 禁止并发驱动 UTF 运行；确认无实际运行时删除 Temp/axu_scenario_status.json 手动解锁" +
+                        "（Temp/axu_scenario_run.json 是配套的运行记录，遗留时一并删除）。");
                 }
                 if (File.Exists(AxuTestReportPaths.ToFullPath("Temp/pipeline_test_request.json")))
                 {
@@ -143,6 +150,11 @@ namespace AxuTestFramework.Editor
 
                 if (mode == "playmode")
                 {
+                    var playOnlyPhase = new AxuTestRunPhase
+                    {
+                        Mode = "playmode",
+                        Status = AxuTestRunPhase.StatusRunning,
+                    };
                     return new AxuTestRunOutcome
                     {
                         Success = true,
@@ -153,6 +165,9 @@ namespace AxuTestFramework.Editor
                         Filter = context.Filter,
                         StatusPath = AxuTestReportPaths.ToFullPath(AxuTestReportPaths.StatusFilePath),
                         ReportDirectory = reportDirectory,
+                        Phases = new List<AxuTestRunPhase> { playOnlyPhase },
+                        PhasesComplete = false,
+                        OverallConclusion = "PlayMode 段已启动（异步进行中，经 axu_test_status 取其终值）。",
                         Message = $"PlayMode 运行已启动（预检 {matched} 个用例，程序集: {string.Join(", ", effectiveAssemblies)}）。" +
                                   "轮询 axu_test_status 至 completed；报告将落盘并写入状态文件。"
                     };
@@ -160,20 +175,45 @@ namespace AxuTestFramework.Editor
 
                 // ---- EditMode（或 all 的 EditMode 段）：轮询状态文件等待完成 ----
                 var outcome = await WaitForCompletionAsync(request, context, effectiveAssemblies, excluded, startedUtc);
+                var editorPhase = AxuTestRunPhase.FromOutcome("editor", outcome);
+                outcome.Phases = new List<AxuTestRunPhase> { editorPhase };
+                outcome.PhasesComplete = true;
                 if (mode == "editor")
+                {
+                    outcome.OverallConclusion = "EditMode 段：" + AxuTestRunPhase.Describe(editorPhase);
                     return outcome;
+                }
 
-                // ---- all：EditMode 已完成，接着异步启动 PlayMode 段 ----
+                // ---- all：EditMode 段终态决定是否续跑 PlayMode 段 ----
+                outcome.EditorSummary = editorPhase.Summary;
+                if (!AxuTestRunPhase.ShouldStartPlayModePhase(editorPhase))
+                {
+                    // 第一段超时/出错：不掩盖、不续跑——状态与错误原样保留，整体结论写明跳过
+                    outcome.Status = editorPhase.Status;
+                    outcome.PhasesComplete = true;
+                    outcome.OverallConclusion = AxuTestRunPhase.BuildAllModeConclusion(editorPhase, playModeStarted: false);
+                    outcome.Message = outcome.OverallConclusion;
+                    return outcome;
+                }
+
                 AxuConsoleRing.BeginRun();
                 context.Mode = "playmode";
                 context.StartedAtUtc = DateTime.UtcNow.ToString("o");
+                context.PrecedingPhase = editorPhase; // 跨域带给报告器，落进状态文件的 PrecedingPhase
                 WriteRunContextAndStatus(context);
                 ExecuteRun(TestMode.PlayMode, effectiveAssemblies, categoryNames, groupNames, testNames);
 
+                outcome.Phases = new List<AxuTestRunPhase>
+                {
+                    editorPhase,
+                    new AxuTestRunPhase { Mode = "playmode", Status = AxuTestRunPhase.StatusRunning },
+                };
                 outcome.Status = "playmode_running";
                 outcome.StatusPath = AxuTestReportPaths.ToFullPath(AxuTestReportPaths.StatusFilePath);
-                outcome.Message = $"EditMode 段完成: {outcome.Summary?.Passed ?? 0}/{outcome.Summary?.Total ?? 0} 通过。" +
-                                  "PlayMode 段已异步启动——轮询 axu_test_status 至 completed。";
+                outcome.PhasesComplete = false;
+                outcome.OverallConclusion = AxuTestRunPhase.BuildAllModeConclusion(editorPhase, playModeStarted: true);
+                outcome.Message = outcome.OverallConclusion +
+                                  " PlayMode 段报告落盘后写入状态文件，可经 axu_test_status 读取。";
                 return outcome;
             }
             catch (Exception ex)
@@ -198,21 +238,13 @@ namespace AxuTestFramework.Editor
         }
 
         /// <summary>
-        /// 是否有 axu 运行在途（状态文件标记 running 且未越过 <see cref="RunningStatusStaleMinutes"/> 陈旧阈值；
-        /// 异常中断留下的陈旧 running 状态不阻塞后续运行，会被新运行覆盖）。
+        /// 是否有 axu 运行在途（供互斥闸）：状态文件 running 且未越过陈旧阈值。
+        /// 判活依据是最后活动时间（<see cref="AxuTestHeartbeat"/> 的心跳 &gt; 状态文件写入时间 &gt; 启动时间），
+        /// 因此跑十几分钟的单条用例不会被误判为陈旧并放行并发运行。
         /// </summary>
         public static bool IsAxuRunInFlight()
         {
-            var status = AxuTestRunStatus.TryRead();
-            if (status == null || status.Status != AxuTestRunStatus.Running)
-                return false;
-
-            if (DateTime.TryParse(status.StartedAtUtc, null, System.Globalization.DateTimeStyles.RoundtripKind, out var startedUtc))
-            {
-                if (DateTime.UtcNow - startedUtc.ToUniversalTime() > TimeSpan.FromMinutes(RunningStatusStaleMinutes))
-                    return false;
-            }
-            return true;
+            return AxuTestRunStatus.IsInFlight(AxuTestRunStatus.TryRead(), DateTime.UtcNow);
         }
 
         /// <summary>
@@ -434,7 +466,9 @@ namespace AxuTestFramework.Editor
             return true;
         }
 
-        /// <summary>写运行上下文与 running 状态文件（主线程同步段）。</summary>
+        /// <summary>写运行上下文与 running 状态文件（主线程同步段）。
+        /// <c>precedingPhase</c> 必须在这里就带上（不能等 PlayMode 段终态才写）：异步段运行期间轮询方
+        /// 就该看到 EditMode 段结论，且第二段被中断时该结论也不能丢。</summary>
         private static void WriteRunContextAndStatus(AxuTestRunContext context)
         {
             AxuTestRunContext.Write(context);
@@ -443,7 +477,9 @@ namespace AxuTestFramework.Editor
                 Status = AxuTestRunStatus.Running,
                 Mode = context.Mode,
                 StartedAtUtc = context.StartedAtUtc,
-                Assemblies = context.Assemblies
+                HeartbeatUtc = DateTime.UtcNow.ToString("o"),
+                Assemblies = context.Assemblies,
+                PrecedingPhase = context.PrecedingPhase
             });
 
             AxuCapture.ArtifactsDirectory = context.ArtifactsDirectory;
@@ -572,7 +608,9 @@ namespace AxuTestFramework.Editor
                 Assemblies = effectiveAssemblies ?? safeAssemblies,
                 ExcludedAssemblies = excluded,
                 Error = message,
-                Message = message
+                Message = message,
+                PhasesComplete = true, // 未执行任何阶段：结论已完整（就是"没能跑起来"）
+                OverallConclusion = message
             };
         }
     }

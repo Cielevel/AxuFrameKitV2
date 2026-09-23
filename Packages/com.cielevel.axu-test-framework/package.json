@@ -1,6 +1,6 @@
 {
   "name": "com.cielevel.axu-test-framework",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "displayName": "AxuTestFramework",
   "description": "AxuTestFramework：通用测试框架包。v1：EditMode/PlayMode 测试工具层（等待/场景/截图/日志监视/静态重置/结构化报告），经 Unity Pipeline 本地 API（可选）驱动测试闭环；v2：场景测试平台（Core 纯 C# 模型 + Player 可编译 Agent，八能力 echo/perf/loadtime/smoke/soak/stress/monkey/gamehook，axu_scenario_*/axu_player_*/axu_trend_* 命令与三页签看板）。",
   "author": {

@@ -245,7 +245,7 @@ Assets/
   "com.cielevel.axu-indie-selection-to-csv": "嵌入式包 - 选中导出 CSV（零依赖）",
   "com.cielevel.axu-indie-sprite-to-animation": "嵌入式包 - 序列帧转动画（零依赖）",
   "com.cielevel.axu-indie-stat-pipeline": "嵌入式包 - 数值管线（零依赖）",
-  "com.cielevel.axu-test-framework": "嵌入式包 - 通用测试框架 AxuTestFramework 0.3.0（UTF 工具层 + 场景测试平台：八能力 Agent 运行时、axu_test_* / axu_scenario_* / axu_player_* / axu_trend_* / axu_doctor / axu_lint pipeline 命令、AxuTestRunner 看板（总览/Tests/Scenario/Trend 四页签，总览为默认页））",
+  "com.cielevel.axu-test-framework": "嵌入式包 - 通用测试框架 AxuTestFramework 0.4.0（UTF 工具层 + 场景测试平台：八能力 Agent 运行时、axu_test_* / axu_scenario_* / axu_player_* / axu_trend_* / axu_doctor / axu_lint pipeline 命令、AxuTestRunner 看板（总览/Tests/Scenario/Trend 四页签，总览为默认页）；0.4.0 起三条运行入口共用启动-收尾契约（终态后自动退 Play、按 runId 回显本次结果、手动停止=已中断），在途判定改心跳判活、mode=all 双阶段结论、纯 ref suite 文件可加载）",
   "com.cielevel.axu-unity-cli-kit": "嵌入式包 - Axu CLI Agent Kit 0.1.0（unity CLI / Pipeline 用法文档 + Agent Skill 安装器，无运行时代码，零依赖）",
   "com.termway.ide.antigravity": "Git 包 - IDE 增强",
   "com.unity.ai.navigation": "2.0.4",
@@ -429,3 +429,26 @@ UIBindTextStr.Bind(myTextComponent, () => model.PlayerName);
 - **Git**: 使用标准 Unity .gitignore
 - **忽略目录**: `Library/`, `Temp/`, `Logs/`, `UserSettings/`, `Build/`
 - **忽略文件**: `*.csproj`, `*.sln`, `*.unitypackage`
+
+<!-- axu-cli-kit:begin -->
+## Unity command-line work (installed by com.cielevel.axu-unity-cli-kit)
+
+Use when a task touches Unity from outside the Editor or needs a running Editor driven — checking whether a Unity Editor is live and then controlling it (scenes, GameObjects, prefabs, assets, play mode, screenshots, C# eval, recompile), running EditMode/PlayMode tests, headless build or run, installing or licensing Editors and modules, wiring Unity into CI, or triaging a failing `unity` CLI / Pipeline command. Also covers how this project's agent skills are installed and refreshed.
+
+Full skill: `Packages/com.cielevel.axu-unity-cli-kit/Skills~/unity-cli-workflows/SKILL.md`
+
+## Guardrails
+
+- Don't invent command names or flags — `unity command` (bare) and `unity <group> --help` are
+  the source of truth; this document is a map, not a manifest.
+- Don't run a bare `run_tests` with no assembly or name filter on a shared Editor: unrelated
+  or hostile test suites will run. Filter to what you changed.
+- Don't put secrets (tokens, licenses, service-account credentials) in shell history or
+  process arguments. Prefer stdin flags (`--git-token-stdin`, `--secret-from-stdin`) fed from
+  a secret store or environment variable.
+- Long PlayMode/soak runs occupy the Editor's single command gate: **don't dispatch another
+  CLI command at the same instance while one is in flight.**
+- When you change project state through the CLI, leave the project in a legible state — save
+  what you saved, report what you touched.
+<!-- axu-cli-kit:end -->
+

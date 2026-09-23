@@ -32,6 +32,22 @@ namespace AxuTestFramework.Editor
         /// <summary>status=completed 时是否全部通过（total&gt;0 且 failed==0 且 inconclusive==0）。</summary>
         public bool AllPassed { get; set; }
 
+        /// <summary>
+        /// 本次请求规划的所有阶段是否都到达终态。mode=all 的 PlayMode 段是异步的，
+        /// 启动即返回时为 false（此时 <see cref="AllPassed"/> 只反映已完成的阶段）；
+        /// editor 模式恒 true；playmode 模式为 false（等待轮询 axu_test_status）。
+        /// </summary>
+        public bool PhasesComplete { get; set; }
+
+        /// <summary>
+        /// 各阶段结果（按执行顺序）。单模式为一段；mode=all 为 EditMode + PlayMode 两段，
+        /// 第二段异步启动时状态为 running——两段结果各自留存，任一段的失败/超时都不会被另一段掩盖。
+        /// </summary>
+        public List<AxuTestRunPhase> Phases { get; set; }
+
+        /// <summary>整体结论（一句话中文；mode=all 时说明两段各自的结果与是否跳过第二阶段）。</summary>
+        public string OverallConclusion { get; set; }
+
         /// <summary>报告 JSON 完整路径（report=true 且已落盘时填写）。</summary>
         public string ReportPath { get; set; }
 

@@ -70,14 +70,19 @@ com.cielevel.axu-test-framework/
 │   ├── State/AxuTestState.cs         #   静态/单例重置登记表（域重载关闭纪律）
 │   └── Reports/                      #   UTF 报告 POCO（schema: axu-test-report/1）
 ├── Editor/                           # asmdef: AxuTestFramework.Editor（Editor-only, autoReferenced:false；零 pipeline 引用）
-│   ├── Commands/                     #   UTF 运行编排（AxuTestRunService / 程序集扫描 / 请求·结果模型）
-│   ├── Reports/                      #   AxuTestReportWriter（[TestRunCallback]）/ AxuConsoleRing / 路径约定
-│   ├── Scenarios/                    #   ScenarioRunService（桥文件+看门狗+趋势入库+自动退 Play）/ 菜单族
+│   ├── Commands/                     #   UTF 运行编排（AxuTestRunService / AxuTestRunPhase（双阶段模型）/
+│   │                                 #   程序集扫描 / 请求·结果模型）
+│   ├── Reports/                      #   AxuTestReportWriter（[TestRunCallback]）/ AxuTestHeartbeat（运行心跳）/
+│   │                                 #   AxuConsoleRing / 路径约定 / 状态文件模型（UTF 与 scenario 各一）
+│   ├── Scenarios/                    #   ScenarioRunService（运行记录+桥文件+看门狗+趋势入库+自动退 Play）/
+│   │                                 #   ScenarioRunRecord（Temp/axu_scenario_run.json）/ ScenarioPrecheck / 菜单族
 │   │                                 #   （Enable Test Agent / Create Scenario·Suite JSON / Run Suite JSON... / Deploy）
 │   ├── Export/                       #   JUnitExporter / HtmlSummaryExporter
 │   ├── Window/AxuTestRunnerWindow.cs #   UITK 看板（AxuFrameKit/AxuTestRunner，总览 / Tests / Scenario / Trend 页签）
 │   ├── Window/AxuTestRunnerWindow.ScenarioTrend.cs  #  Scenario / Trend 页（partial）
 │   ├── Window/AxuTestRunnerWindow.Overview.cs       #  总览页（partial，默认页）
+│   ├── Window/ScenarioReportPresenter.cs            #  报告展示纯函数（结论/指标/findings 翻译/色调）
+│   ├── Window/ScenarioRunStatusPresenter.cs         #  运行状态展示纯函数（徽章/原因/来源）
 │   └── UI/AxuTestTokens.uss          #   窗口样式 token（独立自持，仿 KitBox 意象）
 ├── Editor.Pipeline/                  # asmdef: AxuTestFramework.Editor.Pipeline（AXU_PIPELINE_PRESENT 守护）
 │   └── Commands/
@@ -137,9 +142,20 @@ POST /api/exec  {"command":"axu_test_run","parameters":{...},"timeout":150000}
 | `out_path` | 空 | 报告路径覆盖：`.json` 结尾视为文件，否则视为目录；相对工程根或绝对路径。artifacts 同步重定向到 `<报告目录>/artifacts/` |
 | `timeout_ms` | `120000` | EditMode 完成等待预算；HTTP 请求 timeout 需大于它 |
 
-- **EditMode**：同步等待（内部轮询状态文件）后直接返回 `{status:"completed", summary, allPassed, reportPath, assemblies, ...}`。
-- **PlayMode**：**强制异步**——立即返回 `{status:"playmode_running", statusPath, assemblies, ...}`，随后轮询
-  `axu_test_status` 至 `completed`，报告路径在状态文件的 `reportPath`。Editor 会自动进入并退出 Play 模式。
+- **EditMode**：同步等待（内部轮询状态文件）后直接返回 `{status:"completed", summary, allPassed, phases, overallConclusion, reportPath, assemblies, ...}`。
+- **PlayMode**：**强制异步**——立即返回 `{status:"playmode_running", statusPath, phasesComplete:false, phases, overallConclusion, ...}`，
+  随后轮询 `axu_test_status` 至 `completed`，报告路径在状态文件的 `reportPath`。Editor 会自动进入并退出 Play 模式。
+- **`mode=all` 双阶段语义**（`phases[]` 逐段留存，任一段失败/超时都不被另一段的状态掩盖）：
+  1. EditMode 段**同步**跑完并留存（`phases[0]` + `editorSummary` + 该段 `reportPath`）；
+  2. **仅当该段正常 `completed`** 才异步启动 PlayMode 段（此时 `phases[1].status="running"`、`phasesComplete=false`）；
+     该段超时/出错则**跳过**第二段（编辑器已卡或报告流程已坏，再进 Play 只会叠加故障并掩盖第一段问题）——
+     `status` 原样保留 `timeout`/`error`，`overallConclusion` 写明"已跳过、本次 mode=all 未完成"；
+  3. 用例失败不算故障：`completed` 且 `summary.failed>0` 时 PlayMode 段照常执行。
+  轮询方在 PlayMode 段异步运行期间可从状态文件读到 `precedingPhase`（EditMode 段结论；跨域经运行上下文文件传递，
+  域重载不丢）。
+- **在途判定（心跳）**：`running` 是否算"仍在运行"只看**最后活动时间**（心跳 > 状态文件写入时间 > 启动时间，阈值 15 分钟）。
+  单条用例可以跑十几分钟以上，用启动时间判活会把仍在运行的测试误判为陈旧并放行并发运行；
+  UTF 运行期由 `AxuTestHeartbeat` 每 5 秒刷新状态文件心跳，崩溃/中断残留的心跳停止后自动放行。
 - **安全行为（硬性）**：`assemblyNames` 恒为安全测试程序集清单——`CompilationPipeline` 枚举引用了 TestRunner 的
   程序集并**无条件剔除 `Unity.Pipeline.Tests*`**（其 `SecurityTokenTests` 会清空 pipeline 本地 API 鉴权 token，
   导致全部请求 401 的"token 中毒"事故）。返回值中的 `assemblies`（实际运行）与 `excludedAssemblies`（被剔除）即审计线索。
@@ -174,8 +190,11 @@ curl -s ... -d '{"command":"axu_test_status","parameters":{}}' ...
 
 - `axu_test_report`：`{"latest":true}`（默认；`LastReportPath` → 报告目录里最新文件）或 `{"path":"..."}`；
   返回报告 JSON **原文**。超过 256KB 返回 `{status:"too_large", path, sizeBytes, limitBytes}`，请直接读文件。
-- `axu_test_status`：读 `Temp/axu_test_run_status.json` 原文；`status` 为 `running` / `completed` / `error`，
-  含 `summary`、`reportPath`、`startedAtUtc`（判断陈旧状态）；无文件返回 `{status:"idle"}`。
+- `axu_test_status`：读 `Temp/axu_test_run_status.json` 原文（**键为 PascalCase**：`Status` / `Summary` /
+  `ReportPath` / `StartedAtUtc` / `HeartbeatUtc` / `PrecedingPhase` / …，与 scenario 侧状态文件的 camelCase 是
+  两套独立契约；读取方按大小写不敏感解析即可）；`Status` 为 `running` / `completed` / `error`；
+  **判活看 `HeartbeatUtc`**（见上"在途判定"）；`PrecedingPhase` 为 mode=all 的 EditMode 段结论
+  （第一段一开始异步跑就有，第二段被中断也不丢）；无文件返回 `{status:"idle"}`。
 
 ### axu_doctor（环境自检）
 
@@ -194,7 +213,7 @@ POST /api/exec  {"command":"axu_doctor","parameters":{}}
 | `packages.optional` | pipeline 版本回报；InputSystem 与 uGUI 均缺失=warn（monkey 降级为仅记录坐标） |
 | `defines.axu_test_agent` | 未开=warn（scenario 路径不可用，UTF 不受影响；hint 给开启方法） |
 | `editor.state` | playing/compiling/updating 任一=warn（命令响应可能延迟） |
-| `runs.in_flight` | 新鲜（<15 分钟）的 running 状态=warn（互斥闸占用，新运行会被拒） |
+| `runs.in_flight` | `running` 且**最后活动**（心跳/文件写入/启动时间取最新）<15 分钟=warn（互斥闸占用，新运行会被拒）；长跑持续心跳即恒判在途 |
 | `reports.storage` | `Library/AxuTestReports` 写探针自清理；不可写=fail；附带报告/趋势存量盘点 |
 | `suites.inventory` | Assets 下 suite/scenario JSON 计数（恒 pass；为 0 时 hint 给创建菜单） |
 
@@ -254,9 +273,10 @@ regex 为启发式文本扫描（非 Roslyn），嵌套类型/条件编译块内
 菜单 **`AxuFrameKit/AxuTestRunner`**（与 AxuKitBox 同级；样式仿 KitBox 但包内自持独立 USS，无任何代码引用）。
 窗口为四页签，**默认落在「总览」页**：
 
-- **总览（默认页）**：最近一次 suite 运行的大结果徽章（✓全部通过 / ⚠通过但有警告 / ✗有失败 / —尚无记录）
-  + 趋势速览（各场景最近 8 次运行的彩色圆点序列，点击某行直达其趋势页）+ 三个快捷大按钮
-  （运行场景套件 / 查看趋势 / 刷新）；面向不看技术细节的使用者，数据与 Scenario/Trend 页同源。
+- **总览（默认页）**：最近一次 suite 运行的大结果徽章（✓全部通过 / ⚠通过但有警告 / ✗有失败 / ■已中断 /
+  ✗运行失败 / …正在运行 / —尚无记录）+ 趋势速览（各场景最近 8 次运行的彩色圆点序列，点击某行直达其趋势页）
+  + 三个快捷大按钮（运行场景套件 / 查看趋势 / 刷新）；面向不看技术细节的使用者，数据与 Scenario/Trend 页同源。
+  徽章以运行状态文件为准，因此"被中断的运行"不会被更早报告的结果顶替；没有状态文件时才回退到最新的历史报告。
 - **Tests 页（单元测试）**：左侧测试套件树（按程序集/类分组，顶部过滤输入做全名包含匹配），
   右侧最近报告结果树（FAIL 默认展开，消息/堆栈/类别可看），
   顶栏 EditMode/PlayMode 切换 + **Run 全部 / Run 选定（N）** 双按钮 + 刷新 + 最近报告路径（点击 Reveal）。
@@ -283,9 +303,9 @@ scenario / player / UTF 三类运行禁止在同一 Editor 并发驱动。
 
 | 命令 | 参数 | 说明 |
 |---|---|---|
-| `axu_scenario_list` | — | 枚举内建能力（echo/perf/loadtime/smoke + P1：soak/stress/monkey）+ Assets 下 `*.suite.json` / `*.scenario.json`（含 scenarioIds 摘要） |
-| `axu_scenario_run` | `suite`（必填，工程相对/绝对）、`scenario`（可选，逗号分隔 id） | Editor PlayMode 内驱动 Agent Runner；**异步启动即返**，经 `axu_scenario_status` 轮询 `Temp/axu_scenario_status.json`（running/completed/error + reportPath/exitCode）；完成后看门狗自动趋势入库并退 Play |
-| `axu_scenario_status` | — | 读运行状态文件原文（idle 时返回 idle 信封） |
+| `axu_scenario_list` | — | 枚举内建能力（echo/perf/loadtime/smoke + P1：soak/stress/monkey）+ Assets 下 `*.suite.json` / `*.scenario.json`（含 scenarioIds 摘要）。纯 `ref` 条目解析不到的 suite 仍按 suite 列出，并给出 `unresolvedRefs` + `note`（代码态 scenario 由游戏运行时注册，Editor 侧无法静态解析） |
+| `axu_scenario_run` | `suite`（必填，工程相对/绝对）、`scenario`（可选，逗号分隔 id） | Editor PlayMode 内驱动 Agent Runner；**异步启动即返**。启动前预检：Play 中 / `AXU_TEST_AGENT` 未开 / 文件不存在 / **文件结构非法**（schema 不符、scenarios 为空、内联定义非法、ref 缺字段）一律直接回错误信封，不进 Play（纯 `ref` 条目放行——由运行时注册解析）。经 `axu_scenario_status` 轮询 `Temp/axu_scenario_status.json`；完成后看门狗自动趋势入库并**自动退出 Play** |
+| `axu_scenario_status` | — | 读运行状态文件原文（idle 时返回 idle 信封）。字段：`status`(`running`/`completed`/`error`/`aborted`)、`runId`、`suiteId`、`startedAtUtc`、`heartbeatUtc`、`completedCount`/`totalCount`、`reportPath`、`summary`、`exitCode`、`reason`（仅 error/aborted）、`message` |
 | `axu_player_suite_build` | `output`（默认 `Builds/AxuScenarioPlayer/<产品名>.app`；**默认后缀为 macOS .app——Windows/Linux 构建请显式传 `output` 目录**） | Development Build；构建期临时确保 `AXU_TEST_AGENT` define 开启，`finally` 还原；场景 = Build Settings |
 | `axu_player_suite_run` | `suite`（必填）、`player`（默认 `Builds/AxuScenarioPlayer`，支持 .app/目录/可执行）、`scenario`、`seed`、`warn_as_fail`、`timeout_ms`（默认 3600000，0=无限，超时 Kill） | 启动 Player 进程（`-axuSuite -axuQuitOnDone -axuReport …`）→ 等退出码 → 回拉报告到 `Library/AxuTestReports/scenario/player-{时间戳}-{suite}/` → 趋势入库 |
 | `axu_trend_summary` | `scenario` / `suite`（可选过滤）、`last_n`（默认 10） | 读趋势 CSV，输出各指标最近 N 次序列与最近两次变化百分比（方向感知：**正值恒=变差**；fps 负值=改善，frameTime/memory 正值=劣化） |
@@ -302,10 +322,29 @@ scenario / player / UTF 三类运行禁止在同一 Editor 并发驱动。
 
 ### Editor 侧配套
 
-- **看板 Scenario 页**：扫描并列出 suite/scenario JSON（列表显示中文标题与能力清单、点击选中高亮、底部三步引导）→ Run Suite（含 define 预检）→ 运行后回读报告摘要 + Export JUnit/HTML；趋势自动入库。报告详情为逐场景 Foldout：一句话结论、指标表、预算表、基线对比、findings（人话翻译）、截图缩略图与工件链接；运行期轮询状态文件显示"第 x/N 个场景"进度条；三个打开按钮（报告 JSON / 工件目录 / HTML 摘要）。
+**启动-收尾契约（看板 / 菜单 / pipeline 三条入口共用同一实现 `ScenarioRunService`）**：
+
+1. 预检（Play 中 / `AXU_TEST_AGENT` 未开 / 文件不存在 / 文件结构非法）→ 拦在 Play 之外并给出修复入口；
+2. 写运行记录 `Temp/axu_scenario_run.json`（`runId` + suite 路径 + 发起方）与桥文件 → 进 Play；
+3. Agent 执行并把进度/终态写状态文件（含同一 `runId`；长 scenario 期间每 5 秒心跳续写）；
+4. 看门狗的收尾：**终态 → 趋势入库 → 删运行记录 → 自动退出 Play**；用户手动停止 → 补写 `aborted` 终态
+   （`reason=interrupted`，`reportPath` 清空）→ 删记录。
+
+用户可见结果：**不需要手动退出 Play**；看板按状态文件的 `runId`/`reportPath` 回显"本次"结果——
+completed 加载状态文件指名的报告；aborted/error 清空结果面板并说明原因（**绝不把上一次的报告当作本次结果**）。
+在途判定与互斥闸一致：按最后活动时间（心跳）判活，20 分钟以上的长跑不会被当作陈旧放行并发运行。
+
+- **看板 Scenario 页**：扫描并列出 suite/scenario JSON（列表显示中文标题与能力清单、点击选中高亮、底部三步引导）→
+  Run Suite（走上面的共用契约）→ 终态后按本次 `runId` 回显报告摘要 + Export JUnit/HTML；趋势由看门狗入库（窗口侧不再重复入库）。
+  报告详情为逐场景 Foldout：一句话结论、指标表、预算表、基线对比、findings（人话翻译）、截图缩略图与工件链接；
+  运行期轮询状态文件显示"第 x/N 个场景"进度条与终态（`✓ 全部通过` / `⚠ 通过（有警告）` / `✗ 有失败` / `■ 已中断` / `✗ 运行失败`）；
+  三个打开按钮（报告 JSON / 工件目录 / HTML 摘要）仅在有本次报告时可用。
+- **看板总览页**：徽章与详情以状态文件为准（含 `已中断` / `运行失败` / `正在运行`）；仅当没有状态文件时才回退显示
+  报告目录里最新的历史报告，并在文案里标注"（历史报告）"。
 - **看板 Trend 页**：按 scenario 分组查看各指标最近 10 次序列与环比（正=变差红 / 负=改善绿；run 级行按 pass/warn/fail 着色）。
 - **导出器**：`JUnitExporter`（JUnit XML）与 `HtmlSummaryExporter`（单文件自包含 HTML 摘要）。
-- **define 预检**（Phase 1 遗留收口）：运行入口检查 `AXU_TEST_AGENT` 未开时弹可跳过警告。
+- **define 预检**：运行入口检查 `AXU_TEST_AGENT`，未开时不进 Play，弹对话框/回错误信封并给出开启入口
+  （菜单 `AxuTestFramework/Enable Test Agent`）——不再允许进入"必然不会执行测试"的 Play 状态。
 - **部署菜单**：`AxuTestFramework/Deploy Suite To StreamingAssets`（复制 suite JSON 到 `Assets/StreamingAssets/AxuSuites/`）与 `Remove Deployed Suites`。
 
 ## 场景测试能力库（Agent 层，`AXU_TEST_AGENT` 守护）

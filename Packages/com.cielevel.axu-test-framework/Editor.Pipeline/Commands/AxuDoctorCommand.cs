@@ -20,9 +20,6 @@ namespace AxuTestFramework.Editor
     /// </summary>
     public static class AxuDoctorCommand
     {
-        /// <summary>在途状态的新鲜度阈值：running 超过该时长视为陈旧残留，不判在途（与 .zcode/08 的 15 分钟口径一致）。</summary>
-        private static readonly TimeSpan StaleThreshold = TimeSpan.FromMinutes(15);
-
         /// <summary>检查项登记委托（hint 省略 = 输出不含 hint 字段；委托的可选参数对调用方透明）。</summary>
         private delegate void AddCheck(string id, string status, string message, string hint = null);
 
@@ -242,13 +239,23 @@ namespace AxuTestFramework.Editor
         {
             try
             {
+                var now = DateTime.UtcNow;
                 var inFlight = new List<string>();
 
-                if (IsFreshRunning(AxuTestReportPaths.ToFullPath(AxuTestReportPaths.StatusFilePath), out var utfStarted))
-                    inFlight.Add($"axu_test_run（startedAtUtc {utfStarted:HH:mm:ss}Z）");
+                // 用类型化模型读两侧状态文件（键大小写由模型保证；UTF 侧为 PascalCase、scenario 侧为 camelCase），
+                // 判活一律走"最后活动时间"——长跑测试持续心跳即恒判在途
+                var utf = AxuTestRunStatus.TryRead();
+                if (AxuTestRunStatus.IsInFlight(utf, now))
+                    inFlight.Add($"axu_test_run（{DescribeLiveness(utf.TryGetLastActivityUtc(out var utfActivity) ? utfActivity : (DateTime?)null)}）");
 
-                if (IsFreshRunning(ScenarioRunService.StatusFileFullPath, out var scenarioStarted))
-                    inFlight.Add($"axu_scenario_run（startedAtUtc {scenarioStarted:HH:mm:ss}Z）");
+                var scenario = AxuScenarioRunStatus.TryRead();
+                if (AxuScenarioRunStatus.IsInFlight(scenario, now))
+                    inFlight.Add($"axu_scenario_run（{DescribeLiveness(scenario.TryGetLastActivityUtc(out var scenarioActivity) ? scenarioActivity : (DateTime?)null)}）");
+
+                // 运行记录残留（Editor 驱动的运行未收尾）：看门狗会在下一次轮询内收尾
+                var record = ScenarioRunRecord.TryRead();
+                if (record != null && !record.IsStale(now))
+                    inFlight.Add($"scenario 运行记录未收尾（{record.Source}，{record.StartedAtUtc}）");
 
                 if (inFlight.Count == 0)
                 {
@@ -258,7 +265,8 @@ namespace AxuTestFramework.Editor
                 {
                     add("runs.in_flight", "warn",
                         $"检测到在途运行：{string.Join("、", inFlight)}——互斥闸占用中，新的运行类命令会被拒绝。",
-                        "轮询 axu_test_status / axu_scenario_status 至 completed/error；陈旧（>15 分钟）的 running 不视为在途。");
+                        "轮询 axu_test_status / axu_scenario_status 至 completed/error/aborted；" +
+                        "判活依据是最后活动时间（心跳），中断残留超过 15 分钟后自动放行。");
                 }
             }
             catch (Exception ex)
@@ -267,25 +275,16 @@ namespace AxuTestFramework.Editor
             }
         }
 
-        /// <summary>状态文件是否为"新鲜 running"：status==running 且 startedAtUtc 未越过陈旧阈值（无法解析时间时保守视为新鲜）。</summary>
-        private static bool IsFreshRunning(string statusFileFullPath, out DateTime startedUtc)
+        /// <summary>在途项的活信号描述（最后活动时间距今多久）。</summary>
+        private static string DescribeLiveness(DateTime? lastActivityUtc)
         {
-            startedUtc = DateTime.MinValue;
-            if (string.IsNullOrEmpty(statusFileFullPath) || !File.Exists(statusFileFullPath))
-                return false;
+            if (!lastActivityUtc.HasValue)
+                return "无时间字段，保守视为在途";
 
-            var json = JObject.Parse(File.ReadAllText(statusFileFullPath));
-            if ((string)json["status"] != "running")
-                return false;
-
-            if (DateTime.TryParse((string)json["startedAtUtc"], null,
-                    System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal,
-                    out var parsed))
-            {
-                startedUtc = parsed;
-                return DateTime.UtcNow - parsed <= StaleThreshold;
-            }
-            return true;
+            var elapsed = DateTime.UtcNow - lastActivityUtc.Value;
+            if (elapsed < TimeSpan.Zero)
+                elapsed = TimeSpan.Zero;
+            return $"最后活动 {elapsed.TotalSeconds:0}s 前";
         }
 
         // ------------------------------------------------------------------
