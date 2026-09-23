@@ -1,13 +1,13 @@
 {
   "schema": "axu-suite/1",
   "id": "soak.example",
-  "title": "soak 能力示例（2 分钟快速浸泡；正式长跑改 durationMinutes）",
+  "title": "soak 能力示例（当前场景采样 2 分钟，不自动驱动游玩）",
   "scenarios": [
     {
       "schema": "axu-scenario/1",
       "id": "soak.quick",
       "capability": "soak",
-      "title": "2 分钟浸泡（10s 采样 / 1min partial flush，不截图）",
+      "title": "当前场景采样 2 分钟（10s 采样 / 1min partial flush，不截图）",
       "params": {
         "durationMinutes": 2,
         "sampleIntervalSec": 10,

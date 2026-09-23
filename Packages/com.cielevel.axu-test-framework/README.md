@@ -355,12 +355,13 @@ completed 加载状态文件指名的报告；aborted/error 清空结果面板�
 | `perf` | 性能基准 | warmup→度量→预算→截图 | Agent/Capabilities/Perf/DOC.md |
 | `loadtime` | 加载时长 | 场景矩阵加载计时 | Agent/Capabilities/LoadTime/DOC.md |
 | `smoke` | 冒烟矩阵 | 全场景可进+无报错+截图 | Agent/Capabilities/Smoke/DOC.md |
-| `soak` | 浸泡/泄漏 | 长跑内存斜率/FPS 衰减 + partial flush（崩溃不丢前段） | Agent/Capabilities/Soak/DOC.md |
+| `soak` | 浸泡/泄漏 | 观察当前场景的长跑内存斜率/FPS 衰减 + partial flush；默认不加载场景、不驱动游玩 | Agent/Capabilities/Soak/DOC.md |
 | `stress` | 压力/承载 | 容量探测（目标帧率最大实体数）+ churn + 事件洪峰 | Agent/Capabilities/Stress/DOC.md |
 | `monkey` | 猴子测试 | 随机点按（seed 可复现）+ 卡死检测 + JSONL 流水 | Agent/Capabilities/Monkey/DOC.md |
 | `gamehook` | 游戏适配器 | 游戏侧显式注册自定义能力/代码态 scenario（`AxuTestAgent.RegisterCapability/RegisterScenario`） | Agent/Capabilities/GameHook/DOC.md |
 
 示例 suite 见 `Samples~/Scenarios/`（每能力一份，Package Manager → Samples 导入）。
+`soak` 示例只采样启动时的当前场景；游戏工程需要自行准备目标场景和持续行为，接入步骤与结果解释见 `Agent/Capabilities/Soak/DOC.md` 的“测试对象与覆盖边界”。
 
 ## Runtime 工具层速览
 

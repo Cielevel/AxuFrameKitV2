@@ -2,7 +2,7 @@
 
 > 对应方案：`.zcode/plans/axu-test-framework-usability-refactor.md`（阶段 1：运行闭环与可信状态）
 > 实施日期：2026-09-23 · Unity 6000.0.23f1 · 包版本 `com.cielevel.axu-test-framework` 0.3.0 → **0.4.0**
-> 状态：**已实施并验证**（除下方"仍需人工确认"两项外，验收项逐条实测通过）
+> 实施时状态：**已实施并验证**（以下为实施 Agent 的原始验收记录）。2026-09-23 复评发现 3 项阶段 1 补修问题及 20 分钟实跑证据缺口，**最终验收待补修与复评**；任务与标准见 `.zcode/plans/axu-test-framework-usability-refactor.md` 的“阶段 1 复评补修清单”。
 
 ## 1. 变更摘要
 
