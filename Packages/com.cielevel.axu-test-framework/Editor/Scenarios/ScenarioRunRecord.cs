@@ -39,6 +39,9 @@ namespace AxuTestFramework.Editor
         /// <summary>suite / scenario 文件完整路径。</summary>
         [JsonProperty("suitePath")] public string SuitePath { get; set; }
 
+        /// <summary>文件声明的 suite/scenario id，用于状态损坏时由看门狗写出本轮终态。</summary>
+        [JsonProperty("suiteId")] public string SuiteId { get; set; }
+
         /// <summary>限定运行的 scenario id（空 = 全部）。</summary>
         [JsonProperty("scenarioIds")] public List<string> ScenarioIds { get; set; }
 
@@ -85,6 +88,33 @@ namespace AxuTestFramework.Editor
                 Directory.CreateDirectory(directory);
             File.WriteAllText(target, JsonConvert.SerializeObject(record, Formatting.Indented),
                 new System.Text.UTF8Encoding(false));
+        }
+
+        /// <summary>新建记录并以原子落盘，目标已存在时失败且保留原记录。</summary>
+        public static void WriteNew(ScenarioRunRecord record, string fullPath)
+        {
+            if (record == null)
+                throw new ArgumentNullException(nameof(record));
+            if (string.IsNullOrEmpty(fullPath))
+                throw new ArgumentException("运行记录路径不能为空。", nameof(fullPath));
+            if (File.Exists(fullPath))
+                throw new IOException("已有未收尾的 scenario 运行记录，拒绝覆盖: " + fullPath);
+
+            var directory = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+            var tempPath = fullPath + "." + record.RunId + ".tmp";
+            try
+            {
+                File.WriteAllText(tempPath, JsonConvert.SerializeObject(record, Formatting.Indented),
+                    new System.Text.UTF8Encoding(false));
+                File.Move(tempPath, fullPath);
+            }
+            finally
+            {
+                try { if (File.Exists(tempPath)) File.Delete(tempPath); }
+                catch (Exception) { }
+            }
         }
 
         /// <summary>读记录文件；不存在/解析失败返回 null。</summary>

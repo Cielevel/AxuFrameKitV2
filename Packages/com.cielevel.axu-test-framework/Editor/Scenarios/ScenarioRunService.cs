@@ -53,7 +53,7 @@ namespace AxuTestFramework.Editor
 
         /// <summary>
         /// 启动一次 Editor 内 PlayMode 运行（看板/菜单/pipeline 共用）：预检（Play 中 / define / 文件存在性 /
-        /// 文件结构）→ 清陈旧状态 → 写运行记录 + 桥文件 + 初始 running 状态 → 进 Play。
+        /// 文件结构）→ 原子准备运行记录、初始 running 状态和桥文件 → 进 Play。
         /// 看门狗在终态时自动收尾（趋势入库 + 删记录 + 退 Play）。必须在 Unity 主线程调用。
         /// </summary>
         /// <param name="source">发起方（<see cref="ScenarioRunRecord.SourceDashboard"/> 等，仅用于诊断/展示）。</param>
@@ -92,6 +92,7 @@ namespace AxuTestFramework.Editor
             try
             {
                 record = ScenarioRunRecord.Create(suiteFullPath, scenarioIds, source);
+                record.SuiteId = suiteId;
             }
             catch (Exception ex)
             {
@@ -101,38 +102,13 @@ namespace AxuTestFramework.Editor
 
             try
             {
-                // 陈旧状态清理：上一轮异常中断留下的 running/completed 会让轮询方误判
                 var statusPath = StatusFileFullPath;
-                if (File.Exists(statusPath))
-                    File.Delete(statusPath);
-
-                // 顺序要紧：运行记录与初始状态先就位，桥文件最后写——桥文件是"进 Play 就会被 Agent 消费"
-                // 的触发器，若在它之后抛异常会留下孤儿桥文件，让下一次（哪怕是用户手按的）Play 静默执行本 suite。
-                ScenarioRunRecord.Write(record);
-
-                // 初始 running 状态（字段与 Agent 侧 ScenarioStatusFile 同构）：填补"进 Play 到 Agent 写状态"的空窗
-                var initialStatus = new JObject
-                {
-                    ["status"] = AxuScenarioRunStatus.Running,
-                    ["suiteId"] = suiteId,
-                    ["runId"] = record.RunId,
-                    ["startedAtUtc"] = record.StartedAtUtc,
-                    ["heartbeatUtc"] = record.StartedAtUtc,
-                    ["endedAtUtc"] = null,
-                    ["completedCount"] = 0,
-                    ["totalCount"] = 0,
-                    ["reportPath"] = string.Empty,
-                    ["summary"] = null,
-                    ["exitCode"] = null
-                };
-                WriteText(AgentPaths.StatusFilePath, initialStatus.ToString(Newtonsoft.Json.Formatting.Indented));
-
-                WriteBridgeFile(suiteFullPath, scenarioIds, record.RunId);
+                PrepareRunFiles(record, suiteId,
+                    ScenarioRunRecord.DefaultFullPath, statusPath, BridgeFileFullPath,
+                    () => WriteBridgeFile(suiteFullPath, scenarioIds, record.RunId));
             }
             catch (Exception ex)
             {
-                ScenarioRunRecord.Delete();
-                DeleteIfExists(BridgeFileFullPath);
                 error = $"启动前文件准备失败: {ex.Message}";
                 return false;
             }
@@ -162,7 +138,78 @@ namespace AxuTestFramework.Editor
             if (ids != null && ids.Count > 0)
                 payload["scenarioIds"] = new JArray(ids);
 
-            WriteText(AgentPaths.EditorBridgeFilePath, payload.ToString(Newtonsoft.Json.Formatting.Indented));
+            var target = BridgeFileFullPath;
+            var temp = target + "." + (runId ?? Guid.NewGuid().ToString("N")) + ".tmp";
+            try
+            {
+                WriteTextFullPath(temp, payload.ToString(Newtonsoft.Json.Formatting.Indented));
+                if (File.Exists(target))
+                    throw new IOException("已有待执行的 scenario 桥文件，拒绝覆盖其他运行的文件: " + target);
+                File.Move(temp, target);
+            }
+            finally
+            {
+                DeleteIfExists(temp);
+            }
+        }
+
+        /// <summary>顺序写本轮记录、初始状态和桥文件；任何失败只回滚 runId 属于本轮的文件。</summary>
+        static void PrepareRunFiles(ScenarioRunRecord record, string suiteId, string recordPath,
+            string statusPath, string bridgePath, Action writeBridge)
+        {
+            var hadPreviousStatus = File.Exists(statusPath);
+            var previousStatus = hadPreviousStatus ? File.ReadAllText(statusPath) : null;
+            try
+            {
+                ScenarioRunRecord.WriteNew(record, recordPath);
+                var initialStatus = new JObject
+                {
+                    ["status"] = AxuScenarioRunStatus.Running,
+                    ["suiteId"] = suiteId,
+                    ["runId"] = record.RunId,
+                    ["startedAtUtc"] = record.StartedAtUtc,
+                    ["heartbeatUtc"] = record.StartedAtUtc,
+                    ["endedAtUtc"] = null,
+                    ["completedCount"] = 0,
+                    ["totalCount"] = 0,
+                    ["reportPath"] = string.Empty,
+                    ["summary"] = null,
+                    ["exitCode"] = null
+                };
+                WriteTextAtomicFullPath(statusPath, initialStatus.ToString(Newtonsoft.Json.Formatting.Indented));
+                writeBridge();
+            }
+            catch
+            {
+                DeleteOwnedRunFiles(record.RunId, recordPath, statusPath, bridgePath);
+                if (hadPreviousStatus && !File.Exists(statusPath))
+                    WriteTextAtomicFullPath(statusPath, previousStatus);
+                throw;
+            }
+        }
+
+        static void DeleteOwnedRunFiles(string runId, string recordPath, string statusPath, string bridgePath)
+        {
+            var existingRecord = ScenarioRunRecord.TryRead(recordPath);
+            if (existingRecord != null && string.Equals(existingRecord.RunId, runId, StringComparison.Ordinal))
+                ScenarioRunRecord.Delete(recordPath);
+            DeleteJsonFileIfOwned(statusPath, runId);
+            DeleteJsonFileIfOwned(bridgePath, runId);
+        }
+
+        static void DeleteJsonFileIfOwned(string path, string runId)
+        {
+            try
+            {
+                if (!File.Exists(path)) return;
+                var json = JObject.Parse(File.ReadAllText(path));
+                if (string.Equals((string)json["runId"], runId, StringComparison.Ordinal))
+                    File.Delete(path);
+            }
+            catch (Exception)
+            {
+                // 不能确认归属时保留文件，避免清理另一轮运行的数据。
+            }
         }
 
         /// <summary>
@@ -286,9 +333,15 @@ namespace AxuTestFramework.Editor
 
             if (EditorApplication.isPlaying)
             {
-                // 状态尚不属于本轮（Agent 还没接手写状态）→ 继续等
+                // 状态尚不属于本轮（缺失/损坏/别的 runId）：允许正常接手宽限，之后按本轮发起时间
+                // 设置硬上限；若有可读的 running 活动时间且已陈旧，则可更早收尾。
                 if (!matched)
+                {
+                    if (ScenarioRunWatchdogPolicy.ShouldAbortUnmatched(record, status, now))
+                        MarkAborted(record, DescribeUnmatchedStatus(status),
+                            AxuScenarioRunStatus.ReasonAgentNotRun, exitPlay: true);
                     return;
+                }
 
                 if (status.IsTerminal)
                 {
@@ -310,7 +363,7 @@ namespace AxuTestFramework.Editor
             if (record.IsStale(now))
             {
                 // 陈旧残留（跨会话遗留）：清掉即可，不动状态文件（可能是别的运行留下的）
-                ScenarioRunRecord.Delete();
+                DeleteRunRecordIfOwned(record.RunId);
                 Debug.LogWarning("[AxuTestFramework] 清理陈旧的 scenario 运行记录（" + ScenarioRunRecord.DefaultPath + "）。");
                 return;
             }
@@ -353,7 +406,8 @@ namespace AxuTestFramework.Editor
                     Debug.LogWarning($"[AxuTestFramework] 趋势入库失败（不影响报告）: {trendError}");
             }
 
-            ScenarioRunRecord.Delete();
+            DeleteRunRecordIfOwned(record.RunId);
+            DeleteBridgeIfOwned(record.RunId);
 
             if (exitPlay && EditorApplication.isPlaying)
             {
@@ -373,26 +427,33 @@ namespace AxuTestFramework.Editor
             try
             {
                 var status = AxuScenarioRunStatus.TryRead();
-                if (status != null && status.IsTerminal && record.MatchesStatus(status))
+                var belongsToRun = record.MatchesStatus(status);
+                if (status != null && status.IsTerminal && belongsToRun)
                     return; // Agent 已写出终态：中断判定不覆盖真实结论
 
                 var terminal = new JObject
                 {
                     ["status"] = AxuScenarioRunStatus.Aborted,
-                    ["suiteId"] = status?.SuiteId ?? Path.GetFileNameWithoutExtension(record.SuitePath ?? string.Empty),
+                    ["suiteId"] = belongsToRun && !string.IsNullOrEmpty(status.SuiteId)
+                        ? status.SuiteId
+                        : string.IsNullOrEmpty(record.SuiteId)
+                            ? Path.GetFileNameWithoutExtension(record.SuitePath ?? string.Empty)
+                            : record.SuiteId,
                     ["runId"] = record.RunId,
-                    ["startedAtUtc"] = status?.StartedAtUtc ?? record.StartedAtUtc,
+                    ["startedAtUtc"] = belongsToRun && !string.IsNullOrEmpty(status.StartedAtUtc)
+                        ? status.StartedAtUtc
+                        : record.StartedAtUtc,
                     ["heartbeatUtc"] = DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
                     ["endedAtUtc"] = DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
-                    ["completedCount"] = status?.CompletedCount ?? 0,
-                    ["totalCount"] = status?.TotalCount ?? 0,
+                    ["completedCount"] = belongsToRun ? status.CompletedCount : 0,
+                    ["totalCount"] = belongsToRun ? status.TotalCount : 0,
                     ["reportPath"] = string.Empty, // 关键：清空报告路径，界面据此不回显上一次的报告
                     ["summary"] = null,
                     ["exitCode"] = null,
                     ["reason"] = reason,
                     ["message"] = message
                 };
-                WriteText(AgentPaths.StatusFilePath, terminal.ToString(Newtonsoft.Json.Formatting.Indented));
+                WriteTextAtomicFullPath(StatusFileFullPath, terminal.ToString(Newtonsoft.Json.Formatting.Indented));
                 Debug.LogWarning($"[AxuTestFramework] scenario 运行已中断（{reason}）：{message}");
             }
             catch (Exception ex)
@@ -402,7 +463,8 @@ namespace AxuTestFramework.Editor
             }
             finally
             {
-                ScenarioRunRecord.Delete();
+                DeleteRunRecordIfOwned(record.RunId);
+                DeleteBridgeIfOwned(record.RunId);
             }
 
             if (exitPlay && EditorApplication.isPlaying)
@@ -412,14 +474,63 @@ namespace AxuTestFramework.Editor
             }
         }
 
-        /// <summary>写相对工程根的文本文件（UTF-8 无 BOM，目录随建）。</summary>
-        static void WriteText(string relativePath, string content)
+        static string DescribeUnmatchedStatus(AxuScenarioRunStatus status)
         {
-            var fullPath = AxuTestReportPaths.ToFullPath(relativePath);
+            if (status == null)
+                return "运行状态缺失或无法解析，等待 Agent 接手超时，本次运行未完成。";
+            return "状态文件 runId 与本轮不匹配，等待 Agent 接手超时，本次运行未完成。";
+        }
+
+        static void DeleteRunRecordIfOwned(string runId)
+        {
+            var current = ScenarioRunRecord.TryRead();
+            if (current != null && string.Equals(current.RunId, runId, StringComparison.Ordinal))
+                ScenarioRunRecord.Delete();
+        }
+
+        static void DeleteBridgeIfOwned(string runId)
+        {
+            try
+            {
+                var path = BridgeFileFullPath;
+                if (!File.Exists(path)) return;
+                var bridge = JObject.Parse(File.ReadAllText(path));
+                if (string.Equals((string)bridge["runId"], runId, StringComparison.Ordinal))
+                    File.Delete(path);
+            }
+            catch (Exception)
+            {
+                // 解析失败或文件被占用时保留现场；不能证明它属于本轮。
+            }
+        }
+
+        /// <summary>写指定路径的文本文件（UTF-8 无 BOM，目录随建）。</summary>
+        static void WriteTextFullPath(string fullPath, string content)
+        {
             var directory = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
             File.WriteAllText(fullPath, content, new System.Text.UTF8Encoding(false));
+        }
+
+        static void WriteTextAtomicFullPath(string fullPath, string content)
+        {
+            var directory = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+            var tempPath = fullPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.WriteAllText(tempPath, content, new System.Text.UTF8Encoding(false));
+                if (File.Exists(fullPath))
+                    File.Replace(tempPath, fullPath, null);
+                else
+                    File.Move(tempPath, fullPath);
+            }
+            finally
+            {
+                DeleteIfExists(tempPath);
+            }
         }
 
         /// <summary>删除文件（不存在/占用时静默——清理路径不抛）。</summary>

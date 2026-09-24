@@ -55,6 +55,7 @@ namespace AxuTestFramework.Editor
         private ScrollView _scenarioResultsScroll;
         private ScenarioReport _scenarioReport;
         private string _scenarioReportPath;
+        private AxuScenarioRunStatus _scenarioRunStatus;
         private VisualElement _scenarioProgressRow;
         private ProgressBar _scenarioProgressBar;
         private Label _scenarioProgressLabel;
@@ -441,6 +442,7 @@ namespace AxuTestFramework.Editor
         /// </summary>
         private void RenderTerminalState(AxuScenarioRunStatus status)
         {
+            _scenarioRunStatus = status;
             var runId = status.RunId ?? string.Empty;
             var alreadyDelivered = runId.Length > 0 && _deliveredRunId == runId;
             _lastRunningCompletedCount = -1; // 下一轮运行重新按进度刷新总览
@@ -572,6 +574,9 @@ namespace AxuTestFramework.Editor
                 (report.Summary != null
                     ? $"total {report.Summary.Total} · pass {report.Summary.Passed} · warn {report.Summary.Warned} · fail {report.Summary.Failed}"
                     : "（无汇总）") +
+                (IsCurrentWarnAsFailReport()
+                    ? $"\n结论：失败（warnAsFail：0 fail，{_scenarioRunStatus.Summary.Warned} warn）"
+                    : string.Empty) +
                 $"\n报告: {Path.GetFileName(_scenarioReportPath)}";
 
             if (report.Results == null || report.Results.Count == 0)
@@ -592,6 +597,16 @@ namespace AxuTestFramework.Editor
             _exportJunitButton.SetEnabled(true);
             _exportHtmlButton.SetEnabled(true);
             UpdateOpenButtons(true);
+        }
+
+        private bool IsCurrentWarnAsFailReport()
+        {
+            var status = _scenarioRunStatus;
+            if (!ScenarioRunStatusPresenter.IsWarnAsFailVerdict(status) ||
+                string.IsNullOrEmpty(status.ReportPath) || string.IsNullOrEmpty(_scenarioReportPath))
+                return false;
+            return string.Equals(Path.GetFullPath(status.ReportPath), Path.GetFullPath(_scenarioReportPath),
+                StringComparison.OrdinalIgnoreCase);
         }
 
         private static string StatusBadge(string status)

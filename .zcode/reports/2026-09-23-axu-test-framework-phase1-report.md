@@ -2,7 +2,7 @@
 
 > 对应方案：`.zcode/plans/axu-test-framework-usability-refactor.md`（阶段 1：运行闭环与可信状态）
 > 实施日期：2026-09-23 · Unity 6000.0.23f1 · 包版本 `com.cielevel.axu-test-framework` 0.3.0 → **0.4.0**
-> 实施时状态：**已实施并验证**（以下为实施 Agent 的原始验收记录）。2026-09-23 复评发现 3 项阶段 1 补修问题及 20 分钟实跑证据缺口，**最终验收待补修与复评**；任务与标准见 `.zcode/plans/axu-test-framework-usability-refactor.md` 的“阶段 1 复评补修清单”。
+> 实施时状态：**已实施并验证**（以下 §1–§5 为 2026-09-23 实施 Agent 的原始验收记录）。2026-09-23 复评发现的 3 项补修问题及 20 分钟实跑证据缺口已于 2026-09-24 补齐；**阶段 1 最终验收通过**，本次证据与尚未实跑的异常路径见 §6。任务与标准见 `.zcode/plans/axu-test-framework-usability-refactor.md` 的“阶段 1 复评补修清单”。
 
 ## 1. 变更摘要
 
@@ -105,3 +105,37 @@
 - ✅ 未直接编辑任何场景/Prefab/Asset 的 YAML；新增的 `gamehook-ref-demo.suite.json` 经 pipeline `import_asset` 导入（`.meta` 由 Unity 生成）。
 - ✅ 未执行无程序集/测试名过滤的裸 `run_tests`；长跑（10 分钟 soak）期间未向同一 Editor 并发派发其他命令（互斥闸单测即以此场景验证）。
 - ✅ 测试覆盖真实风险而非文案镜像：状态收尾（runId 归属 / 中断终态 / 心跳判活）、文件加载（纯 ref 全链路）、长跑互斥（20 分钟谓词 + 在途记录）、双阶段结果（续跑/跳过/结论），并对 `mode=all` 做了真实 E2E（含 `timeout_ms=1` 强制跳过分支）。
+
+## 6. 2026-09-24 复评补修与最终验收
+
+环境：Windows · Unity **6000.0.23f1** · `com.cielevel.axu-test-framework` 0.4.0。本节只陈述本次重新取得的证据；§1–§5 的数字和截图仍属于 2026-09-23 的原始记录。
+
+### 三项补修
+
+| 项目 | 根因与改法 | 本次验证 |
+|---|---|---|
+| P1 `warnAsFail` 界面误报通过 | `ScenarioRunStatusPresenter` 原先只按 `Summary.Failed/Warned` 决定结论；现在先依据 `ExitCode` 判失败，再保留 `0 fail、N warn` 和因 `warnAsFail` 判失败的原因。总览和 Scenario 页共用该结论，Scenario 报告详情补出同一原因。 | `ScenarioReportPresenterTests` 中的 `RunStatus_warnAsFail关闭_仅警告仍显示警告色和真实计数`、`RunStatus_warnAsFail开启且仅警告_所有结论均为失败语义并保留原因`、`RunStatus_真实失败和成功_按退出码及计数映射` 通过；真实 echo suite 的状态与报告均为 `0 fail / 1 warn / exitCode 1`，看板红色显示“有失败（warnAsFail）”。 |
+| P2 状态缺失或不属于本轮时无限等待 | `PollWatch` 在 `!matched` 时直接返回，无法进入超时收尾。现在先保留正常进 Play/域重载宽限期，再由 `ScenarioRunWatchdogPolicy` 按本轮发起时间给出 15 分钟上限；可读但陈旧的活动状态可提前触发。收尾写本轮 `runId` 的 `aborted`、清空 `reportPath`，清理本轮记录和桥文件，自动退出 Play。仅匹配本轮的状态字段可继承到终态。 | `ScenarioRunStateTests` 的 `Watchdog_状态文件缺失_保留接手宽限后有界收尾`、`Watchdog_状态JSON损坏_按缺失状态的有界策略收尾`、`Watchdog_runId不匹配_陈旧活动可提前收尾且发起时间提供硬上限`、`Watchdog_正常Agent接手_启动宽限不误判` 通过；另在真实 Editor 运行期间删除状态文件并把测试运行记录发起时间故障注入为 16 分钟前，看门狗写出 `aborted / agent_not_run`、空 `reportPath`，删除记录和桥文件并自动退出 Play。 |
+| P2 桥文件写失败留下假的 `running` | 原流程先写初始状态，写桥文件异常时只清理记录和桥，留下 `running`。现在运行记录、初始状态和桥文件分别用临时文件落盘；准备失败只回滚本轮 `runId` 的文件，并恢复之前的状态，拒绝覆盖外轮桥文件。 | `ScenarioRunStateTests.RunPreparation_桥文件写失败_回滚本轮状态与记录且可重试` 通过，覆盖部分桥文件已写入后抛错及重试；真实 Editor 中预置外轮桥文件，启动返回明确错误，`playMode=stopped`，无本轮记录，旧 `completed` 状态保留；移除注入文件后重试 `1/1 pass`。 |
+
+Unity 编译结果：`recompile_status` 为 `completed`、`failed=false`、零错误。定向 EditMode：`ScenarioRunStateTests` **18/18**、`ScenarioReportPresenterTests` **13/13**。类别回归：`axu_test_run --mode editor --category Axu/TestFramework` **258/258**（报告 `Library/AxuTestReports/20260924-035438-editor.json`）。`axu_lint` 为 4 pass / 1 warn / 0 fail；唯一 warn 是原有的 24 处 `file.type_name`，本次新增 `ScenarioRunWatchdogPolicy.cs` 没有违规。`git diff --check` 通过。
+
+### 长跑实证与边界
+
+真实 suite `Temp/axu-phase1-soak-21m.suite.json` 于 **03:32:26 UTC** 开始、**03:53:26 UTC** 结束（21 分钟）。同一 `runId=8e5fc64ee9824a8bb66cf5d68a8e9ff7` 的进程外只读采样：
+
+| 已运行 | 观察时间 UTC | 心跳 UTC | 状态 | 运行记录 |
+|---:|---|---|---|---|
+| 15.93 分钟 | 03:48:21 | 03:48:17 | `running` | 存在 |
+| 17.15 分钟 | 03:49:34 | 03:49:32 | `running` | 存在 |
+| 20.49 分钟 | 03:52:55 | 03:52:52 | `running` | 存在 |
+
+原始采样见 [2026-09-24-axu-phase1-soak-heartbeats.jsonl](2026-09-24-axu-phase1-soak-heartbeats.jsonl)。最终状态与报告 `Library/AxuTestReports/scenario/20260924-113226-axu-phase1-soak-21m.suite.json` 均为 `completed / exitCode 0 / 1 pass / 0 warn / 0 fail`；运行记录与桥文件被清理，Editor `playMode=stopped`。长跑期间遵守单 Editor 命令闸，未并发发起 Pipeline 命令；互斥判定通过隔离的 20 分钟心跳测试验证。本次 soak 只采样当前场景，**不代表游戏长期游玩稳定性通过**。
+
+### 看板截图与未实跑项
+
+- [仅警告却按 warnAsFail 判失败](axu-phase1-final-screenshots/warn-as-fail.png)：真实 suite，状态文件、报告和看板一致。
+- [状态丢失后的已中断](axu-phase1-final-screenshots/status-loss-aborted.png)：真实 Editor 故障注入，空报告路径。
+- [中断后再次运行成功](axu-phase1-final-screenshots/success-after-abort.png)：真实 suite；原始交付的 [首次打开](axu-phase1-screenshots/00-first-use.png) 与 [运行中](axu-phase1-screenshots/03-running.png) 截图仍供阶段 1 评审使用。
+
+本次没有自然等待 15 分钟来触发状态文件丢失超时；故障注入通过改旧发起时间验证同一看门狗分支。状态 JSON 损坏、`runId` 不匹配和启动准备异常的边界由定向测试覆盖，其中桥文件冲突另有真实 Editor 实跑。suite 在 Agent 侧加载失败、报告写盘失败仍仅有原始报告记录的单测/错误映射证据，未构造完整 E2E；macOS 也未实测。这些限制不应写成已经实跑。

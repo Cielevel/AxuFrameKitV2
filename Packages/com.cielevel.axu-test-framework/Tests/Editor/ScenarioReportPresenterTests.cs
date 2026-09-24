@@ -5,6 +5,7 @@ using AxuTestFramework.Core.Budget;
 using AxuTestFramework.Core.Report;
 using AxuTestFramework.Editor;
 using NUnit.Framework;
+using ScenarioReportSummary = AxuTestFramework.Core.Report.ReportSummary;
 
 namespace AxuTestFramework.Tests.Editor
 {
@@ -139,6 +140,63 @@ namespace AxuTestFramework.Tests.Editor
             Assert.That(ScenarioReportPresenter.ToneClass("fail"), Is.EqualTo("ax-tone-bad"));
             Assert.That(ScenarioReportPresenter.ToneClass("error"), Is.EqualTo("ax-tone-bad"));
             Assert.That(ScenarioReportPresenter.ToneClass(null), Is.EqualTo("ax-tone-neutral"));
+        }
+
+        [Test]
+        public void RunStatus_warnAsFail关闭_仅警告仍显示警告色和真实计数()
+        {
+            var status = CompletedStatus(exitCode: (int)ScenarioExitCode.WarningsOnly, warned: 2, failed: 0);
+
+            Assert.That(ScenarioRunStatusPresenter.Label(status), Does.Contain("通过（有警告）"));
+            Assert.That(ScenarioRunStatusPresenter.ToneClass(status), Is.EqualTo("ax-tone-warn"));
+            Assert.That(ScenarioRunStatusPresenter.BadgeClass(status), Is.EqualTo("ax-badge-warn"));
+            Assert.That(ScenarioRunStatusPresenter.DetailText(status, "demo"), Does.Contain("2 警告 · 0 失败"));
+            Assert.That(ScenarioRunStatusPresenter.DetailText(status, "demo"), Does.Not.Contain("warnAsFail"));
+        }
+
+        [Test]
+        public void RunStatus_warnAsFail开启且仅警告_所有结论均为失败语义并保留原因()
+        {
+            var status = CompletedStatus(exitCode: (int)ScenarioExitCode.Failures, warned: 2, failed: 0);
+
+            Assert.That(ScenarioRunStatusPresenter.Label(status), Does.Contain("失败"));
+            Assert.That(ScenarioRunStatusPresenter.Label(status), Does.Contain("warnAsFail"));
+            Assert.That(ScenarioRunStatusPresenter.ToneClass(status), Is.EqualTo("ax-tone-bad"));
+            Assert.That(ScenarioRunStatusPresenter.BadgeClass(status), Is.EqualTo("ax-badge-bad"));
+            Assert.That(ScenarioRunStatusPresenter.DetailText(status, "demo"), Does.Contain("0 fail、2 warn"));
+            Assert.That(ScenarioRunStatusPresenter.DetailText(status, "demo"), Does.Contain("因 warnAsFail 判失败"));
+        }
+
+        [Test]
+        public void RunStatus_真实失败和成功_按退出码及计数映射()
+        {
+            var failed = CompletedStatus(exitCode: (int)ScenarioExitCode.Failures, warned: 0, failed: 1);
+            var passed = CompletedStatus(exitCode: (int)ScenarioExitCode.Success, warned: 0, failed: 0);
+            var failedWithoutSummary = new AxuScenarioRunStatus
+            {
+                Status = AxuScenarioRunStatus.Completed,
+                ExitCode = (int)ScenarioExitCode.Failures
+            };
+
+            Assert.That(ScenarioRunStatusPresenter.Label(failed), Does.Contain("有失败"));
+            Assert.That(ScenarioRunStatusPresenter.ToneClass(failed), Is.EqualTo("ax-tone-bad"));
+            Assert.That(ScenarioRunStatusPresenter.DetailText(failed, "demo"), Does.Not.Contain("warnAsFail"));
+            Assert.That(ScenarioRunStatusPresenter.Label(passed), Does.Contain("全部通过"));
+            Assert.That(ScenarioRunStatusPresenter.ToneClass(passed), Is.EqualTo("ax-tone-ok"));
+            Assert.That(ScenarioRunStatusPresenter.BadgeClass(passed), Is.EqualTo("ax-badge-ok"));
+            Assert.That(ScenarioRunStatusPresenter.Label(failedWithoutSummary), Does.Contain("有失败"));
+            Assert.That(ScenarioRunStatusPresenter.ToneClass(failedWithoutSummary), Is.EqualTo("ax-tone-bad"));
+            Assert.That(ScenarioRunStatusPresenter.DetailText(failedWithoutSummary, "demo"), Does.Contain("运行失败"));
+        }
+
+        static AxuScenarioRunStatus CompletedStatus(int exitCode, int warned, int failed)
+        {
+            return new AxuScenarioRunStatus
+            {
+                Status = AxuScenarioRunStatus.Completed,
+                ExitCode = exitCode,
+                Summary = new ScenarioReportSummary { Total = 3, Passed = 3 - warned - failed, Warned = warned, Failed = failed }
+            };
         }
     }
 }

@@ -1,8 +1,10 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using AxuTestFramework.Editor;
 using NUnit.Framework;
+using Newtonsoft.Json.Linq;
 
 namespace AxuTestFramework.Tests.Editor
 {
@@ -253,6 +255,139 @@ namespace AxuTestFramework.Tests.Editor
             ScenarioRunRecord.Delete(path);
 
             Assert.That(ScenarioRunRecord.TryRead(path), Is.Null);
+        }
+
+        // ------------------------------------------------------------------ 看门狗丢失/不匹配状态恢复
+
+        [Test]
+        public void Watchdog_状态文件缺失_保留接手宽限后有界收尾()
+        {
+            var record = RecordStartedAt(Now);
+            var missing = AxuScenarioRunStatus.TryRead(PathOf("missing-status.json"));
+
+            Assert.That(missing, Is.Null);
+            Assert.That(ScenarioRunWatchdogPolicy.ShouldAbortUnmatched(record, missing,
+                Now.AddSeconds(AxuRunLiveness.StartGraceSeconds - 1)), Is.False);
+            Assert.That(ScenarioRunWatchdogPolicy.ShouldAbortUnmatched(record, missing,
+                Now.AddMinutes(15)), Is.True);
+        }
+
+        [Test]
+        public void Watchdog_状态JSON损坏_按缺失状态的有界策略收尾()
+        {
+            var path = PathOf("broken-status.json");
+            File.WriteAllText(path, "{ this is broken");
+            var record = RecordStartedAt(Now);
+            var unreadable = AxuScenarioRunStatus.TryRead(path);
+
+            Assert.That(unreadable, Is.Null);
+            Assert.That(ScenarioRunWatchdogPolicy.ShouldAbortUnmatched(record, unreadable,
+                Now.AddMinutes(16)), Is.True);
+        }
+
+        [Test]
+        public void Watchdog_runId不匹配_陈旧活动可提前收尾且发起时间提供硬上限()
+        {
+            var record = RecordStartedAt(Now);
+            var otherRun = new AxuScenarioRunStatus
+            {
+                Status = AxuScenarioRunStatus.Running,
+                RunId = "other-run",
+                StartedAtUtc = Iso(Now.AddMinutes(-20)),
+                HeartbeatUtc = Iso(Now.AddMinutes(-16))
+            };
+
+            Assert.That(record.MatchesStatus(otherRun), Is.False);
+            Assert.That(ScenarioRunWatchdogPolicy.ShouldAbortUnmatched(record, otherRun, Now.AddMinutes(2)), Is.True,
+                "状态可读但活动已停超过阈值时可提前结束");
+
+            otherRun.HeartbeatUtc = Iso(Now.AddMinutes(14));
+            Assert.That(ScenarioRunWatchdogPolicy.ShouldAbortUnmatched(record, otherRun, Now.AddMinutes(14)), Is.False,
+                "别的 runId 有新活动时仍保留观察窗口");
+            Assert.That(ScenarioRunWatchdogPolicy.ShouldAbortUnmatched(record, otherRun, Now.AddMinutes(15)), Is.True,
+                "任何不匹配状态都受本轮发起时间硬上限约束");
+        }
+
+        [Test]
+        public void Watchdog_正常Agent接手_启动宽限不误判()
+        {
+            var record = RecordStartedAt(Now);
+            Assert.That(ScenarioRunWatchdogPolicy.ShouldAbortUnmatched(record, null,
+                Now.AddSeconds(AxuRunLiveness.StartGraceSeconds - 1)), Is.False);
+
+            var claimed = new AxuScenarioRunStatus
+            {
+                Status = AxuScenarioRunStatus.Running,
+                RunId = record.RunId,
+                StartedAtUtc = record.StartedAtUtc,
+                HeartbeatUtc = Iso(Now.AddSeconds(AxuRunLiveness.StartGraceSeconds + 1))
+            };
+            Assert.That(record.MatchesStatus(claimed), Is.True);
+            Assert.That(ScenarioRunWatchdogPolicy.ShouldAbortUnmatched(record, claimed, Now.AddSeconds(15)), Is.False);
+        }
+
+        // ------------------------------------------------------------------ 启动准备失败回滚（桥文件写入注入）
+
+        [Test]
+        public void RunPreparation_桥文件写失败_回滚本轮状态与记录且可重试()
+        {
+            var recordPath = PathOf("prepare-run.json");
+            var statusPath = PathOf("prepare-status.json");
+            var bridgePath = PathOf("foreign-bridge.json");
+            File.WriteAllText(bridgePath, "{\"runId\":\"another-run\"}");
+            const string previousStatus = "{\"status\":\"completed\",\"runId\":\"another-run\"}";
+            File.WriteAllText(statusPath, previousStatus);
+            var record = ScenarioRunRecord.Create("C:/proj/demo.suite.json", null, ScenarioRunRecord.SourceMenu);
+
+            var prepare = typeof(ScenarioRunService).GetMethod("PrepareRunFiles",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.That(prepare, Is.Not.Null);
+            var arguments = new object[]
+            {
+                record, "demo", recordPath, statusPath, bridgePath,
+                (Action)(() => throw new IOException("injected bridge write failure"))
+            };
+
+            var failure = Assert.Throws<TargetInvocationException>(() => prepare.Invoke(null, arguments));
+            Assert.That(failure.InnerException, Is.TypeOf<IOException>());
+            Assert.That(ScenarioRunRecord.TryRead(recordPath), Is.Null);
+            Assert.That(File.ReadAllText(statusPath), Is.EqualTo(previousStatus), "回滚应恢复其他运行的状态文件");
+            Assert.That(File.Exists(bridgePath), Is.True, "回滚不能删除其他 runId 的文件");
+            var preserved = AxuScenarioRunStatus.TryRead(statusPath);
+            Assert.That(AxuScenarioRunStatus.IsInFlight(preserved, Now), Is.False,
+                "上轮终态不能让互斥闸误判当前仍在途");
+            Assert.That(ScenarioRunStatusPresenter.Label(preserved), Does.Not.Contain("正在运行"),
+                "看板不能显示启动失败的假 running 状态");
+
+            File.Delete(bridgePath);
+            Assert.Throws<TargetInvocationException>(() => prepare.Invoke(null, new object[]
+            {
+                record, "demo", recordPath, statusPath, bridgePath,
+                (Action)(() =>
+                {
+                    File.WriteAllText(bridgePath, "{\"runId\":\"" + record.RunId + "\"}");
+                    throw new IOException("injected failure after partial bridge creation");
+                })
+            }));
+            Assert.That(ScenarioRunRecord.TryRead(recordPath), Is.Null);
+            Assert.That(File.ReadAllText(statusPath), Is.EqualTo(previousStatus));
+            Assert.That(File.Exists(bridgePath), Is.False, "本轮已写出的孤儿桥文件应被清理");
+
+            prepare.Invoke(null, new object[]
+            {
+                record, "demo", recordPath, statusPath, bridgePath,
+                (Action)(() => File.WriteAllText(bridgePath, "{\"runId\":\"" + record.RunId + "\"}"))
+            });
+            Assert.That(ScenarioRunRecord.TryRead(recordPath).RunId, Is.EqualTo(record.RunId));
+            Assert.That(AxuScenarioRunStatus.TryRead(statusPath).RunId, Is.EqualTo(record.RunId));
+            Assert.That(File.Exists(bridgePath), Is.True);
+        }
+
+        static ScenarioRunRecord RecordStartedAt(DateTime started)
+        {
+            var record = ScenarioRunRecord.Create("C:/proj/demo.suite.json", null, ScenarioRunRecord.SourcePipeline);
+            record.StartedAtUtc = Iso(started);
+            return record;
         }
     }
 }

@@ -22,11 +22,13 @@ namespace AxuTestFramework.Editor
             switch ((status.Status ?? string.Empty).Trim().ToLowerInvariant())
             {
                 case AxuScenarioRunStatus.Completed:
+                    if (IsFailureVerdict(status))
+                        return IsWarnAsFailVerdict(status)
+                            ? "✗ 有失败（warnAsFail）"
+                            : "✗ 有失败";
                     var summary = status.Summary;
                     if (summary == null)
                         return "✓ 运行完成";
-                    if (summary.Failed > 0)
-                        return "✗ 有失败";
                     return summary.Warned > 0 ? "⚠ 通过（有警告）" : "✓ 全部通过";
                 case AxuScenarioRunStatus.Aborted:
                     return "■ 已中断";
@@ -46,11 +48,11 @@ namespace AxuTestFramework.Editor
             switch ((status.Status ?? string.Empty).Trim().ToLowerInvariant())
             {
                 case AxuScenarioRunStatus.Completed:
+                    if (IsFailureVerdict(status))
+                        return "ax-tone-bad";
                     var summary = status.Summary;
                     if (summary == null)
                         return "ax-tone-neutral";
-                    if (summary.Failed > 0)
-                        return "ax-tone-bad";
                     return summary.Warned > 0 ? "ax-tone-warn" : "ax-tone-ok";
                 case AxuScenarioRunStatus.Aborted:
                 case AxuScenarioRunStatus.Error:
@@ -115,13 +117,34 @@ namespace AxuTestFramework.Editor
                        "跑完会自动退出 Play 并在这里给出结论。";
 
             var summary = status.Summary;
+            if (status.IsCompleted && summary == null && IsFailureVerdict(status))
+                return $"{scope} · {when} · 运行失败（exitCode {(status.ExitCode.HasValue ? status.ExitCode.Value.ToString() : "未知")}）";
+
             if (status.IsCompleted && summary != null)
             {
-                return $"{scope} · {when} · {summary.Total} 项 · {summary.Passed} 通过 · " +
-                       $"{summary.Warned} 警告 · {summary.Failed} 失败";
+                var detail = $"{scope} · {when} · {summary.Total} 项 · {summary.Passed} 通过 · " +
+                             $"{summary.Warned} 警告 · {summary.Failed} 失败";
+                return IsWarnAsFailVerdict(status)
+                    ? detail + " · 因 warnAsFail 判失败（0 fail、" + summary.Warned + " warn）"
+                    : detail;
             }
 
             return $"{scope} · {when} · {ReasonText(status)}";
+        }
+
+        /// <summary>失败结论以进程退出码为准；summary 仍保留实际 pass/warn/fail 计数。</summary>
+        public static bool IsFailureVerdict(AxuScenarioRunStatus status)
+        {
+            return status != null && (status.ExitCode == (int)AxuTestFramework.Core.Report.ScenarioExitCode.Failures ||
+                                      status.ExitCode == (int)AxuTestFramework.Core.Report.ScenarioExitCode.InfrastructureError ||
+                                      (status.Summary != null && status.Summary.Failed > 0));
+        }
+
+        /// <summary>退出码为失败，但实际只有 warning 时，说明是 warnAsFail 规则导致。</summary>
+        public static bool IsWarnAsFailVerdict(AxuScenarioRunStatus status)
+        {
+            return status != null && status.ExitCode == (int)AxuTestFramework.Core.Report.ScenarioExitCode.Failures &&
+                   status.Summary != null && status.Summary.Failed == 0 && status.Summary.Warned > 0;
         }
 
         /// <summary>运行来源的中文短句（运行记录文件里的 source）。</summary>
