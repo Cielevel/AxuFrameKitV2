@@ -49,6 +49,24 @@ namespace AxuTestFramework.Editor
             return true;
         }
 
+        /// <summary>
+        /// 幂等开启 <see cref="DefineName"/>（首次运行引导的"一键开启"入口，等价 <see cref="Toggle"/> 的开启分支）：
+        /// 已开启时 no-op；未开启时按 <see cref="Toggle"/> 同款方式写符号（会触发脚本重编译）并记日志说明。
+        /// </summary>
+        public static void Enable()
+        {
+            if (HasAgentDefine())
+                return;
+
+            var named = GetActiveNamedBuildTarget();
+            var joined = string.Join(";", AppendDefine(ReadDefines(named), DefineName));
+            PlayerSettings.SetScriptingDefineSymbols(named, joined);
+
+            Debug.Log(
+                $"[AxuTestFramework] {DefineName} 已添加（{named.TargetName}）——脚本重编译即将发生，" +
+                "完成后即可运行场景类示例测试。");
+        }
+
         /// <summary>当前 activeBuildTarget 对应的 NamedBuildTarget（Unity 6 API）。</summary>
         public static NamedBuildTarget GetActiveNamedBuildTarget()
         {

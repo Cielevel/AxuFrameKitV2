@@ -252,9 +252,27 @@ namespace AxuTestFramework.Editor
             _suiteRowElements.Clear();
             if (_suiteEntries.Count == 0)
             {
-                var empty = new Label("（Assets 下未发现 .suite.json / .scenario.json——菜单 AxuTestFramework/Create Suite JSON 可生成模板）");
-                empty.AddToClassList("ax-empty-note");
-                _suiteListScroll.Add(empty);
+                // 空态（2026-09-24 改造）：不再只给教程文字，直接给两条可操作出路——
+                // 先跑内置示例看一眼能否跑通（不动 Assets），或落一份可编辑的最小配置
+                var emptyCol = new VisualElement { name = "ax-suite-empty" };
+                emptyCol.style.marginTop = 6f;
+
+                var emptyNote = new Label("（Assets 下还没有 .suite.json / .scenario.json）可以先跑一次内置示例，或创建一份最小配置：");
+                emptyNote.AddToClassList("ax-empty-note");
+                emptyCol.Add(emptyNote);
+
+                var trySelfCheckButton = new Button(RunSelfCheck) { text = "先用示例套件试一次" };
+                trySelfCheckButton.AddToClassList("ax-run-button");
+                trySelfCheckButton.style.marginBottom = 4f;
+                trySelfCheckButton.tooltip = "运行内置的工具链自检示例（临时生成在 Temp，不写 Assets），验证环境通不通；跑完自动退出 Play 并回显结果。";
+                emptyCol.Add(trySelfCheckButton);
+
+                var createMinimalButton = new Button(CreateMinimalGoalSuite) { text = "创建最小配置" };
+                createMinimalButton.AddToClassList("ax-secondary-button");
+                createMinimalButton.tooltip = "在工程约定的示例目录下创建一份可编辑的场景冒烟示例套件（重名自动加序号，不覆盖既有文件）。";
+                emptyCol.Add(createMinimalButton);
+
+                _suiteListScroll.Add(emptyCol);
             }
 
             foreach (var entry in _suiteEntries)
@@ -343,9 +361,36 @@ namespace AxuTestFramework.Editor
         {
             if (_runSuiteButton == null)
                 return;
-            // 运行中（Play 或运行记录未收尾）禁止再发起：桥文件必须在进 Play 前写入，重复点击无意义
-            var busy = EditorApplication.isPlaying || ScenarioRunRecord.TryRead() != null;
+            // 运行中（Play、任一运行在途、运行记录未收尾）禁止再发起：桥文件必须在进 Play 前写入，
+            // 重复点击无意义——判定与总览/首用卡同口径（阶段 2 Task C 扩为四条件）
+            var busy = EditorApplication.isPlaying
+                || ScenarioRunRecord.TryRead() != null
+                || ScenarioRunService.IsScenarioRunInFlight()
+                || AxuTestRunService.IsAxuRunInFlight();
             _runSuiteButton.SetEnabled(!string.IsNullOrEmpty(_selectedSuitePath) && !busy);
+        }
+
+        /// <summary>
+        /// Scenario 页空态「创建最小配置」：经 <see cref="FirstRunSuiteCatalog.TryCreateGoalSuite"/>
+        /// 落一份可编辑的场景冒烟示例套件（重名自动加序号不覆盖），成功后刷新列表并选中新文件；
+        /// 失败把原因写进状态栏。
+        /// </summary>
+        private void CreateMinimalGoalSuite()
+        {
+            if (!FirstRunSuiteCatalog.TryCreateGoalSuite("scene", null, out var assetPath, out var error))
+            {
+                UpdateStatus("创建最小配置失败：" + (string.IsNullOrEmpty(error) ? "未知原因" : error));
+                return;
+            }
+
+            RefreshSuiteList();
+            var fullPath = AxuTestReportPaths.ToFullPath(assetPath);
+            var entry = _suiteEntries.FirstOrDefault(e =>
+                string.Equals(e.Path, fullPath, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrEmpty(entry.Path))
+                SelectSuite(entry); // 复用既有选中逻辑（回填高亮与运行按钮可用性）
+
+            UpdateStatus($"已创建 {assetPath}，点「▶ 运行选中的套件」开始。");
         }
 
         /// <summary>
@@ -423,7 +468,8 @@ namespace AxuTestFramework.Editor
             if (status.IsRunning)
             {
                 var stale = status.IsStale(DateTime.UtcNow);
-                var text = $"运行中：第 {status.CompletedCount}/{status.TotalCount} 个场景 · suite {status.SuiteId}";
+                var suiteName = ScenarioRunStatusPresenter.ScopePrefix(status.SuiteId) + status.SuiteId;
+                var text = $"运行中：第 {status.CompletedCount}/{status.TotalCount} 个场景 · suite {suiteName}";
                 if (stale)
                     text += $"（心跳已停止超过 {AxuScenarioRunStatus.StaleMinutes} 分钟，运行可能已中断）";
                 ShowScenarioProgress(text, status.CompletedCount, Mathf.Max(1, status.TotalCount),
@@ -448,7 +494,8 @@ namespace AxuTestFramework.Editor
             _lastRunningCompletedCount = -1; // 下一轮运行重新按进度刷新总览
 
             ShowScenarioProgress(
-                $"运行结束（{ScenarioRunStatusPresenter.Label(status)}）· suite {status.SuiteId}" +
+                $"运行结束（{ScenarioRunStatusPresenter.Label(status)}）· suite " +
+                ScenarioRunStatusPresenter.ScopePrefix(status.SuiteId) + status.SuiteId +
                 (string.IsNullOrEmpty(status.ReportPath) ? "" : $"（报告 {Path.GetFileName(status.ReportPath)}）"),
                 status.CompletedCount, Mathf.Max(1, status.TotalCount),
                 ScenarioRunStatusPresenter.ToneClass(status));
@@ -486,7 +533,9 @@ namespace AxuTestFramework.Editor
                 var note = new Label(BuildUnfinishedNote(status));
                 note.AddToClassList("ax-empty-note");
                 _scenarioResultsScroll.Add(note);
-                _scenarioSummaryLabel.text = $"suite: {status.SuiteId} · {ScenarioRunStatusPresenter.Label(status)}";
+                _scenarioSummaryLabel.text =
+                    $"suite: {ScenarioRunStatusPresenter.ScopePrefix(status.SuiteId) + status.SuiteId}" +
+                    $" · {ScenarioRunStatusPresenter.Label(status)}";
                 UpdateStatus($"本次运行未完成：{ScenarioRunStatusPresenter.Label(status)}");
             }
 
@@ -570,7 +619,7 @@ namespace AxuTestFramework.Editor
             }
 
             _scenarioSummaryLabel.text =
-                $"suite: {report.SuiteId} · exitCode {(int)report.ExitCode} · " +
+                $"suite: {ScenarioRunStatusPresenter.ScopePrefix(report.SuiteId) + report.SuiteId} · exitCode {(int)report.ExitCode} · " +
                 (report.Summary != null
                     ? $"total {report.Summary.Total} · pass {report.Summary.Passed} · warn {report.Summary.Warned} · fail {report.Summary.Failed}"
                     : "（无汇总）") +

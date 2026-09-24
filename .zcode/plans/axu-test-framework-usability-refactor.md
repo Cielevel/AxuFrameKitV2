@@ -2,7 +2,7 @@
 
 > 面向实施 Agent 的任务说明与验收清单。目标读者包括不了解 AxuTestFramework 内部架构的 Unity 开发者。
 >
-> 状态：阶段 1 补修与最终验收已于 2026-09-24 完成，证据见 `.zcode/reports/2026-09-23-axu-test-framework-phase1-report.md` §6；阶段 2 尚未开始。2026-09-23 基于代码静态评审制定。
+> 状态：阶段 1 补修与最终验收已于 2026-09-24 完成，证据见 `.zcode/reports/2026-09-23-axu-test-framework-phase1-report.md` §6；阶段 2（首次使用路径）已于 2026-09-24 实施并验收，证据见 `.zcode/reports/2026-09-24-axu-test-framework-phase2-report.md`；阶段 3、4 尚未开始。2026-09-23 基于代码静态评审制定。
 
 ## 目标
 

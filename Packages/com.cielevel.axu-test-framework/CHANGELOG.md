@@ -4,6 +4,36 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-24
+
+- **可用性改造 阶段 2：首次使用引导（2026-09-24）**。让第一次打开看板的人不需要读文档就能跑通第一次测试：
+  看板总览页新增**「开始使用」卡**（默认页首屏第一元素）——一键**工具链自检**（内置示例套件
+  `axu-selfcheck-echo`：单 echo 内联 scenario，仅延时+日志，无预算无基线，首次使用时临时生成于
+  `Temp/axu_selfcheck_echo.suite.json`，不动 Assets）+ **readiness 就绪预检横幅**（Play 中 / define 未开 /
+  运行在途 / 构建场景清单为空时说明原因并给一键修复：启用 AXU_TEST_AGENT / 退出 Play / 等待在途运行结束 /
+  Build Profiles 指引 / 重新准备自检；编译期间追加提示并禁用发起按钮）+ **按目标运行**四个入口
+  （代码单元测试 = 模式二选后直达单元测试页 / 场景冒烟 = 自动准备 smoke 示例并运行，可另存为可编辑套件 /
+  性能采样 = perf 示例，跑两次以上可看趋势 / 示例自检 = 卡顶大按钮）+ 自检结论行（发起后按 runId 回显一次，
+  域重载后按"最近终态属于自检套件"兜底）。**示例自检通过只验证测试工具链可用，不代表项目功能或全部测试通过。**
+- 看板总览接线：`BuildOverviewPage` 首位插入「开始使用」卡；总览"最近一次运行"的套件展示名接
+  `ScenarioRunStatusPresenter.ScopePrefix(suiteId)` 前缀（示例自检的运行显示"（示例自检）"，
+  不与普通套件结论混淆）；原快捷操作卡降级为次要样式（"运行场景套件"改 `ax-secondary-button`，
+  主导入口让位给「开始使用」卡，保留跳 Scenario 页能力）。
+- Scenario 页空态改造：列表为空时从纯教程文字改为两条可操作出路——**「先用示例套件试一次」**
+  （调 `RunSelfCheck()` 跑内置自检示例，无需任何 JSON）与**「创建最小配置」**
+  （`FirstRunSuiteCatalog.TryCreateGoalSuite("scene")` 在工程示例目录落一份可编辑的场景冒烟套件，
+  重名自动加序号不覆盖，成功后刷新列表并选中新文件）。运行按钮的在途判定与总览/首用卡同口径
+  （`isPlaying || ScenarioRunRecord != null || ScenarioRunService.IsScenarioRunInFlight() ||
+  AxuTestRunService.IsAxuRunInFlight()`）；运行中标题/摘要同样接 ScopePrefix。
+- 新增 API（阶段 2 Task A 逻辑层）：`RunReadinessCheck`（`Evaluate` 纯函数 + `GatherInput`）、
+  `RunReadiness`/`RunReadinessIssue`/`RunReadinessInput`/`ReadinessFixKind`、`FirstRunGoal`、
+  `FirstRunSuiteCatalog`（自检套件 JSON 供给与 goal 套件落盘）、`FirstRunPresenter`（文案纯函数）、
+  `ScenarioRunStatusPresenter.ScopePrefix(suiteId)`、`AgentDefineMenu.Enable()`（幂等开启 define）。
+  新增单测 32 例（`RunReadinessCheckTests` 11 / `FirstRunSuiteCatalogTests` 8 / `FirstRunPresenterTests` 13）。
+- 版本 0.4.0 → **0.5.0**（语义化版本：新增面向用户的功能面——看板引导卡、Scenario 空态入口、
+  自检/目标示例套件与两个新 API；不改变报告 schema 与既有命令参数）。README「看板窗口」新增
+  「首次使用与工具链自检」小节，「场景测试接入一页纸」开头补零配置路径。
+
 ## [0.4.0] - 2026-09-23
 
 - **可用性改造 阶段 1：运行闭环与可信状态（2026-09-23）**。让用户发起一次运行后必定得到明确终态，

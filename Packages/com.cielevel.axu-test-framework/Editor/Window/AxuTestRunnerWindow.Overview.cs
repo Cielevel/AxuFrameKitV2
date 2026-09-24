@@ -14,9 +14,11 @@ namespace AxuTestFramework.Editor
 {
     /// <summary>
     /// <see cref="AxuTestRunnerWindow"/> 的总览页（默认页，2026-09-02 面板可读化改造新增）。
-    /// <para>面向"不看技术细节的使用者"：一屏给出 ①最近一次场景套件运行的大结果徽章
-    /// （通过/警告/失败/已中断/运行失败/正在运行/尚无记录 + 中文摘要）②最近 8 次运行的趋势速览（彩色圆点序列）
-    /// ③三个大按钮（运行场景套件 / 查看趋势 / 刷新）。</para>
+    /// <para>面向"不看技术细节的使用者"：一屏给出 ⓪「开始使用」卡（首次运行引导 + 一键工具链自检，
+    /// 见 <see cref="AxuTestRunnerWindow.BuildFirstRunCard"/>，页面首元素）①最近一次场景套件运行的大结果徽章
+    /// （通过/警告/失败/已中断/运行失败/正在运行/尚无记录 + 中文摘要；示例自检的运行带"（示例自检）"前缀，
+    /// 见 <see cref="ScenarioRunStatusPresenter.ScopePrefix"/>）②最近 8 次运行的趋势速览（彩色圆点序列）
+    /// ③快捷操作（次要样式：运行场景套件 / 查看趋势 / 刷新——主导入口在「开始使用」卡）。</para>
     /// <para>状态来源：运行状态文件（Temp/axu_scenario_status.json）——它由每次运行的发起方清空重建、
     /// 由 Agent 写出终态，因此"最近一次运行"始终可辨（被中断的运行显示"已中断"而不是沿用更早报告的结果）；
     /// 没有状态文件时才回退到报告目录里最新的一份报告（历史数据，会在文案里标明）。
@@ -51,6 +53,10 @@ namespace AxuTestFramework.Editor
             layout.style.overflow = Overflow.Hidden;
             layout.style.flexDirection = FlexDirection.Column;
             _overviewPage.Add(layout);
+
+            // 卡 0：开始使用（首次运行引导，阶段 2 Task C 接线——默认页首屏第一元素；
+            // 卡内自挂 800ms 轮询，无需 Overview 刷新路径额外调用）
+            layout.Add(BuildFirstRunCard());
 
             // 卡 1：最近一次运行的大结果
             var runCard = new VisualElement { name = "ax-overview-run-card" };
@@ -103,27 +109,27 @@ namespace AxuTestFramework.Editor
             trendCard.Add(_overviewTrendScroll);
             layout.Add(trendCard);
 
-            // 卡 3：快捷操作
+            // 卡 3：快捷操作（次要：主导入口已让位给首屏「开始使用」卡，本卡仅保留轻量跳转）
             var quickCard = new VisualElement { name = "ax-overview-quick-card" };
             quickCard.AddToClassList("ax-overview-card");
             var quickRow = new VisualElement { name = "ax-overview-quick-row" };
             quickRow.style.flexDirection = FlexDirection.Row;
 
             var runSuiteButton = new Button(GoToScenarioPage) { text = "▶  运行场景套件" };
-            runSuiteButton.AddToClassList("ax-big-button");
-            runSuiteButton.tooltip = "跳转到「场景套件」页，选择套件并运行";
+            runSuiteButton.AddToClassList("ax-secondary-button");
+            runSuiteButton.tooltip = "跳转到「场景套件」页，选择套件并运行（首次使用建议用上方「开始使用」卡）";
             var viewTrendButton = new Button(GoToTrendPage) { text = "查看趋势" };
-            viewTrendButton.AddToClassList("ax-big-button");
+            viewTrendButton.AddToClassList("ax-secondary-button");
             viewTrendButton.tooltip = "跳转到「趋势」页，查看各指标历次序列与环比";
             var refreshButton = new Button(RefreshOverview) { text = "刷新" };
-            refreshButton.AddToClassList("ax-big-button");
+            refreshButton.AddToClassList("ax-secondary-button");
             refreshButton.tooltip = "重新读取最近报告与趋势";
             quickRow.Add(runSuiteButton);
             quickRow.Add(viewTrendButton);
             quickRow.Add(refreshButton);
             quickCard.Add(quickRow);
 
-            var quickHint = new Label("一句话流程：第一步选套件 → 第二步运行 → 跑完回来这里看结果与趋势。");
+            var quickHint = new Label("一句话流程：首次使用先点上方「开始使用」卡；日常使用 = 选套件 → 运行 → 回来看结果与趋势。");
             quickHint.AddToClassList("ax-overview-note");
             quickCard.Add(quickHint);
 
@@ -196,7 +202,8 @@ namespace AxuTestFramework.Editor
             {
                 SetBadge(ScenarioRunStatusPresenter.BadgeClass(status), ScenarioRunStatusPresenter.Label(status));
                 _overviewLastRunLabel.text = DescribeRunScope(status);
-                _overviewDetailLabel.text = ScenarioRunStatusPresenter.DetailText(status, status.SuiteId);
+                _overviewDetailLabel.text = ScenarioRunStatusPresenter.DetailText(
+                    status, ScenarioRunStatusPresenter.ScopePrefix(status.SuiteId) + status.SuiteId);
 
                 // 详情按钮只在本次运行有报告时可用（中断/失败没有本次报告——不给"查看上一次报告"的错觉）
                 _overviewReportPath = !string.IsNullOrEmpty(status.ReportPath) && File.Exists(status.ReportPath)
@@ -222,11 +229,13 @@ namespace AxuTestFramework.Editor
             var warned = summary?.Warned ?? 0;
             var failed = summary?.Failed ?? 0;
             var elapsed = FormatElapsed(report.StartedAt, report.EndedAt);
+            // 历史报告的套件展示名同样接范围前缀（示例自检的运行不显示成普通套件结论）
+            var suiteName = ScenarioRunStatusPresenter.ScopePrefix(report.SuiteId) + report.SuiteId;
 
             if (report.Truncated == true)
             {
                 SetBadge("ax-badge-warn", "⚠  运行中 / 中断");
-                _overviewLastRunLabel.text = $"套件 {report.SuiteId} · {FormatLocalTime(report.StartedAt)}";
+                _overviewLastRunLabel.text = $"套件 {suiteName} · {FormatLocalTime(report.StartedAt)}";
                 _overviewDetailLabel.text = "这是一份部分报告（运行未正常结束，数据以前段为准）。";
                 return;
             }
@@ -244,23 +253,24 @@ namespace AxuTestFramework.Editor
                     break;
             }
 
-            _overviewLastRunLabel.text = $"套件 {report.SuiteId} · 运行于 {FormatLocalTime(report.StartedAt)}（历史报告）";
+            _overviewLastRunLabel.text = $"套件 {suiteName} · 运行于 {FormatLocalTime(report.StartedAt)}（历史报告）";
             _overviewDetailLabel.text = $"{total} 项 · {passed} 通过 · {warned} 警告 · {failed} 失败" +
                                         (elapsed != null ? $" · 用时 {elapsed}" : "") +
                                         (report.ExitCode != ScenarioExitCode.Success ? $" · 退出码 {(int)report.ExitCode}" : "");
             _overviewOpenReportButton.SetEnabled(true);
         }
 
-        /// <summary>最近一次运行的标题行：套件 + 时间 + 运行中标注。</summary>
+        /// <summary>最近一次运行的标题行：套件（带范围前缀）+ 时间 + 运行中标注。</summary>
         private static string DescribeRunScope(AxuScenarioRunStatus status)
         {
             var when = status.EndedAtUtc ?? status.StartedAtUtc;
             var time = string.IsNullOrEmpty(when)
                 ? "-"
                 : FormatLocalTime(when);
+            var suiteName = ScenarioRunStatusPresenter.ScopePrefix(status.SuiteId) + status.SuiteId;
             return status.IsRunning
-                ? $"套件 {status.SuiteId} · 正在运行（第 {status.CompletedCount}/{status.TotalCount} 个场景）"
-                : $"套件 {status.SuiteId} · 运行于 {time}";
+                ? $"套件 {suiteName} · 正在运行（第 {status.CompletedCount}/{status.TotalCount} 个场景）"
+                : $"套件 {suiteName} · 运行于 {time}";
         }
 
         private void SetBadge(string colorClass, string text)

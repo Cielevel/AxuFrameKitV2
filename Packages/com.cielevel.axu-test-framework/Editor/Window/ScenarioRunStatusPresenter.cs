@@ -159,6 +159,17 @@ namespace AxuTestFramework.Editor
             }
         }
 
+        /// <summary>
+        /// 运行范围前缀（总览/引导区标注用）：自检套件（<see cref="FirstRunSuiteCatalog.SelfCheckSuiteId"/>）
+        /// 返回"（示例自检）"，提醒这是内置示例的结果而非项目测试结论；其他 suite（含 null/空）返回空串。
+        /// </summary>
+        public static string ScopePrefix(string suiteId)
+        {
+            return string.Equals(suiteId, FirstRunSuiteCatalog.SelfCheckSuiteId, StringComparison.Ordinal)
+                ? "（示例自检）"
+                : string.Empty;
+        }
+
         static string FormatLocalTime(string utcIso)
         {
             if (string.IsNullOrEmpty(utcIso))
