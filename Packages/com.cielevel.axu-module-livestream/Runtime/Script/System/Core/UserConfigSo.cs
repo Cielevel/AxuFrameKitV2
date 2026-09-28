@@ -23,6 +23,9 @@ namespace AxuFrameKit.Modules.LiveStream
         [SerializeField]
         private List<UserDataUnit> _userDataUnitList;
 
+        // 供运行时控制台面板读取用户列表（只读视图，外部不应改动配置数据）
+        public IReadOnlyList<UserDataUnit> Users => _userDataUnitList;
+
         [ContextMenu("生成用户数据")]
         private void GenerateUserData()
         {

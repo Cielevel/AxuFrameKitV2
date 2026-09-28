@@ -1,8 +1,8 @@
 {
   "name": "com.cielevel.axu-module-livestream",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "AxuFrameKit Modules - LiveStream",
-  "description": "Live-stream interactive simulation (comment/gift/like triggers, UI panels, simulator & recorder windows). Optional module of AxuFrameKit family; depends on AxuFrameKit.",
+  "description": "Live-stream interactive simulation (comment/gift/like triggers, UI panels, in-game console prefab, simulator & recorder windows). Optional module of AxuFrameKit family; depends on AxuFrameKit.",
   "author": {
     "name": "Cielevel",
     "url": "https://github.com/Cielevel"

@@ -12,6 +12,9 @@ namespace AxuFrameKit.Modules.LiveStream
     {
         [SerializeField] private List<GiftDataUnit> _giftDataUnitList;
 
+        // 供运行时控制台面板读取礼物列表（只读视图，外部不应改动配置数据）
+        public IReadOnlyList<GiftDataUnit> Gifts => _giftDataUnitList;
+
         private void OnValidate()
         {
             int index = 0;

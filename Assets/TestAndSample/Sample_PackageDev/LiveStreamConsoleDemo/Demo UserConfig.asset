@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87cb1d9d5fd06479e8b3386160afecf1, type: 3}
+  m_Name: Demo UserConfig
+  m_EditorClassIdentifier: 
+  _generateCount: 0
+  _userIdLength: 0
+  _userNicknameLength: {x: 0, y: 0}
+  _userDataUnitList:
+  - elementName: "(0)\u5C0F\u963F\u4FEE(100001)"
+    <Avatar>k__BackingField: {fileID: 0}
+    <AvatarUrl>k__BackingField: 
+    <Nickname>k__BackingField: "\u5C0F\u963F\u4FEE"
+    <UserId>k__BackingField: 100001
+  - elementName: "(1)\u661F\u661F\u4F34\u6708(100002)"
+    <Avatar>k__BackingField: {fileID: 0}
+    <AvatarUrl>k__BackingField: 
+    <Nickname>k__BackingField: "\u661F\u661F\u4F34\u6708"
+    <UserId>k__BackingField: 100002
+  - elementName: "(2)\u8DEF\u8FC7\u7684 agent(100003)"
+    <Avatar>k__BackingField: {fileID: 0}
+    <AvatarUrl>k__BackingField: 
+    <Nickname>k__BackingField: "\u8DEF\u8FC7\u7684 agent"
+    <UserId>k__BackingField: 100003
