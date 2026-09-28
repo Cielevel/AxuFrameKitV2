@@ -60,6 +60,7 @@ namespace AxuTestFramework.Editor
         /// <summary>本域最近一次成功加载的报告路径（供 reveal 与 axu_test_report latest 兜底对照）。</summary>
         private string _loadedReportPath;
         private AxuTestReport _report;
+        private bool _reportIsHistorical;
 
         /// <summary>左侧树当前数据（用于窗口重开时保留过滤输入等状态）。</summary>
         private List<ITestAdaptor> _cachedAssemblyRoots = new List<ITestAdaptor>();
@@ -101,6 +102,7 @@ namespace AxuTestFramework.Editor
 
             _ = RefreshTestsAsync();
             TryLoadLatestReport();
+            _testsPage.schedule.Execute(RefreshTestRunState).Every(800);
             RefreshSuiteList();
         }
 
@@ -186,7 +188,7 @@ namespace AxuTestFramework.Editor
             resultsPane.AddToClassList("ax-pane");
             resultsPane.AddToClassList("ax-pane-last");
             resultsPane.style.minWidth = 260f;
-            var resultsHeader = new Label("最近报告结果");
+            var resultsHeader = new Label("单元测试结果（仅覆盖下方显示的运行范围）");
             resultsHeader.AddToClassList("ax-pane-header");
             _summaryLabel = new Label("（尚无结果——先 Run 一次）");
             _summaryLabel.AddToClassList("ax-summary");
@@ -478,6 +480,7 @@ namespace AxuTestFramework.Editor
                 return;
 
             _running = true;
+            ClearTestReport("单元测试正在运行；本次结果尚未生成。");
             _runAllButton.SetEnabled(false);
             UpdateSelectionUi();
             UpdateStatus(runSelectedOnly
@@ -523,7 +526,6 @@ namespace AxuTestFramework.Editor
                 _running = false;
                 _runAllButton.SetEnabled(true);
                 UpdateSelectionUi();
-                TryLoadLatestReport();
             }
         }
 
@@ -559,6 +561,10 @@ namespace AxuTestFramework.Editor
 
             if (outcome.Status == "completed")
             {
+                if (!string.IsNullOrEmpty(outcome.ReportPath))
+                    LoadReport(outcome.ReportPath);
+                else
+                    ClearTestReport("本次单元测试已结束，但没有生成报告；请查看状态栏与 Console。");
                 var summary = outcome.Summary;
                 if (summary != null)
                 {
@@ -608,45 +614,86 @@ namespace AxuTestFramework.Editor
 
         // ------------------------------------------------------------------ 右侧：报告结果
 
-        /// <summary>加载最近可用的报告（优先本域 LastReportPath，其次报告目录里最新文件）。</summary>
+        /// <summary>窗口重建时优先认状态文件中的本次报告；只有无状态文件才展示标注过的历史报告。</summary>
         private void TryLoadLatestReport()
         {
+            var status = AxuTestRunStatus.TryRead();
+            if (status != null)
+            {
+                if (status.IsRunning)
+                    ClearTestReport("单元测试正在运行；本次结果尚未生成。");
+                else if (!string.IsNullOrEmpty(status.ReportPath))
+                    LoadReport(status.ReportPath);
+                else
+                    ClearTestReport("最近一次单元测试没有可用报告；请查看运行状态与 Console。");
+                return;
+            }
+
             string path = null;
-
-            if (AxuTestReportWriter.LastReportPath != null && File.Exists(AxuTestReportWriter.LastReportPath))
+            var directory = AxuTestReportPaths.ToFullPath(AxuTestReportPaths.ReportsDirectory);
+            if (Directory.Exists(directory))
             {
-                path = AxuTestReportWriter.LastReportPath;
+                var newest = new DirectoryInfo(directory)
+                    .EnumerateFiles("*.json")
+                    .OrderByDescending(f => f.LastWriteTimeUtc)
+                    .FirstOrDefault();
+                path = newest?.FullName;
             }
+            if (path != null)
+                LoadReport(path, true);
             else
-            {
-                var directory = AxuTestReportPaths.ToFullPath(AxuTestReportPaths.ReportsDirectory);
-                if (Directory.Exists(directory))
-                {
-                    var newest = new DirectoryInfo(directory)
-                        .EnumerateFiles("*.json")
-                        .OrderByDescending(f => f.LastWriteTimeUtc)
-                        .FirstOrDefault();
-                    path = newest?.FullName;
-                }
-            }
+                ClearTestReport("单元测试：尚无运行记录。");
+        }
 
-            LoadReport(path);
+        private void RefreshTestRunState()
+        {
+            if (_running || _testsPage == null) return;
+            var status = AxuTestRunStatus.TryRead();
+            if (status == null) return;
+            if (status.IsRunning)
+            {
+                if (_report != null) ClearTestReport("单元测试正在运行；本次结果尚未生成。");
+                return;
+            }
+            if (!string.IsNullOrEmpty(status.ReportPath) &&
+                !string.Equals(_loadedReportPath, status.ReportPath, StringComparison.OrdinalIgnoreCase))
+                LoadReport(status.ReportPath);
+            else if (string.IsNullOrEmpty(status.ReportPath) && _report != null)
+                ClearTestReport("最近一次单元测试没有可用报告；请查看运行状态与 Console。");
+        }
+
+        private void ClearTestReport(string message)
+        {
+            _report = null;
+            _loadedReportPath = null;
+            _reportIsHistorical = false;
+            _reportPathButton.text = "（本次无报告）";
+            _reportPathButton.SetEnabled(false);
+            _summaryLabel.text = message;
+            _resultsScroll.Clear();
         }
 
         /// <summary>读报告 JSON 并渲染结果树；读不到时保留现状提示。</summary>
-        private void LoadReport(string path)
+        private void LoadReport(string path, bool historical = false)
         {
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            {
+                ClearTestReport("本次单元测试的报告文件不可读；请查看运行状态与 Console。");
                 return;
+            }
 
             try
             {
                 _report = JsonConvert.DeserializeObject<AxuTestReport>(File.ReadAllText(path));
+                if (_report == null || _report.Schema != AxuTestReport.SchemaId)
+                    throw new InvalidDataException("报告 schema 不匹配");
                 _loadedReportPath = path;
+                _reportIsHistorical = historical;
             }
             catch (Exception ex)
             {
                 UpdateStatus("报告解析失败: " + ex.Message);
+                ClearTestReport("单元测试报告解析失败；请查看 Console。");
                 return;
             }
 
@@ -661,15 +708,9 @@ namespace AxuTestFramework.Editor
         {
             _resultsScroll.Clear();
 
-            if (_report?.Summary != null)
-            {
-                _summaryLabel.text =
-                    $"[{_report.Mode}] {_report.Summary.Passed}/{_report.Summary.Total} 通过 · " +
-                    $"{_report.Summary.Failed} 失败 · {_report.Summary.Skipped} 跳过 · " +
-                    $"console 错误 {_report.Console?.ErrorCount ?? 0} 条";
-            }
+            _summaryLabel.text = UtfResultPresenter.Summary(_report, _reportIsHistorical);
 
-            var results = _report?.Results;
+            var results = _report?.Results?.Where(result => result != null).ToList();
             if (results == null || results.Count == 0)
             {
                 var empty = new Label("（报告无用例明细）");
@@ -695,30 +736,39 @@ namespace AxuTestFramework.Editor
         {
             var failed = IsFailed(result);
             var skipped = result.Status != null && result.Status.StartsWith("Skipped", StringComparison.OrdinalIgnoreCase);
-            var header = $"{(failed ? "FAIL" : skipped ? "SKIP" : "PASS")}  {result.FullName}  ({result.DurationMs:0.#} ms)";
+            var header = $"{(failed ? "未通过" : skipped ? "已跳过" : "通过")}  {result.FullName}  ({result.DurationMs:0.#} ms)";
 
             var row = new Foldout { text = header, value = failed };
             row.AddToClassList("ax-result-row");
             row.AddToClassList(failed ? "ax-row-fail" : skipped ? "ax-row-skip" : "ax-row-pass");
 
+            var issue = UtfResultPresenter.IssueText(result);
+            if (!string.IsNullOrEmpty(issue))
+            {
+                var issueLabel = new Label(issue + "\n建议：" + UtfResultPresenter.Advice(result));
+                issueLabel.AddToClassList("ax-scenario-conclusion");
+                row.Add(issueLabel);
+            }
+            var technical = new Foldout { text = "技术详情：原始消息与堆栈", value = false };
             if (!string.IsNullOrEmpty(result.Message))
             {
                 var messageLabel = new Label(result.Message) { name = "ax-result-message" };
                 messageLabel.AddToClassList("ax-result-detail");
-                row.Add(messageLabel);
+                technical.Add(messageLabel);
             }
             if (!string.IsNullOrEmpty(result.StackTrace))
             {
                 var stackLabel = new Label(result.StackTrace) { name = "ax-result-stack" };
                 stackLabel.AddToClassList("ax-result-detail");
-                row.Add(stackLabel);
+                technical.Add(stackLabel);
             }
             if (result.Categories != null && result.Categories.Count > 0)
             {
                 var categoriesLabel = new Label("Categories: " + string.Join(", ", result.Categories));
                 categoriesLabel.AddToClassList("ax-result-detail");
-                row.Add(categoriesLabel);
+                technical.Add(categoriesLabel);
             }
+            row.Add(technical);
             return row;
         }
 
@@ -726,8 +776,8 @@ namespace AxuTestFramework.Editor
         /// 都按未通过着色，防止 Error 之类的非绿色行被归入通过。</summary>
         private static bool IsFailed(ReportResult result)
         {
-            if (result.Status == null)
-                return false;
+            if (string.IsNullOrWhiteSpace(result?.Status))
+                return true;
             if (result.Status.StartsWith("Passed", StringComparison.OrdinalIgnoreCase))
                 return false;
             if (result.Status.StartsWith("Skipped", StringComparison.OrdinalIgnoreCase))

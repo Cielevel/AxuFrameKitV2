@@ -51,12 +51,14 @@ namespace AxuTestFramework.Editor
                     ReadinessFixKind.WaitUntilIdle));
             }
 
-            if (source.ScenarioRunInFlight)
+            if (source.ScenarioRunInFlight || source.ScenarioRecordPresent)
             {
                 readiness.Issues.Add(RunReadinessIssue.Blocking(
                     "scenario_run_in_flight",
-                    "已有一个场景套件正在运行（Play Mode 进行中），同一时间只能进行一个测试运行。",
-                    "等待当前运行结束（结束后会自动退出 Play Mode）再发起；确认卡住时可停止 Play 后重试。",
+                    source.ScenarioRunInFlight
+                        ? "已有一个场景套件正在运行（Play Mode 进行中），同一时间只能进行一个测试运行。"
+                        : "上次场景运行记录尚未收尾，暂时不能发起新运行。",
+                    "等待当前运行结束；若已停止却仍显示运行记录，请检查 axu_doctor 与 Console。",
                     ReadinessFixKind.WaitUntilIdle));
             }
 
@@ -95,6 +97,7 @@ namespace AxuTestFramework.Editor
                 HasAgentDefine = AgentDefineMenu.HasAgentDefine(),
                 UtfRunInFlight = AxuTestRunService.IsAxuRunInFlight(),
                 ScenarioRunInFlight = ScenarioRunService.IsScenarioRunInFlight(),
+                ScenarioRecordPresent = ScenarioRunRecord.TryRead() != null,
                 BuildSettingsHasScenes = SceneManager.sceneCountInBuildSettings > 0,
             };
         }

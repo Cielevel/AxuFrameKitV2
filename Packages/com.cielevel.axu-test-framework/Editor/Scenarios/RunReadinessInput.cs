@@ -21,6 +21,9 @@ namespace AxuTestFramework.Editor
         /// <summary>是否有场景套件运行在途。</summary>
         public bool ScenarioRunInFlight;
 
+        /// <summary>运行记录尚未清理（与 Scenario 页按钮同口径，即使心跳已陈旧也不误示可运行）。</summary>
+        public bool ScenarioRecordPresent;
+
         /// <summary>构建场景清单是否含至少一个已启用场景（smoke 的 buildSettings 来源的可跑前提）。</summary>
         public bool BuildSettingsHasScenes;
     }

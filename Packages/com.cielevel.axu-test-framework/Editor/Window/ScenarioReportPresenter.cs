@@ -91,6 +91,114 @@ namespace AxuTestFramework.Editor
             }
         }
 
+        /// <summary>给一条问题提供可执行的检查方向；未知代码保留原始信息供技术详情查看。</summary>
+        public static string FindingAdvice(Finding finding)
+        {
+            var code = (finding?.Code ?? string.Empty).Trim().ToUpperInvariant();
+            if (code.StartsWith("BUDGET_", StringComparison.Ordinal))
+                return "检查指标实际值、预算门槛和采集器配置。";
+            if (code.StartsWith("BASELINE_", StringComparison.Ordinal))
+                return "检查本次与基线的运行环境及指标变化。";
+            if (code.StartsWith("SOAK_", StringComparison.Ordinal))
+                return "查看采样曲线与中间报告，确认是否持续劣化。";
+            if (code.StartsWith("SMOKE_", StringComparison.Ordinal) || code.Contains("SCENE") || code == "LOAD_FAILED")
+                return "检查场景清单、构建配置和加载时的 Console 错误。";
+            if (code == "RUNTIME_TIMEOUT")
+                return "检查耗时操作与 timeoutSec 设置。";
+            if (code == "RUNTIME_EXCEPTION")
+                return "展开技术详情查看原始异常，再定位抛出位置。";
+            if (code == "CAPABILITY_MISSING")
+                return "检查能力注册、程序集引用和 suite 中的 capability 名称。";
+            return "展开技术详情查看原始消息、指标和日志。";
+        }
+
+        /// <summary>优先选错误，再选警告；不依赖 findings 的原始列表顺序。</summary>
+        public static Finding PrimaryIssue(ScenarioReportResult result)
+        {
+            if (result?.Findings == null)
+                return null;
+            Finding warning = null;
+            foreach (var finding in result.Findings)
+            {
+                if (finding == null) continue;
+                if (finding.Severity == FindingSeverity.Error) return finding;
+                if (warning == null && finding.Severity == FindingSeverity.Warning) warning = finding;
+            }
+            return warning;
+        }
+
+        /// <summary>首屏下一步：只消费本轮状态对应的报告；无报告时不猜历史结果。</summary>
+        public static string NextStep(AxuScenarioRunStatus status, ScenarioReport report)
+        {
+            if (status == null)
+                return report == null ? "下一步：运行一个场景套件；单元测试结果请到「单元测试」页查看。"
+                    : "这是历史场景报告。下一步：运行套件以取得本次结论。";
+            if (status.IsRunning)
+                return status.IsStale(DateTime.UtcNow)
+                    ? "下一步：检查 Editor 与 Agent 状态；这次运行已超过心跳时限。"
+                    : "下一步：等待运行结束；结果会自动回显。";
+            if (!status.IsCompleted)
+                return "下一步：" + ScenarioRunStatusPresenter.ReasonText(status) + " 修复后重新运行。";
+            if (report == null)
+                return "本次运行已结束，但报告不可读；检查报告路径、磁盘权限及 Console。";
+            if (IsFailure(status, report))
+            {
+                if (ScenarioRunStatusPresenter.IsWarnAsFailVerdict(status) && report.Results != null)
+                {
+                    foreach (var result in report.Results)
+                    {
+                        if (result == null || result.Status != "warn") continue;
+                        var warning = PrimaryIssue(result);
+                        if (warning != null)
+                            return $"警告按失败处理。优先查看 {result.ScenarioId}：{TranslateFinding(warning)}。{FindingAdvice(warning)}";
+                    }
+                    return "警告按失败处理；展开报告检查警告场景与 warnAsFail 设置。";
+                }
+                if (report?.Results != null)
+                {
+                    foreach (var result in report.Results)
+                    {
+                        if (result == null || (result.Status != "fail" && result.Status != "error")) continue;
+                        var issue = PrimaryIssue(result);
+                        if (issue != null)
+                            return $"优先处理 {result.ScenarioId}：{TranslateFinding(issue)}。{FindingAdvice(issue)}";
+                        return $"优先检查 {result.ScenarioId}：展开技术详情查看原始消息与运行日志。";
+                    }
+                }
+                return "下一步：打开本次报告，检查失败场景及原始错误。";
+            }
+            if (string.Equals(status.SuiteId, FirstRunSuiteCatalog.SelfCheckSuiteId, StringComparison.Ordinal))
+                return "本次仅验证测试工具链可用。下一步：运行代码单元测试或项目场景套件；这不是项目通过结论。";
+            if (status.Summary != null && status.Summary.Warned > 0)
+            {
+                if (report.Results != null)
+                {
+                    foreach (var result in report.Results)
+                    {
+                        if (result == null || result.Status != "warn") continue;
+                        var issue = PrimaryIssue(result);
+                        if (issue != null)
+                            return $"优先查看 {result.ScenarioId}：{TranslateFinding(issue)}。{FindingAdvice(issue)}";
+                    }
+                }
+                return "下一步：查看警告场景，确认是否需要调整预算或修复问题。";
+            }
+            if (report?.Results != null)
+            {
+                foreach (var result in report.Results)
+                    if (result != null && result.Unbudgeted)
+                        return "本次场景通过，但有项目未设预算；需要性能门槛时请补充预算。";
+            }
+            return "下一步：可查看场景详情或运行其他套件；此结论只覆盖本次场景测试。";
+        }
+
+        private static bool IsFailure(AxuScenarioRunStatus status, ScenarioReport report)
+        {
+            return ScenarioRunStatusPresenter.IsFailureVerdict(status) ||
+                   report?.ExitCode == ScenarioExitCode.Failures ||
+                   report?.ExitCode == ScenarioExitCode.InfrastructureError;
+        }
+
         /// <summary>
         /// 一句话结论：状态 + 预算/基线/错误/警告计数 + 首要问题（findings 人话翻译）。
         /// 全部通过且无任何 warning/fail 时输出"全部通过，无异常。"。
@@ -104,7 +212,7 @@ namespace AxuTestFramework.Editor
 
             var errors = 0;
             var warnings = 0;
-            Finding primary = null;
+            var primary = PrimaryIssue(result);
             if (result.Findings != null)
             {
                 foreach (var finding in result.Findings)
@@ -114,12 +222,10 @@ namespace AxuTestFramework.Editor
                     if (finding.Severity == FindingSeverity.Error)
                     {
                         errors++;
-                        if (primary == null) primary = finding;
                     }
                     else if (finding.Severity == FindingSeverity.Warning)
                     {
                         warnings++;
-                        if (primary == null) primary = finding;
                     }
                 }
             }
@@ -129,7 +235,7 @@ namespace AxuTestFramework.Editor
             var baselineFail = CountBaseline(result.BaselineDiff, "fail");
             var baselineWarn = CountBaseline(result.BaselineDiff, "warn");
 
-            if (status == "pass" && errors == 0 && warnings == 0 &&
+            if (status == "pass" && !result.Unbudgeted && errors == 0 && warnings == 0 &&
                 budgetFail == 0 && budgetWarn == 0 && baselineFail == 0 && baselineWarn == 0)
             {
                 return "结论：全部通过，无异常。";

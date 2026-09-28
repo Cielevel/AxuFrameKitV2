@@ -30,6 +30,7 @@ namespace AxuTestFramework.Editor
         private Label _overviewBadgeLabel;
         private Label _overviewDetailLabel;
         private Label _overviewLastRunLabel;
+        private Label _overviewNextStepLabel;
         private Button _overviewOpenReportButton;
         private ScrollView _overviewTrendScroll;
 
@@ -61,6 +62,9 @@ namespace AxuTestFramework.Editor
             // 卡 1：最近一次运行的大结果
             var runCard = new VisualElement { name = "ax-overview-run-card" };
             runCard.AddToClassList("ax-overview-card");
+            var runHeader = new Label("最近一次场景套件运行（不含单元测试）");
+            runHeader.AddToClassList("ax-pane-header");
+            runCard.Add(runHeader);
 
             var runRow = new VisualElement { name = "ax-overview-run-row" };
             runRow.style.flexDirection = FlexDirection.Row;
@@ -87,6 +91,9 @@ namespace AxuTestFramework.Editor
             runRow.Add(infoCol);
             runRow.Add(_overviewOpenReportButton);
             runCard.Add(runRow);
+            _overviewNextStepLabel = new Label("下一步：运行一个场景套件；单元测试结果请到「单元测试」页查看。");
+            _overviewNextStepLabel.AddToClassList("ax-overview-note");
+            runCard.Add(_overviewNextStepLabel);
             layout.Add(runCard);
 
             // 卡 2：趋势速览
@@ -146,10 +153,13 @@ namespace AxuTestFramework.Editor
                 return;
 
             _overviewRunStatus = AxuScenarioRunStatus.TryRead();
-            if (_overviewRunStatus == null || _overviewRunStatus.IsRunning)
+            _overviewReport = null;
+            _overviewReportPath = null;
+            if (_overviewRunStatus == null)
                 TryDiscoverLatestScenarioReport(out _overviewReport, out _overviewReportPath);
-            else
-                _overviewReport = null; // 有终态运行记录时不猜报告：徽章与详情以状态文件为准
+            else if (_overviewRunStatus.IsCompleted)
+                TryLoadScenarioReport(_overviewRunStatus.ReportPath, out _overviewReport, out _overviewReportPath);
+            // 有本次状态时只认状态文件指向的报告；运行中或中断时不回填历史报告。
 
             RenderOverviewBadge();
             RenderOverviewTrend();
@@ -198,17 +208,20 @@ namespace AxuTestFramework.Editor
         private void RenderOverviewBadge()
         {
             var status = _overviewRunStatus;
+            _overviewNextStepLabel.text = ScenarioReportPresenter.NextStep(status, _overviewReport);
             if (status != null)
             {
-                SetBadge(ScenarioRunStatusPresenter.BadgeClass(status), ScenarioRunStatusPresenter.Label(status));
+                var scopeLabel = status.SuiteId == FirstRunSuiteCatalog.SelfCheckSuiteId
+                    ? " · 示例自检" : " · 场景套件";
+                SetBadge(ScenarioRunStatusPresenter.BadgeClass(status),
+                    ScenarioRunStatusPresenter.Label(status) + scopeLabel);
                 _overviewLastRunLabel.text = DescribeRunScope(status);
                 _overviewDetailLabel.text = ScenarioRunStatusPresenter.DetailText(
-                    status, ScenarioRunStatusPresenter.ScopePrefix(status.SuiteId) + status.SuiteId);
+                    status, ScenarioRunStatusPresenter.ScopePrefix(status.SuiteId) + status.SuiteId) +
+                    (FormatElapsed(status.StartedAtUtc, status.EndedAtUtc) is string duration
+                        ? " · 用时 " + duration : string.Empty);
 
                 // 详情按钮只在本次运行有报告时可用（中断/失败没有本次报告——不给"查看上一次报告"的错觉）
-                _overviewReportPath = !string.IsNullOrEmpty(status.ReportPath) && File.Exists(status.ReportPath)
-                    ? status.ReportPath
-                    : null;
                 _overviewOpenReportButton.SetEnabled(status.IsCompleted && _overviewReportPath != null);
                 return;
             }
@@ -243,13 +256,13 @@ namespace AxuTestFramework.Editor
             switch (report.ExitCode)
             {
                 case ScenarioExitCode.Success when failed == 0:
-                    SetBadge("ax-badge-ok", "✓  全部通过");
+                    SetBadge("ax-badge-ok", "✓  本场景套件通过");
                     break;
                 case ScenarioExitCode.WarningsOnly when failed == 0:
-                    SetBadge("ax-badge-warn", "⚠  通过（有警告）");
+                    SetBadge("ax-badge-warn", "⚠  场景套件通过（有警告）");
                     break;
                 default:
-                    SetBadge("ax-badge-bad", "✗  有失败");
+                    SetBadge("ax-badge-bad", "✗  场景套件有失败");
                     break;
             }
 
@@ -400,6 +413,7 @@ namespace AxuTestFramework.Editor
                 return;
             }
 
+            _scenarioReportIsHistorical = _overviewRunStatus == null;
             RenderScenarioReport();
             SetPage("scenario");
         }

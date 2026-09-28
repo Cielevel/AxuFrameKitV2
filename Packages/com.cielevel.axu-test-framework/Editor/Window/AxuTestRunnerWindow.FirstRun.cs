@@ -29,6 +29,7 @@ namespace AxuTestFramework.Editor
         private VisualElement _firstRunBanner;
         private Label _firstRunBannerLabel;
         private VisualElement _firstRunBannerActions;
+        private string _firstRunBannerActionSignature;
         private VisualElement _firstRunGoalsContainer;
         private Label _firstRunOutcomeLabel;
 
@@ -160,6 +161,7 @@ namespace AxuTestFramework.Editor
 
             // 运行中判定与 Scenario 页同口径：Play 中，或任一运行在途（互斥闸）——此时禁止再发起
             var busy = EditorApplication.isPlaying
+                || input.ScenarioRecordPresent
                 || ScenarioRunService.IsScenarioRunInFlight()
                 || AxuTestRunService.IsAxuRunInFlight();
 
@@ -424,6 +426,7 @@ namespace AxuTestFramework.Editor
             if (string.IsNullOrEmpty(text))
             {
                 _firstRunBanner.style.display = DisplayStyle.None;
+                _firstRunBannerActionSignature = null;
                 return;
             }
 
@@ -437,6 +440,13 @@ namespace AxuTestFramework.Editor
             tint.a = 0.10f; // 对齐主题 token 的 warn-soft 弱底色
             _firstRunBanner.style.backgroundColor = tint;
 
+            var signature = (input.IsCompiling ? "compiling" : "idle") + ":" +
+                            string.Join("|", readiness.Issues == null
+                                ? new string[0]
+                                : readiness.Issues.ConvertAll(issue => issue?.Id + "/" + issue?.FixKind));
+            if (signature == _firstRunBannerActionSignature)
+                return;
+            _firstRunBannerActionSignature = signature;
             _firstRunBannerActions.Clear();
             if (readiness.Issues == null)
                 return;

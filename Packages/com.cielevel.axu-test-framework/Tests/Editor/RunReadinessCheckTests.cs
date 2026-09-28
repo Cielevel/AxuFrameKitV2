@@ -121,6 +121,20 @@ namespace AxuTestFramework.Tests.Editor
         }
 
         [Test]
+        public void Evaluate_场景运行记录未收尾_阻断首用入口()
+        {
+            var input = ReadyInput();
+            input.ScenarioRecordPresent = true;
+
+            var readiness = RunReadinessCheck.Evaluate(input, requireAgentDefine: true, requireBuildScenes: false);
+            var issue = Find(readiness, "scenario_run_in_flight");
+
+            Assert.That(readiness.IsReady, Is.False);
+            Assert.That(issue, Is.Not.Null);
+            Assert.That(issue.Message, Does.Contain("运行记录"));
+        }
+
+        [Test]
         public void Evaluate_编译中_仅非阻断提示IsReady仍为真()
         {
             var input = ReadyInput();

@@ -245,7 +245,7 @@ Assets/
   "com.cielevel.axu-indie-selection-to-csv": "嵌入式包 - 选中导出 CSV（零依赖）",
   "com.cielevel.axu-indie-sprite-to-animation": "嵌入式包 - 序列帧转动画（零依赖）",
   "com.cielevel.axu-indie-stat-pipeline": "嵌入式包 - 数值管线（零依赖）",
-  "com.cielevel.axu-test-framework": "嵌入式包 - 通用测试框架 AxuTestFramework 0.5.0（UTF 工具层 + 场景测试平台：八能力 Agent 运行时、axu_test_* / axu_scenario_* / axu_player_* / axu_trend_* / axu_doctor / axu_lint pipeline 命令、AxuTestRunner 看板（总览/Tests/Scenario/Trend 四页签，总览为默认页）；0.4.0 起三条运行入口共用启动-收尾契约（终态后自动退 Play、按 runId 回显本次结果、手动停止=已中断），在途判定改心跳判活、mode=all 双阶段结论、纯 ref suite 文件可加载；0.5.0 起总览首屏为「开始使用」卡：一键示例自检（axu-selfcheck-echo，只验工具链可用、不代表项目全部测试通过）、按目标运行入口、就绪预检带修复按钮，Scenario 页空态可先用示例或创建最小配置）",
+  "com.cielevel.axu-test-framework": "嵌入式包 - 通用测试框架 AxuTestFramework 0.6.0（UTF 工具层 + 场景测试平台：八能力 Agent 运行时、axu_test_* / axu_scenario_* / axu_player_* / axu_trend_* / axu_doctor / axu_lint pipeline 命令、AxuTestRunner 看板（总览/Tests/Scenario/Trend 四页签，总览为默认页）；0.4.0 起三条运行入口共用启动-收尾契约（终态后自动退 Play、按 runId 回显本次结果、手动停止=已中断），在途判定改心跳判活、mode=all 双阶段结论、纯 ref suite 文件可加载；0.5.0 起总览首屏为「开始使用」卡：一键示例自检（axu-selfcheck-echo，只验工具链可用、不代表项目全部测试通过）、按目标运行入口、就绪预检带修复按钮，Scenario 页空态可先用示例或创建最小配置；0.6.0 起结果范围、失败建议与技术详情分层，当前运行无报告时不回填历史结果）",
   "com.cielevel.axu-unity-cli-kit": "嵌入式包 - Axu CLI Agent Kit 0.1.0（unity CLI / Pipeline 用法文档 + Agent Skill 安装器，无运行时代码，零依赖）",
   "com.termway.ide.antigravity": "Git 包 - IDE 增强",
   "com.unity.ai.navigation": "2.0.4",

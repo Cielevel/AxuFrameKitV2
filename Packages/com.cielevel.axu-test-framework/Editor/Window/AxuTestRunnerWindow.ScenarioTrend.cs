@@ -55,6 +55,7 @@ namespace AxuTestFramework.Editor
         private ScrollView _scenarioResultsScroll;
         private ScenarioReport _scenarioReport;
         private string _scenarioReportPath;
+        private bool _scenarioReportIsHistorical;
         private AxuScenarioRunStatus _scenarioRunStatus;
         private VisualElement _scenarioProgressRow;
         private ProgressBar _scenarioProgressBar;
@@ -170,8 +171,6 @@ namespace AxuTestFramework.Editor
             _exportHtmlButton.SetEnabled(false);
             _exportHtmlButton.tooltip = "把最近一次报告导出为单文件 HTML 摘要（可分享给非技术同事）";
             actionRow.Add(_runSuiteButton);
-            actionRow.Add(_exportJunitButton);
-            actionRow.Add(_exportHtmlButton);
 
             // 报告/工件打开入口（backlog #4 P0：打开 JSON / 目录 / HTML 三按钮，报告加载后启用）
             var openRow = new VisualElement { name = "ax-suite-open-actions" };
@@ -211,10 +210,15 @@ namespace AxuTestFramework.Editor
 
             reportPane.Add(reportHeader);
             reportPane.Add(actionRow);
-            reportPane.Add(openRow);
             reportPane.Add(_scenarioProgressRow);
             reportPane.Add(_scenarioSummaryLabel);
             reportPane.Add(_scenarioResultsScroll);
+            var technicalActions = new Foldout { text = "技术详情与导出", value = false, name = "ax-scenario-technical-actions" };
+            technicalActions.AddToClassList("ax-overview-card");
+            technicalActions.Add(_exportJunitButton);
+            technicalActions.Add(_exportHtmlButton);
+            technicalActions.Add(openRow);
+            reportPane.Add(technicalActions);
 
             _scenarioPage.Add(listPane);
             _scenarioPage.Add(reportPane);
@@ -511,6 +515,7 @@ namespace AxuTestFramework.Editor
                 {
                     _scenarioReport = report;
                     _scenarioReportPath = path;
+                    _scenarioReportIsHistorical = false;
                     RenderScenarioReport();
                     UpdateStatus($"Suite 运行完成：{Path.GetFileName(path)}（趋势已入库）");
                 }
@@ -518,6 +523,7 @@ namespace AxuTestFramework.Editor
                 {
                     _scenarioReport = null;
                     _scenarioReportPath = null;
+                    _scenarioReportIsHistorical = false;
                     RenderScenarioReport();
                     WarnIfPartialRemnants(AxuTestReportPaths.ToFullPath(AxuTrendPaths.ScenarioReportRoot));
                     UpdateStatus("运行已结束，但报告文件读不到（可能已删除或写盘失败）——详见 Console 与状态文件。");
@@ -528,6 +534,7 @@ namespace AxuTestFramework.Editor
                 // 未完成（中断/基础设施错误）：清空面板，明确"本次没有结果"
                 _scenarioReport = null;
                 _scenarioReportPath = null;
+                _scenarioReportIsHistorical = false;
                 RenderScenarioReport();
                 _scenarioResultsScroll.Clear();
                 var note = new Label(BuildUnfinishedNote(status));
@@ -618,15 +625,17 @@ namespace AxuTestFramework.Editor
                 return;
             }
 
+            var verdict = report.ExitCode == ScenarioExitCode.Success ? "通过"
+                : report.ExitCode == ScenarioExitCode.WarningsOnly ? "通过但有警告" : "失败";
             _scenarioSummaryLabel.text =
-                $"suite: {ScenarioRunStatusPresenter.ScopePrefix(report.SuiteId) + report.SuiteId} · exitCode {(int)report.ExitCode} · " +
+                $"场景套件：{ScenarioRunStatusPresenter.ScopePrefix(report.SuiteId) + report.SuiteId} · {verdict}" +
+                (_scenarioReportIsHistorical ? "（历史报告）" : string.Empty) + " · " +
                 (report.Summary != null
-                    ? $"total {report.Summary.Total} · pass {report.Summary.Passed} · warn {report.Summary.Warned} · fail {report.Summary.Failed}"
+                    ? $"{report.Summary.Total} 项 · {report.Summary.Passed} 通过 · {report.Summary.Warned} 警告 · {report.Summary.Failed} 失败"
                     : "（无汇总）") +
                 (IsCurrentWarnAsFailReport()
-                    ? $"\n结论：失败（warnAsFail：0 fail，{_scenarioRunStatus.Summary.Warned} warn）"
-                    : string.Empty) +
-                $"\n报告: {Path.GetFileName(_scenarioReportPath)}";
+                    ? $"\n警告按失败处理（0 个失败项、{_scenarioRunStatus.Summary.Warned} 个警告项）。"
+                    : string.Empty);
 
             if (report.Results == null || report.Results.Count == 0)
             {
@@ -662,10 +671,10 @@ namespace AxuTestFramework.Editor
         {
             switch (status)
             {
-                case "pass": return "[PASS]";
-                case "warn": return "[WARN]";
-                case "fail": return "[FAIL]";
-                case "error": return "[ERROR]";
+                case "pass": return "[通过]";
+                case "warn": return "[警告]";
+                case "fail": return "[失败]";
+                case "error": return "[运行错误]";
                 default: return $"[{status}]";
             }
         }
@@ -704,8 +713,9 @@ namespace AxuTestFramework.Editor
             var status = (result.Status ?? "-").Trim().ToLowerInvariant();
             var failed = status == "fail" || status == "error";
             var warned = status == "warn";
-            var header = $"{StatusBadge(status)} {result.ScenarioId} · {result.Capability} · " +
-                         $"{result.DurationMs:0.#} ms · findings {result.Findings?.Count ?? 0}" +
+            var primaryIssue = ScenarioReportPresenter.PrimaryIssue(result);
+            var header = $"{StatusBadge(status)} {result.ScenarioId} · " +
+                         (primaryIssue != null ? ScenarioReportPresenter.TranslateFinding(primaryIssue) : result.Capability) +
                          (result.Unbudgeted ? " · 未设预算" : string.Empty);
 
             var row = new Foldout { text = header, value = failed || warned, name = "ax-scenario-result" };
@@ -716,13 +726,46 @@ namespace AxuTestFramework.Editor
             conclusion.AddToClassList("ax-scenario-conclusion");
             conclusion.AddToClassList(ScenarioReportPresenter.ToneClass(status));
             row.Add(conclusion);
+            AddIssueGuidance(row, result);
 
-            AddMetricsSection(row, result);
-            AddBudgetSection(row, result);
-            AddBaselineSection(row, result);
-            AddFindingsSection(row, result);
-            AddArtifactsSection(row, result);
+            var technical = new Foldout { text = "技术详情：指标、预算、原始消息与工件", value = false };
+            technical.AddToClassList("ax-group-foldout");
+            AddDetailNote(technical, "能力与耗时", $"{result.Capability} · {result.DurationMs:0.#} ms");
+            AddMetricsSection(technical, result);
+            AddBudgetSection(technical, result);
+            AddBaselineSection(technical, result);
+            AddFindingsSection(technical, result);
+            AddArtifactsSection(technical, result);
+            row.Add(technical);
             return row;
+        }
+
+        private static void AddIssueGuidance(VisualElement parent, ScenarioReportResult result)
+        {
+            var groups = result.Findings?
+                .Where(finding => finding != null && finding.Severity != FindingSeverity.Info)
+                .GroupBy(finding => finding.Code ?? finding.Message ?? string.Empty)
+                .OrderByDescending(group => group.Any(finding => finding.Severity == FindingSeverity.Error))
+                .ToList();
+            if (groups != null)
+            {
+                foreach (var group in groups.Take(3))
+                {
+                    var finding = group.FirstOrDefault(f => f.Severity == FindingSeverity.Error) ?? group.First();
+                    var severity = finding.Severity == FindingSeverity.Error ? "失败" : "警告";
+                    var label = new Label($"{severity}：{ScenarioReportPresenter.TranslateFinding(finding)}。" +
+                                          (group.Count() > 1 ? $"（同类 {group.Count()} 条）" : string.Empty) +
+                                          $"建议：{ScenarioReportPresenter.FindingAdvice(finding)}");
+                    label.AddToClassList("ax-scenario-conclusion");
+                    label.AddToClassList(finding.Severity == FindingSeverity.Error ? "ax-tone-bad" : "ax-tone-warn");
+                    parent.Add(label);
+                }
+                if (groups.Count > 3)
+                    parent.Add(new Label($"另有 {groups.Count - 3} 类问题；展开技术详情查看全部原始记录。"));
+            }
+            if ((groups == null || groups.Count == 0) &&
+                (result.Status == "fail" || result.Status == "error" || result.Status == "warn"))
+                parent.Add(new Label("建议：展开技术详情，查看原始消息、指标及运行日志。"));
         }
 
         /// <summary>指标表：按 collector 分组，列出每个 stat 的聚合值（BaselineDiff.Flatten 同键口径）。</summary>
@@ -837,6 +880,8 @@ namespace AxuTestFramework.Editor
                 row.Add(badge);
                 row.Add(text);
                 parent.Add(row);
+                if (!string.IsNullOrWhiteSpace(finding.Message))
+                    AddDetailNote(parent, "原始消息", $"[{finding.Code}] {finding.Message}");
             }
         }
 
